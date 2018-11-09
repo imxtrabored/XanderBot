@@ -1,3 +1,4 @@
 *.sln
 .vs
+.pyproj
 tokens.txt
