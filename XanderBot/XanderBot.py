@@ -1,9 +1,11 @@
 import discord
 import asyncio
+import sqlite3
 
 FILENAME = "../tokens.txt"
 file = open (FILENAME, "r")
 token = file.read()
+file.close()
 
 client = discord.Client()
 
