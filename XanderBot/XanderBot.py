@@ -5,7 +5,7 @@ import sqlite3
 
 FILENAME = "../tokens.txt"
 file = open (FILENAME, "r")
-token = file.read()
+token = file.readline()
 file.close()
 
 description = '''An example bot to showcase the discord.ext.commands extension
