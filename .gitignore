@@ -1,4 +1,7 @@
-*.sln
 .vs
+*.sln
 *.pyproj
+XanderBot/.pylintrc
+XanderBot/.mypy_cache
+__pycache__
 tokens.txt
