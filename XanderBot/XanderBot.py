@@ -4,8 +4,8 @@ import asyncio
 from FEH.Hero import Hero, Color, WeaponType, MoveType
 from FEH.Hero import LegendElement, LegendBoost
 
-FILENAME = "../tokens.txt"
-file = open (FILENAME, "r")
+FILENAME = '../tokens.txt'
+file = open (FILENAME, 'r')
 token = file.readline().rstrip('\n')
 file.close()
 
@@ -31,13 +31,55 @@ class XanderBotClient(discord.Client):
 
         if lowerMessage.startswith('hero') or lowerMessage.startswith('unit'):
             thisHero = await Hero.create('null')
-            heroEmbed = discord.Embed(title='null')
-            heroEmbed.description = 'description'
+            heroEmbed = discord.Embed(title = thisHero.name + ': ' + thisHero.epithet)
+            description = ''
+            description += thisHero.color.name + ' ' + thisHero.weaponType.name + ' ' + thisHero.moveType.name + '\n'
+            for i in range(thisHero.rarity):
+                description += 'star' 
+            heroEmbed.description = description
             heroEmbed.colour = discord.Colour.from_rgb(255, 0, 0)
-            heroEmbed.set_footer(text='footertext')
-            heroEmbed.add_field(name='field1', value='data1')
-            heroEmbed.add_field(name='field2', value='data2')
-            heroEmbed.add_field(name='field3', value='data3')
+            if len(thisHero.skills.weapon) > 0:
+                skills = ''
+                for counter, skill in enumerate(thisHero.skills.weapon):
+                    if skill != None:
+                        skills += skill.name + ' ' + str(counter) + 'star\n'
+                if skills == '': skills = 'None'
+                heroEmbed.add_field(name='Weapons', value=skills)
+            if len(thisHero.skills.assist) > 0:
+                skills = ''
+                for counter, skill in enumerate(thisHero.skills.assist):
+                    if skill != None:
+                        skills += skill.name + ' ' + str(counter) + 'star\n'
+                if skills == '': skills = 'None'
+                heroEmbed.add_field(name='Assists', value=skills)
+            if len(thisHero.skills.special) > 0:
+                skills = ''
+                for counter, skill in enumerate(thisHero.skills.special):
+                    if skill != None:
+                        skills += skill.name + ' ' + str(counter) + 'star\n'
+                if skills == '': skills = 'None'
+                heroEmbed.add_field(name='Specials', value=skills)
+            if len(thisHero.skills.passiveA) > 0:
+                skills = ''
+                for counter, skill in enumerate(thisHero.skills.passiveA):
+                    if skill != None:
+                        skills += skill.name + ' ' + str(counter) + 'star\n'
+                if skills == '': skills = 'None'
+                heroEmbed.add_field(name='Passive A', value=skills)
+            if len(thisHero.skills.passiveB) > 0:
+                skills = ''
+                for counter, skill in enumerate(thisHero.skills.passiveB):
+                    if skill != None:
+                        skills += skill.name + ' ' + str(counter) + 'star\n'
+                if skills == '': skills = 'None'
+                heroEmbed.add_field(name='Passive B', value=skills)
+            if len(thisHero.skills.passiveC) > 0:
+                skills = ''
+                for counter, skill in enumerate(thisHero.skills.passiveC):
+                    if skill != None:
+                        skills += skill.name + ' ' + str(counter) + 'star\n'
+                if skills == '': skills = 'None'
+                heroEmbed.add_field(name='Passive C', value=skills)
             await message.channel.send(embed=heroEmbed)
             return
 
