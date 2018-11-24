@@ -2,7 +2,7 @@
 *.sln
 *.pyproj
 *.pyperf
-XanderBot/.pylintrc
-XanderBot/.mypy_cache
+xanderbot/.pylintrc
+xanderbot/.mypy_cache
 __pycache__
 tokens.txt
