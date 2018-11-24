@@ -2,7 +2,7 @@ import discord
 import asyncio
 
 from feh.hero import Hero, Color, WeaponType, MoveType
-from feh.hero import LegendElement, LegendBoost
+from feh.hero import LegendElement, Stat
 from feh.unitlib import UnitLib
 
 FILENAME = '../tokens.txt'
@@ -23,6 +23,7 @@ class XanderBotClient(discord.Client):
 
     async def cmd_hero(self, message, tokens):
         this_hero = self.library.unit_list[self.library.unit_names.get(tokens[1])]
+        this_hero.update_rarity(4)
         hero_embed = discord.Embed(title = this_hero.name + ': ' + this_hero.epithet)
         description = ''
         description += this_hero.color.name + ' ' + this_hero.weapon_type.name + ' ' + this_hero.move_type.name + '\n'
@@ -77,6 +78,14 @@ class XanderBotClient(discord.Client):
             hero_embed.add_field(name='Passive C', value=skills)
         await message.channel.send(embed=hero_embed)
         return
+
+    async def cmd_stats(self, message, tokens):
+        this_hero = self.library.unit_list[self.library.unit_names.get(tokens[1])]
+        hero_embed = discord.Embed(title = this_hero.name + ': ' + this_hero.epithet)
+        description = ''
+
+        await message.channel.send(hero_embed)
+
 
     async def cmd_skill(self, message, tokens):
         this_skill = self.library.skill_list[self.library.skill_names.get(tokens[1])]

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<ProfilingTarget xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ProjectTarget>
+    <TargetProject>cae9371a-75c3-4a57-9556-ffe2a89bcaa2</TargetProject>
+    <FriendlyName>XanderBot</FriendlyName>
+  </ProjectTarget>
+  <Reports>
+    <Report>
+      <Filename>C:\Users\imxtrabored\AppData\Local\Temp\XanderBot_20181121.vsp</Filename>
+    </Report>
+  </Reports>
+</ProfilingTarget>

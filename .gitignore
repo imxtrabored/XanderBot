@@ -1,6 +1,7 @@
 .vs
 *.sln
 *.pyproj
+*.pyperf
 XanderBot/.pylintrc
 XanderBot/.mypy_cache
 __pycache__

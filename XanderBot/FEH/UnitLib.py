@@ -5,6 +5,8 @@ from feh.skill import Skill
 class UnitLib(object):
     '''Library of units, loaded into memory'''
 
+    singleton = None
+
     @staticmethod
     async def initialize(sqlite_instance = None):
         self = UnitLib()
@@ -20,4 +22,13 @@ class UnitLib(object):
         self.skill_names = dict()
         self.skill_names['nullskill'] = 0
         self.skill_names['bestskill'] = 0
+
+        singleton = self
+
         return(self)
+
+    @staticmethod
+    async def get_unitlib():
+        if singleton == None:
+            await UnitLib.initialize()
+        yield singleton
