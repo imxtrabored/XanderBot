@@ -4,69 +4,71 @@ from feh.skill import Skill
 
 class Color(Enum):
     '''Enum for each unit color'''
-    RED = 0
-    BLUE = 1
-    GREEN = 2
-    COLORLESS = 3
+    RED = 1
+    BLUE = 2
+    GREEN = 3
+    COLORLESS = 4
 
 class WeaponType(Enum):
     '''Enum for each weapon type'''
-    R_SWORD = 0
-    R_TOME = 1
-    R_BREATH = 2
-    B_LANCE = 3
-    B_TOME = 4
-    B_BREATH = 5
-    G_AXE = 6
-    G_TOME = 7
-    G_BREATH = 8
-    C_BOW = 9
-    C_DAGGER = 10
-    C_STAFF = 11
-    C_BREATH = 12
-    R_BOW = 13
-    B_BOW = 14
-    G_BOW = 15
-    R_DAGGER = 16
-    B_DAGGER = 17
-    G_DAGGER = 18
+    R_SWORD = 1
+    R_TOME = 2
+    R_BREATH = 3
+    B_LANCE = 4
+    B_TOME = 5
+    B_BREATH = 6
+    G_AXE = 7
+    G_TOME = 8
+    G_BREATH = 9
+    C_BOW = 10
+    C_DAGGER = 11
+    C_STAFF = 12
+    C_BREATH = 13
+    R_BOW = 14
+    B_BOW = 15
+    G_BOW = 16
+    R_DAGGER = 17
+    B_DAGGER = 18
+    G_DAGGER = 19
 
 class MoveType(Enum):
     '''Enum for each movement type'''
-    INFANTRY = 0
-    ARMOR = 1
-    CAVALRY = 2
-    FLYING = 3
+    INFANTRY = 1
+    ARMOR = 2
+    CAVALRY = 3
+    FLYING = 4
 
 class TomeType(Enum):
     '''Enum for tome elements, UNUSED'''
-    NONE = 0
-    FIRE = 1
-    THUNDER = 2
-    WIND = 3
-    DARK = 4
-    LIGHT = 5
+    NONE = 1
+    FIRE = 2
+    THUNDER = 3
+    WIND = 4
+    DARK = 5
+    LIGHT = 6
 
 class LegendElement(Enum):
     '''Enum for elements of Legendary Heroes'''
-    NONE = 0
-    FIRE = 1
-    WATER = 2
-    WIND = 3
-    EARTH = 4
+    NONE = 1
+    FIRE = 2
+    WATER = 3
+    WIND = 4
+    EARTH = 5
 
 class Stat(Enum):
     '''Enum for each unit stat'''
-    NONE = 0
-    ATK = 1
-    SPD = 2
-    DEF = 3
-    RES = 4
+    NONE = 1
+    HP = 2
+    ATK = 3
+    SPD = 4
+    DEF = 5
+    RES = 6
+
 
 class SkillSet(object):
     """Contains learnable skills of a hero"""
     @staticmethod
-    async def create(heroName = 'null'):
+    def create():
         self = SkillSet()
 
         self.weapon = []
@@ -78,6 +80,7 @@ class SkillSet(object):
         self.weapon_prf = None
 
         return self
+
 
 class Hero(object):
     '''Representation of a unit in FEH'''
@@ -96,26 +99,56 @@ class Hero(object):
          22, 24, 26, 28, 30, 33, 35, 37)
         )
 
-    @staticmethod
-    async def create(heroName = 'null'):
-        '''Temporary init; will replace with sqlite lookup'''
-        self = Hero()
+    def __init__(self, name, epithet, color, weapon_type, move_type,
+                 base_hp, base_atk, base_spd, base_def, base_res,
+                 grow_hp, grow_atk, grow_spd, grow_def, grow_res,
+                 max_hp, max_atk, max_spd, max_def, max_res,
+                 is_legend = False, legend_element = LegendElement.NONE,
+                 legend_boost = Stat.NONE, tome_type = TomeType.NONE,
+                 description = 'No information available.', bvid = 0x0000,
+                 art_portrait = '', art_attack = '', art_damaged = '',
+                 art_special = '', artist = "Unknown", vo_en = 'Unknown',
+                 vo_jp = 'Unknown', is_story = False, is_seasonal = False,
+                 is_grail = False, is_veteran = False, is_trainee = False,
+                 is_dancer = False, is_brave = False, is_sigurd=False,
+                 generation = 1
+                 ):
+        '''
+        Initializes an instance of a unit. The fields that aren't pre-defined
+        are ones that a unit really wouldn't make much sense without.
+        '''
 
         #initialize unit name
-        self.name = 'Null'
-        self.epithet = 'Null Hero'
-        self.description = 'A mysterious Null Hero.'
-        self.bvid = 0x0000
+        self.name = name
+        self.epithet = epithet
+        self.description = description
+        self.bvid = bvid
 
         #initialize basic unit attributes
-        self.color = Color.RED
-        self.weapon_type = WeaponType.R_SWORD
-        self.move_type = MoveType.INFANTRY
-        self.tome_type = TomeType.NONE
+        self.color = color
+        self.weapon_type = weapon_type
+        self.move_type = move_type
+        self.tome_type = tome_type
         self.rarity = 5
+        self.level = 40
+        self.merges = 0
 
-        #initialize unit stats
-        self.base_hp = 16
+        #skills
+        self.skills = SkillSet.create()
+
+        self.equipped_weapon    = None
+        self.equipped_assist    = None
+        self.equipped_special   = None
+        self.equipped_passive_a = None
+        self.equipped_passive_b = None
+        self.equipped_passive_c = None
+        self.equipped_passive_s = None
+
+        #initialize unit stats, save intermediate steps to resume at any step
+        #base stats == rarity:5 level:1 ivs:neutral merges:0
+        #set by: initialization do not change
+        #needed to calculate rarity
+        self.base_hp  = 16
         self.base_atk = 7
         self.base_spd = 14
         self.base_def = 5
@@ -123,16 +156,51 @@ class Hero(object):
         self.base_total = (self.base_hp + self.base_atk + self.base_spd
                            + self.base_def + self.base_res)
 
-        self.growth_hp = 55
-        self.growth_atk = 50
-        self.growth_spd = 50
-        self.growth_def = 50
-        self.growth_res = 50
-        self.growth_total = (self.growth_hp + self.growth_atk
-                             + self.growth_spd + self.growth_def
-                             + self.growth_res)
+        #iv stats == rarity:5 level:1 ivs: current merges:0
+        #set by: update_ivs
+        #needed to calculate merges
+        self.iv_hp  = base_hp
+        self.iv_atk = base_atk
+        self.iv_spd = base_spd
+        self.iv_def = base_def
+        self.iv_res = base_res
 
-        self.max_hp = 38
+        #merge stats == rarity:5 level:1 ivs:current merges:current
+        #set by: update_merges
+        #needed to calculate lv1 stats
+        self.merge_hp  = base_hp
+        self.merge_atk = base_atk
+        self.merge_spd = base_spd
+        self.merge_def = base_def
+        self.merge_res = base_res
+
+        #rarity mod == amount to subtract from stats due to rarity
+        #separate this calc so that we can minimize the number of times its called
+        self.rmod_hp  = 0
+        self.rmod_atk = 0
+        self.rmod_spd = 0
+        self.rmod_def = 0
+        self.rmod_res = 0
+
+        #lv1 stats == rarity:current level:1 ivs:current merges:current
+        #set by: update_rarity
+        #displayed to user
+        self.lv1_hp  = base_hp
+        self.lv1_atk = base_atk
+        self.lv1_spd = base_spd
+        self.lv1_def = base_def
+        self.lv1_res = base_res
+
+        self.grow_hp  = 55
+        self.grow_atk = 50
+        self.grow_spd = 50
+        self.grow_def = 50
+        self.grow_res = 50
+        self.grow_total = (self.grow_hp + self.grow_atk + self.grow_spd
+                           + self.grow_def + self.grow_res)
+        
+        #stats at lv40, including merges
+        self.max_hp  = 38
         self.max_atk = 29
         self.max_spd = 36
         self.max_def = 27
@@ -140,44 +208,44 @@ class Hero(object):
         self.max_total = (self.max_hp + self.max_atk + self.max_spd
                           + self.max_def + self.max_res)
 
+        #stats at any other lv
+        self.curr_hp  = max_hp
+        self.curr_atk = max_atk
+        self.curr_spd = max_spd
+        self.curr_def = max_def
+        self.curr_res = max_res
+
         self.boon = Stat.NONE
         self.bane = Stat.NONE
 
         self.summoner_support_level = 0
 
-        #stat calc stuff
-        self.is_veteran = False
-        self.is_trainee = False
-        self.is_dancer = False
-        self.is_brave = False
-        self.generation = 1
-
         #legendary hero stuff
-        self.is_legend = False
-        self.legend_element = LegendElement.NONE
-        self.legend_boost = Stat.NONE
+        self.is_legend = is_legend
+        self.legend_element = legend_element
+        self.legend_boost = legend_boost
 
-        #skills
-        self.max_special_cooldown = None
+        #other
+        self.is_story = is_story
+        self.is_seasonal = is_seasonal
+        self.is_grail = is_grail
 
-        self.skills = await SkillSet.create(heroName)
-
-        self.equipped_weapon = None
-        self.equipped_assist = None
-        self.equipped_special = None
-        self.equipped_passive_a = None
-        self.equipped_passive_b = None
-        self.equipped_passive_c = None
-        self.equipped_passive_s = None
+        #stat calc stuff
+        self.is_veteran = is_veteran
+        self.is_trainee = is_trainee
+        self.is_dancer = is_dancer
+        self.is_brave = is_brave
+        self.is_sigurd = is_sigurd
+        self.generation = generation
 
         #fluff
-        self.art_portrait = ''
-        self.art_attack = ''
-        self.art_special = ''
-        self.art_damaged = ''
-        self.artist = ''
-        self.vo_en = ''
-        self.vo_jp = ''
+        self.art_portrait = art_portrait
+        self.art_attack = art_attack
+        self.art_special = art_special
+        self.art_damaged = art_damaged
+        self.artist = artist
+        self.vo_en = vo_en
+        self.vo_jp = vo_jp
 
         #bonus units
         self.is_arena_bonus = False
@@ -185,86 +253,71 @@ class Hero(object):
         self.is_aether_bonus_next = False
         self.is_tempest_bonus = False
 
-        #other
-        self.is_story = False
-        self.is_seasonal = False
-        self.is_grail = False
-
-        #await self.sort_stats()
-
-        return(self)
-
-    @staticmethod
-    async def lookup(name = 'null'):
-        '''returns just the unit name'''
-        return('null')
 
     async def recalc_stats(self):
-        '''updates max stats from base, growth, and rarity'''
+        '''
+        updates max stats from lv1, growth, merges, and rarity
+        '''
+        self.lv1_hp  = self.merge_hp  + self.rmod_hp
+        self.lv1_atk = self.merge_atk + self.rmod_atk
+        self.lv1_spd = self.merge_spd + self.rmod_spd
+        self.lv1_def = self.merge_def + self.rmod_def
+        self.lv1_res = self.merge_res + self.rmod_res
+
         self.max_hp  = (
-            self.base_hp
-            + Hero.STATS_RARITY[self.rarity + 1][self.growth_hp //5]
+            self.lv1_hp
+            + Hero.STATS_RARITY[self.rarity - 1][self.grow_hp //5]
             )
         self.max_atk = (
-            self.base_atk
-            + Hero.STATS_RARITY[self.rarity + 1][self.growth_atk//5]
+            self.lv1_atk
+            + Hero.STATS_RARITY[self.rarity - 1][self.grow_atk//5]
             )
         self.max_spd = (
-            self.base_spd
-            + Hero.STATS_RARITY[self.rarity + 1][self.growth_spd//5]
+            self.lv1_spd
+            + Hero.STATS_RARITY[self.rarity - 1][self.grow_spd//5]
             )
         self.max_def = (
-            self.base_def
-            + Hero.STATS_RARITY[self.rarity + 1][self.growth_def//5]
+            self.lv1_def
+            + Hero.STATS_RARITY[self.rarity - 1][self.grow_def//5]
             )
         self.max_res = (
-            self.base_res
-            + Hero.STATS_RARITY[self.rarity + 1][self.growth_res//5]
+            self.lv1_res
+            + Hero.STATS_RARITY[self.rarity - 1][self.grow_res//5]
             )
 
-    def modify_base_stat(self, stat_enum, amount):
+    def modify_rmod(self, stat_enum, amount):
         '''this is a convenience method to make update_rarity look cleaner'''
-        if   stat_enum == Stat.HP:  self.base_hp  += amount
-        elif stat_enum == Stat.ATK: self.base_atk += amount
-        elif stat_enum == Stat.SPD: self.base_spd += amount
-        elif stat_enum == Stat.DEF: self.base_def += amount
-        elif stat_enum == Stat.RES: self.base_res += amount
+        #todo: investigate whether setattr() is faster (it probably isn't)
+        if   stat_enum == Stat.HP:  self.rmod_hp  += amount
+        elif stat_enum == Stat.ATK: self.rmod_atk += amount
+        elif stat_enum == Stat.SPD: self.rmod_spd += amount
+        elif stat_enum == Stat.DEF: self.rmod_def += amount
+        elif stat_enum == Stat.RES: self.rmod_res += amount
+
+    async def update_level(self, new_level):
+        '''recalculates current stats based on level'''
+        raise NotImplementedError("Get me those BVIDs and then we'll talk.")
 
     async def update_rarity(self, new_rarity):
-        '''recalculates base stats from a rarity change'''
-        if  self.rarity == new_rarity or new_rarity < 1 or new_rarity > 5: return
+        '''
+        recalculates rarity mod from a rarity change
+        no more relative calc since base stats saved all the time
+        be sure to Hero.recalc_stats() afterwards!
+        '''
+        if new_rarity == self.rarity or new_rarity < 1 or new_rarity > 5: return
+        self.rarity = new_rarity
 
-        # microoptimization here
-        self.rarity - new_rarity == rarity_diff
-        if (rarity_diff > 1 or rarity_diff < 1):
-            if (rarity_diff) % 2 == 0:
-                if   rarity_diff ==  2: modify = -1
-                elif rarity_diff ==  4: modify = -2
-                elif rarity_diff == -2: modify =  1
-                elif rarity_diff == -4: modify =  2
-                self.rarity = new_rarity
+        modify = 0
+        if (new_rarity < 4):
+            if new_rarity == 1: modify = -2
+            else: modify = -1
 
-            else:
-                # rarity diff must be 3 or 5
-                if   rarity_diff ==  3:
-                    modify = -1
-                    self.rarity -= 2
-                elif rarity_diff ==  5:
-                    modify = -2
-                    self.rarity -= 4
-                elif rarity_diff == -3:
-                    modify =  1
-                    self.rarity += 2
-                elif rarity_diff == -5:
-                    modify =  2
-                    self.rarity += 4
-
-            self.base_hp  += modify
-            self.base_atk += modify
-            self.base_spd += modify
-            self.base_def += modify
-            self.base_res += modify
-            if (rarity_diff) % 2 == 0: return
+        self.rmod_hp  = modify
+        self.rmod_atk = modify
+        self.rmod_spd = modify
+        self.rmod_def = modify
+        self.rmod_res = modify
+        if new_rarity % 2 == 1: return
 
         stats = [
             (self.base_atk, 4, Stat.ATK),
@@ -275,28 +328,121 @@ class Hero(object):
             ]
         stats.sort(key=lambda sl: (sl[0], sl[1]))
 
-        if rarity_diff > 0:
-            if self.rarity % 2 == 1:
-                # modify smallest 3
-                self.modify_base_stat(stats[i][2], -1)
-            else:
-                for i in range(3, 5):
-                    # modify largest two
-                    self.modify_base_stat(stats[i][2], -1)
-            self.rarity
-        else:
-            if self.rarity % 2 == 1:
-                # modify largest two
-                self.modify_base_stat(stats[i][2], 1)
-            else:
-                # modify smallest 3
-                self.modify_base_stat(stats[i][2], 1)
+        # modify smallest 3
+        for i in range(3):
+            self.modify_rmod(stats[i][2], -1)
 
-        self.rarity = new_rarity
-                
+
+    def modify_iv(self, iv, increase):
+        '''another convenience method'''
+        if iv == None: return
+        elif increase:
+            if iv == Stat.HP:
+                self.iv_hp    += 1
+                self.grow_hp  += 5
+            elif iv == Stat.ATK:
+                self.iv_atk   += 1
+                self.grow_atk += 5
+            elif iv == Stat.SPD:
+                self.iv_spd   += 1
+                self.grow_spd += 5
+            elif iv == Stat.DEF:
+                self.iv_def   += 1
+                self.grow_def += 5
+            elif iv == Stat.RES:
+                self.iv_res   += 1
+                self.grow_res += 5
+        else:
+            if iv == Stat.HP:
+                self.iv_hp    -= 1
+                self.grow_hp  -= 5
+            elif iv == Stat.ATK:
+                self.iv_atk   -= 1
+                self.grow_atk -= 5
+            elif iv == Stat.SPD:
+                self.iv_spd   -= 1
+                self.grow_spd -= 5
+            elif iv == Stat.DEF:
+                self.iv_def   -= 1
+                self.grow_def -= 5
+            elif iv == Stat.RES:
+                self.iv_res   -= 1
+                self.grow_res -= 5
+
+
+    async def update_ivs(self, boon, bane):
+        '''
+        recalculates lv1 stats and growths from ivs
+        note that this invalidates merge_stat
+        '''
+        if boon == bane: return
+        if self.boon != boon:
+            self.modify_iv(self.boon, False)
+            self.modify_iv(boon, True)
+        if self.bane != bane:
+            self.modify_iv(self.bane, True)
+            self.modify_iv(bane, False)
+
+
+    def modify_merge(self, stat_enum, amount):
+        '''this is a convenience method to make update_merges look cleaner'''
+        #todo: investigate whether setattr() is faster (it probably isn't)
+        if   stat_enum == Stat.HP:  self.merge_hp  += amount
+        elif stat_enum == Stat.ATK: self.merge_atk += amount
+        elif stat_enum == Stat.SPD: self.merge_spd += amount
+        elif stat_enum == Stat.DEF: self.merge_def += amount
+        elif stat_enum == Stat.RES: self.merge_res += amount
+
+
+    async def update_merges(self, new_merges):
+        '''
+        recalculates lv1 stats from merges
+        we dont do this in a relative manner since its unlikely to be faster
+        and updating ivs invalidate previous merge_stat
+        be sure to Hero.recalc_stats() afterwards!
+        '''
+        if new_merges < 0 or new_merges > 10: return
+
+        self.merges = new_merges
+        modify = 0
+        if new_merges >= 5:
+            modify = 2
+            new_merges -= 5
+            if new_merges == 10: modify = 4
+
+        self.merge_hp  = self.iv_hp  + modify
+        self.merge_atk = self.iv_atk + modify
+        self.merge_spd = self.iv_spd + modify
+        self.merge_def = self.iv_def + modify
+        self.merge_res = self.iv_res + modify
+        if new_merges % 5 == 0: return
+
+        stats = [
+            (self.base_hp , 4, Stat.HP ),
+            (self.base_atk, 3, Stat.ATK),
+            (self.base_spd, 2, Stat.SPD),
+            (self.base_def, 1, Stat.DEF),
+            (self.base_res, 0, Stat.RES)
+            ]
+        stats.sort(key=lambda sl: (sl[0], sl[1]), reverse=True)
+
+        for i in range(new_merges * 2):
+            self.modify_merge(stats[i % 4][2], 1)
+
+
+    async def update_stat_mods(
+        self, boon = None, bane = None, merges = None, rarity = None):
+        if boon and bane:
+            await self.update_ivs(boon, bane)
+        if merges != None:
+            await self.update_merges(merges)
+        if rarity:
+            await self.update_rarity(rarity)
+        if rarity or (boon and bane) or (merges != None):
+            await self.recalc_stats()
+
 
 
 class CombatHero(Hero):
     '''Representation of a unit in combat'''
-
 

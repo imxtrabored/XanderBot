@@ -1,24 +1,24 @@
 import asyncio, sqlite3
-from feh.hero import *
 from enum import Enum
 
 class SkillType(Enum):
     '''Enum for each skill typer'''
-    WEAPON = 0
-    ASSIST = 1
-    SPECIAL = 2
-    PASSIVE_A = 3
-    PASSIVE_B = 4
-    PASSIVE_C = 5
-    PASSIVE_S = 6
+    WEAPON = 1
+    ASSIST = 2
+    SPECIAL = 3
+    PASSIVE_A = 4
+    PASSIVE_B = 5
+    PASSIVE_C = 6
+    PASSIVE_S = 7
 
 class SpecialTrigger(Enum):
     '''Enum for when specials trigger'''
-    UNIT_INITIATE = 0
-    UNIT_ATTACK = 1
-    UNIT_DEFEND = 2
-    UNIT_ASSIST = 3
-    UNIQUE_ICE_MIRROR = 4
+    UNIT_INITIATE = 1
+    UNIT_ATTACK = 2
+    UNIT_DEFEND = 3
+    UNIT_POSTCOMBAT = 4
+    UNIT_ASSIST = 5
+    UNIQUE_ICE_MIRROR = 6
 
 class Skill(object):
     '''Represents a skill in FEH'''
@@ -62,12 +62,8 @@ class Skill(object):
 
         return self
 
-    @staticmethod
-    async def lookup(skill_name = 'Null'):
-        return('Null')
-
     def pre_death_blow(h, s):
-        h.boost_atk_temp += s.rank * 2
+        return
 
 class SpecialSkill(Skill):
 
