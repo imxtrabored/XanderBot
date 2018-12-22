@@ -1,16 +1,20 @@
 import asyncio, sqlite3
-from enum import Enum
+from enum import Enum, unique
 from feh.skill import Skill
 
+@unique
 class Color(Enum):
     '''Enum for each unit color'''
+    NONE = 0
     RED = 1
     BLUE = 2
     GREEN = 3
     COLORLESS = 4
 
-class WeaponType(Enum):
+@unique
+class UnitWeaponType(Enum):
     '''Enum for each weapon type'''
+    NONE = 0
     R_SWORD = 1
     R_TOME = 2
     R_BREATH = 3
@@ -31,13 +35,15 @@ class WeaponType(Enum):
     B_DAGGER = 18
     G_DAGGER = 19
 
+@unique
 class MoveType(Enum):
     '''Enum for each movement type'''
     INFANTRY = 1
     ARMOR = 2
     CAVALRY = 3
-    FLYING = 4
+    FLIER = 4
 
+@unique
 class TomeType(Enum):
     '''Enum for tome elements, UNUSED'''
     NONE = 1
@@ -47,6 +53,7 @@ class TomeType(Enum):
     DARK = 5
     LIGHT = 6
 
+@unique
 class LegendElement(Enum):
     '''Enum for elements of Legendary Heroes'''
     NONE = 1
@@ -54,7 +61,12 @@ class LegendElement(Enum):
     WATER = 3
     WIND = 4
     EARTH = 5
+    LIGHT = 6
+    DARK = 7
+    ASTRA = 8
+    ANIMA = 9
 
+@unique
 class Stat(Enum):
     '''Enum for each unit stat'''
     NONE = 1
@@ -97,7 +109,9 @@ class Hero(object):
          20, 22, 24, 26, 28, 31, 33, 35),
         (0, 1, 4, 6, 8, 10, 13, 15, 17, 19,
          22, 24, 26, 28, 30, 33, 35, 37)
-        )
+    )
+
+
 
     def __init__(self, name, epithet, color, weapon_type, move_type,
                  base_hp, base_atk, base_spd, base_def, base_res,
@@ -125,10 +139,10 @@ class Hero(object):
         self.bvid = bvid
 
         #initialize basic unit attributes
-        self.color = color
-        self.weapon_type = weapon_type
-        self.move_type = move_type
-        self.tome_type = tome_type
+        self.color = Color(color)
+        self.weapon_type = UnitWeaponType(weapon_type)
+        self.move_type = MoveType(move_type)
+        #self.tome_type = TomeType(tome_type)
         self.rarity = 5
         self.level = 40
         self.merges = 0
@@ -148,11 +162,11 @@ class Hero(object):
         #base stats == rarity:5 level:1 ivs:neutral merges:0
         #set by: initialization do not change
         #needed to calculate rarity
-        self.base_hp  = 16
-        self.base_atk = 7
-        self.base_spd = 14
-        self.base_def = 5
-        self.base_res = 5
+        self.base_hp  = base_hp
+        self.base_atk = base_atk
+        self.base_spd = base_spd
+        self.base_def = base_def
+        self.base_res = base_res
         self.base_total = (self.base_hp + self.base_atk + self.base_spd
                            + self.base_def + self.base_res)
 
@@ -191,20 +205,20 @@ class Hero(object):
         self.lv1_def = base_def
         self.lv1_res = base_res
 
-        self.grow_hp  = 55
-        self.grow_atk = 50
-        self.grow_spd = 50
-        self.grow_def = 50
-        self.grow_res = 50
+        self.grow_hp  = grow_hp
+        self.grow_atk = grow_atk
+        self.grow_spd = grow_spd
+        self.grow_def = grow_def
+        self.grow_res = grow_res
         self.grow_total = (self.grow_hp + self.grow_atk + self.grow_spd
                            + self.grow_def + self.grow_res)
         
         #stats at lv40, including merges
-        self.max_hp  = 38
-        self.max_atk = 29
-        self.max_spd = 36
-        self.max_def = 27
-        self.max_res = 27
+        self.max_hp  = max_hp
+        self.max_atk = max_atk
+        self.max_spd = max_spd
+        self.max_def = max_def
+        self.max_res = max_res
         self.max_total = (self.max_hp + self.max_atk + self.max_spd
                           + self.max_def + self.max_res)
 
@@ -222,8 +236,8 @@ class Hero(object):
 
         #legendary hero stuff
         self.is_legend = is_legend
-        self.legend_element = legend_element
-        self.legend_boost = legend_boost
+        self.legend_element = LegendElement(legend_element)
+        self.legend_boost = Stat(legend_boost)
 
         #other
         self.is_story = is_story
@@ -252,6 +266,45 @@ class Hero(object):
         self.is_aether_bonus = False
         self.is_aether_bonus_next = False
         self.is_tempest_bonus = False
+
+
+    def get_boons_banes(self):
+        boon_hp, boon_atk, boon_spd, boon_def, boon_res = 0, 0, 0, 0, 0
+        five_star_boons = {5, 25, 45, 70}
+        five_star_banes = {10, 30, 50, 75}
+        four_star_boons = {10, 70}
+        four_star_banes = {15, 75}
+        #three_star_boons = {}
+        #three_star_banes = {}
+        #two_star_subboons = {20, 40, 70}
+        #two_star_subbanes = {25, 45, 75}
+        #one_star_subboons = {10, 25, 40, 55, 70}
+        #one_star_subbanes = {15, 30, 45, 60, 75}
+        
+        if self.rarity == 5:
+            if self.grow_hp  in five_star_boons: boon_hp  = 1
+            elif self.grow_hp  in five_star_banes: boon_hp  = -1
+            if self.grow_atk in five_star_boons: boon_atk = 1
+            elif self.grow_atk in five_star_banes: boon_atk = -1
+            if self.grow_spd in five_star_boons: boon_spd = 1
+            elif self.grow_spd in five_star_banes: boon_spd = -1
+            if self.grow_def in five_star_boons: boon_def = 1
+            elif self.grow_def in five_star_banes: boon_def = -1
+            if self.grow_res in five_star_boons: boon_res = 1
+            elif self.grow_res in five_star_banes: boon_res = -1
+        elif self.rarity == 4:
+            if self.grow_hp  in four_star_boons: boon_hp  = 1
+            elif self.grow_hp  in four_star_banes: boon_hp  = -1
+            if self.grow_atk in four_star_boons: boon_atk = 1
+            elif self.grow_atk in four_star_banes: boon_atk = -1
+            if self.grow_spd in four_star_boons: boon_spd = 1
+            elif self.grow_spd in four_star_banes: boon_spd = -1
+            if self.grow_def in four_star_boons: boon_def = 1
+            elif self.grow_def in four_star_banes: boon_def = -1
+            if self.grow_res in four_star_boons: boon_res = 1
+            elif self.grow_res in four_star_banes: boon_res = -1
+
+        return boon_hp, boon_atk, boon_spd, boon_def, boon_res
 
 
     async def recalc_stats(self):
@@ -375,7 +428,7 @@ class Hero(object):
         recalculates lv1 stats and growths from ivs
         note that this invalidates merge_stat
         '''
-        if boon == bane: return
+        if boon == bane and boon != Stat.NONE: return
         if self.boon != boon:
             self.modify_iv(self.boon, False)
             self.modify_iv(boon, True)
@@ -431,7 +484,7 @@ class Hero(object):
 
 
     async def update_stat_mods(
-        self, boon = None, bane = None, merges = None, rarity = None):
+        self, *, boon = None, bane = None, merges = None, rarity = None):
         if boon and bane:
             await self.update_ivs(boon, bane)
         if merges != None:
