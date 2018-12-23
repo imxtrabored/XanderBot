@@ -5,7 +5,7 @@ from copy import copy
 from collections import namedtuple
 from enum import Enum
 
-from emojilib import EmojiLib
+from feh.emojilib import EmojiLib
 from feh.hero import Hero, Color, UnitWeaponType, MoveType
 from feh.hero import LegendElement, Stat
 from feh.skill import Skill, SkillType, SkillWeaponGroup
@@ -48,7 +48,7 @@ class XanderBotClient(discord.Client):
 
     async def forget_reactable(self, bot_msg):
         try:
-            await asyncio.sleep(20)
+            await asyncio.sleep(60)
         except asyncio.CancelledError:
             pass
         finally:
@@ -196,125 +196,40 @@ class XanderBotClient(discord.Client):
         botreply = await message.channel.send(embed=hero_embed)
         self.register_reactable(botreply, message, message.author, this_hero, CMDType.HERO_STATS, hero_embed, [zoom_state])
         await botreply.add_reaction('🔍')
-        await botreply.add_reaction('⬆')
-        await botreply.add_reaction('⬇')
+        await botreply.add_reaction(EmojiLib.get('Rarity_1'))
+        await botreply.add_reaction(EmojiLib.get('Rarity_2'))
+        await botreply.add_reaction(EmojiLib.get('Rarity_3'))
+        await botreply.add_reaction(EmojiLib.get('Rarity_4'))
+        await botreply.add_reaction(EmojiLib.get('Rarity_5'))
         await botreply.add_reaction('➕')
         await botreply.add_reaction('➖')
-
-        return
-
-        def check(reaction, user):
-            if user == message.author:
-               if str(reaction.emoji) == '🔍':
-                   return True
-               elif str(reaction.emoji) == '⬆' or str(reaction.emoji) == '⬇':
-                   return True
-               elif str(reaction.emoji) == '➕' or str(reaction.emoji) == '➖':
-                   return True
-            return False
-        while(True):
-            try:
-                reaction, user = await client.wait_for('reaction_add', check=check, timeout=150.0)
-            except asyncio.TimeoutError:
-                #maybe remove bot reacts
-                return
-            else:
-                if reaction.emoji == '🔍':
-                    zoom_state = not zoom_state
-                    if zoom_state:
-                        lv1_stats, max_stats = large_stat(this_hero)
-                        hero_embed.description = description + desc_rarity + desc_merges
-                        hero_embed.clear_fields()
-                        hero_embed.add_field(name='Level 1 Stats', value=lv1_stats)
-                        hero_embed.add_field(name='Level 40 Stats', value=max_stats)
-                        await botreply.edit(embed=hero_embed)
-                    else:
-                        hero_embed.description = description + desc_rarity + desc_merges + mini_stat(this_hero)
-                        hero_embed.clear_fields()
-                        await botreply.edit(embed=hero_embed)
-                    if message.channel.permissions_for(botreply.author).manage_messages:
-                        await botreply.remove_reaction('🔍', user)
-                elif reaction.emoji == '⬆':
-                    await this_hero.update_stat_mods(rarity=this_hero.rarity + 1)
-                    desc_rarity = ''
-                    for i in range(this_hero.rarity):
-                        desc_rarity += 'star'
-                    desc_rarity += '\n'
-                    if zoom_state:
-                        lv1_stats, max_stats = large_stat(this_hero)
-                        hero_embed.description = description + desc_rarity + desc_merges
-                        hero_embed.clear_fields()
-                        hero_embed.add_field(name='Level 1 Stats', value=lv1_stats)
-                        hero_embed.add_field(name='Level 40 Stats', value=max_stats)
-                        await botreply.edit(embed=hero_embed)
-                    else:
-                        hero_embed.description = description + desc_rarity + desc_merges + mini_stat(this_hero)
-                        hero_embed.clear_fields()
-                        await botreply.edit(embed=hero_embed)
-                    if message.channel.permissions_for(botreply.author).manage_messages:
-                        await botreply.remove_reaction('⬆', user)
-                elif reaction.emoji == '⬇':
-                    await this_hero.update_stat_mods(rarity=this_hero.rarity - 1)
-                    desc_rarity = ''
-                    for i in range(this_hero.rarity):
-                        desc_rarity += 'star'
-                    desc_rarity += '\n'
-                    if zoom_state:
-                        lv1_stats, max_stats = large_stat(this_hero)
-                        hero_embed.description = description + desc_rarity + desc_merges
-                        hero_embed.clear_fields()
-                        hero_embed.add_field(name='Level 1 Stats', value=lv1_stats)
-                        hero_embed.add_field(name='Level 40 Stats', value=max_stats)
-                        await botreply.edit(embed=hero_embed)
-                    else:
-                        hero_embed.description = description + desc_rarity + desc_merges + mini_stat(this_hero)
-                        hero_embed.clear_fields()
-                        await botreply.edit(embed=hero_embed)
-                    if message.channel.permissions_for(botreply.author).manage_messages:
-                        await botreply.remove_reaction('⬇', user)
-                elif reaction.emoji == '➕':
-                    await this_hero.update_stat_mods(merges=this_hero.merges + 1)
-                    desc_merges = 'Merges: ' + str(this_hero.merges)+ '\n'
-                    if zoom_state:
-                        lv1_stats, max_stats = large_stat(this_hero)
-                        hero_embed.description = description + desc_rarity + desc_merges
-                        hero_embed.clear_fields()
-                        hero_embed.add_field(name='Level 1 Stats', value=lv1_stats)
-                        hero_embed.add_field(name='Level 40 Stats', value=max_stats)
-                        await botreply.edit(embed=hero_embed)
-                    else:
-                        hero_embed.description = description + desc_rarity + desc_merges + mini_stat(this_hero)
-                        hero_embed.clear_fields()
-                        await botreply.edit(embed=hero_embed)
-                    if message.channel.permissions_for(botreply.author).manage_messages:
-                        await botreply.remove_reaction('➕', user)
-                elif reaction.emoji == '➖':
-                    await this_hero.update_stat_mods(merges = this_hero.merges - 1)
-                    desc_merges = 'Merges: ' + str(this_hero.merges)+ '\n'
-                    if zoom_state:
-                        lv1_stats, max_stats = large_stat(this_hero)
-                        hero_embed.description = description + desc_rarity + desc_merges
-                        hero_embed.clear_fields()
-                        hero_embed.add_field(name='Level 1 Stats', value=lv1_stats)
-                        hero_embed.add_field(name='Level 40 Stats', value=max_stats)
-                        await botreply.edit(embed=hero_embed)
-                    else:
-                        hero_embed.description = description + desc_rarity + desc_merges + mini_stat(this_hero)
-                        hero_embed.clear_fields()
-                        await botreply.edit(embed=hero_embed)
-                    if message.channel.permissions_for(botreply.author).manage_messages:
-                        await botreply.remove_reaction('➖', user)
 
 
 
     async def react_stats(self, reaction, bot_msg, user_msg, user, hero, cmd_type, embed, data):
         if reaction.emoji == '🔍':
             data[0] = not data[0]
-            embed = self.format_stats(hero, embed, data[0])
-            await bot_msg.edit(embed = embed)
-            if bot_msg.channel.permissions_for(bot_msg.author).manage_messages:
-                await bot_msg.remove_reaction('🔍', user)
-
+        elif reaction.emoji == EmojiLib.get('Rarity_1'):
+            hero.update_stat_mods(rarity = 1)
+        elif reaction.emoji == EmojiLib.get('Rarity_2'):
+            hero.update_stat_mods(rarity = 2)
+        elif reaction.emoji == EmojiLib.get('Rarity_3'):
+            hero.update_stat_mods(rarity = 3)
+        elif reaction.emoji == EmojiLib.get('Rarity_4'):
+            hero.update_stat_mods(rarity = 4)
+        elif reaction.emoji == EmojiLib.get('Rarity_5'):
+            hero.update_stat_mods(rarity = 5)
+        elif reaction.emoji == '➕':
+            hero.update_stat_mods(merges = hero.merges + 1)
+        elif reaction.emoji == '➖':
+            hero.update_stat_mods(merges = hero.merges - 1)
+        elif reaction.emoji == '💾':
+            embed.set_footer(text = 'Coming Soon!',
+                             icon_url = 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/google/146/floppy-disk_1f4be.png')
+        embed = self.format_stats(hero, embed, data[0])
+        await bot_msg.edit(embed = embed)
+        if bot_msg.channel.permissions_for(bot_msg.author).manage_messages:
+            await bot_msg.remove_reaction(reaction, user)
 
 
 

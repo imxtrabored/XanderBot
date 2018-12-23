@@ -307,7 +307,7 @@ class Hero(object):
         return boon_hp, boon_atk, boon_spd, boon_def, boon_res
 
 
-    async def recalc_stats(self):
+    def recalc_stats(self):
         '''
         updates max stats from lv1, growth, merges, and rarity
         '''
@@ -347,11 +347,11 @@ class Hero(object):
         elif stat_enum == Stat.DEF: self.rmod_def += amount
         elif stat_enum == Stat.RES: self.rmod_res += amount
 
-    async def update_level(self, new_level):
+    def update_level(self, new_level):
         '''recalculates current stats based on level'''
         raise NotImplementedError("Get me those BVIDs and then we'll talk.")
 
-    async def update_rarity(self, new_rarity):
+    def update_rarity(self, new_rarity):
         '''
         recalculates rarity mod from a rarity change
         no more relative calc since base stats saved all the time
@@ -423,7 +423,7 @@ class Hero(object):
                 self.grow_res -= 5
 
 
-    async def update_ivs(self, boon, bane):
+    def update_ivs(self, boon, bane):
         '''
         recalculates lv1 stats and growths from ivs
         note that this invalidates merge_stat
@@ -447,7 +447,7 @@ class Hero(object):
         elif stat_enum == Stat.RES: self.merge_res += amount
 
 
-    async def update_merges(self, new_merges):
+    def update_merges(self, new_merges):
         '''
         recalculates lv1 stats from merges
         we dont do this in a relative manner since its unlikely to be faster
@@ -483,16 +483,16 @@ class Hero(object):
             self.modify_merge(stats[i % 4][2], 1)
 
 
-    async def update_stat_mods(
+    def update_stat_mods(
         self, *, boon = None, bane = None, merges = None, rarity = None):
         if boon and bane:
-            await self.update_ivs(boon, bane)
+            self.update_ivs(boon, bane)
         if merges != None:
-            await self.update_merges(merges)
+            self.update_merges(merges)
         if rarity:
-            await self.update_rarity(rarity)
+            self.update_rarity(rarity)
         if rarity or (boon and bane) or (merges != None):
-            await self.recalc_stats()
+            self.recalc_stats()
 
 
 
