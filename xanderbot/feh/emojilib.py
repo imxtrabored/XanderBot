@@ -20,6 +20,8 @@ class EmojiLib(object):
         cur = con.cursor()
 
         self = EmojiLib()
+        cls.singleton = self
+
 
         self.emojis = dict()
 
@@ -61,8 +63,18 @@ class EmojiLib(object):
             elif index[0] == 'L_Element_Dark' : self.emojis[LegendElement.DARK ] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Element_Astra': self.emojis[LegendElement.ASTRA] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Element_Anima': self.emojis[LegendElement.ANIMA] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Skill_Weapon' : self.emojis[SkillType.WEAPON ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Skill_Assist' : self.emojis[SkillType.ASSIST ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Skill_Special': self.emojis[SkillType.SPECIAL] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Skill_A': self.emojis[SkillType.PASSIVE_A] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Skill_B': self.emojis[SkillType.PASSIVE_B] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Skill_C': self.emojis[SkillType.PASSIVE_C] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Skill_S': self.emojis[SkillType.PASSIVE_SEAL] = client.get_emoji(int(index[1]))
 
             else: self.emojis[index[0]] = client.get_emoji(int(index[1]))
+        print(EmojiLib.get(SkillType.WEAPON))
+        print(EmojiLib.get('Skill_Weapon'))
+
         
         self.emojis[SkillWeaponGroup.R_SWORD] = self.emojis[UnitWeaponType.R_SWORD]
         self.emojis[SkillWeaponGroup.R_TOME ] = self.emojis[UnitWeaponType.R_TOME ]
@@ -72,40 +84,39 @@ class EmojiLib(object):
         self.emojis[SkillWeaponGroup.G_TOME ] = self.emojis[UnitWeaponType.G_TOME ]
         self.emojis[SkillWeaponGroup.C_STAFF] = self.emojis[UnitWeaponType.C_STAFF]
 
-        self.emojis[SkillWeaponGroup.S_BREATH] = CompoundEmoji(
-            [
-                self.emojis[UnitWeaponType.R_BREATH],
-                self.emojis[UnitWeaponType.B_BREATH],
-                self.emojis[UnitWeaponType.G_BREATH],
-                self.emojis[UnitWeaponType.C_BREATH]
-            ])
-        self.emojis[SkillWeaponGroup.S_BOW   ] = CompoundEmoji(
-            [
-                self.emojis[UnitWeaponType.R_BOW],
-                self.emojis[UnitWeaponType.B_BOW],
-                self.emojis[UnitWeaponType.G_BOW],
-                self.emojis[UnitWeaponType.C_BOW]
-            ])
-        self.emojis[SkillWeaponGroup.S_DAGGER] = CompoundEmoji(
-            [
-                self.emojis[UnitWeaponType.R_DAGGER],
-                self.emojis[UnitWeaponType.B_DAGGER],
-                self.emojis[UnitWeaponType.G_DAGGER],
-                self.emojis[UnitWeaponType.C_DAGGER]
-            ])
+        self.emojis[SkillWeaponGroup.S_BREATH] = CompoundEmoji((
+            self.emojis[UnitWeaponType.R_BREATH],
+            self.emojis[UnitWeaponType.B_BREATH],
+            self.emojis[UnitWeaponType.G_BREATH],
+            self.emojis[UnitWeaponType.C_BREATH]
+        ))
+        self.emojis[SkillWeaponGroup.S_BOW] = CompoundEmoji((
+            self.emojis[UnitWeaponType.R_BOW],
+            self.emojis[UnitWeaponType.B_BOW],
+            self.emojis[UnitWeaponType.G_BOW],
+            self.emojis[UnitWeaponType.C_BOW]
+        ))
+        self.emojis[SkillWeaponGroup.S_DAGGER] = CompoundEmoji((
+            self.emojis[UnitWeaponType.R_DAGGER],
+            self.emojis[UnitWeaponType.B_DAGGER],
+            self.emojis[UnitWeaponType.G_DAGGER],
+            self.emojis[UnitWeaponType.C_DAGGER]
+        ))
 
-
-        cls.singleton = self
         print('done.')
 
         return(self.emojis)
 
+
+
     @classmethod
     def get(cls, obj, *, single=False):
         if obj in cls.singleton.emojis:
-           if not single: return cls.singleton.emojis[obj]
-           if single and len(cls.singleton.emojis[obj]) > 1:
-               pass
+            if not single: return cls.singleton.emojis.get(obj)
+            if single and len(cls.singleton.emojis[obj]) > 1:
+                return cls.singleton.emojis[obj][-1]
+
+
 
     @classmethod
     async def get_lib(cls):

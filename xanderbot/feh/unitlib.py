@@ -1,7 +1,11 @@
+from string import punctuation
+
 from feh.hero import Hero, Color, UnitWeaponType, MoveType
 from feh.hero import LegendElement, Stat
-from feh.skill import Skill
+from feh.skill import Skill, SkillType
 import sqlite3
+
+transtab = str.maketrans('', '', punctuation + ' ')
 
 class UnitLib(object):
     '''Library of units, loaded into memory'''
@@ -23,9 +27,10 @@ class UnitLib(object):
         cur.execute("""SELECT * FROM hero ORDER BY id ASC;""")
 
         self = UnitLib()
+        cls.singleton = self
         self.unit_list = []
 
-        new_hero = Hero('Null', 'Null Hero',
+        new_hero = Hero(0, 'null', 'Null', 'Null Hero',
                 Color.RED, UnitWeaponType.R_SWORD, MoveType.INFANTRY,
                 16, 7, 14, 5, 5,
                 55, 50, 50, 50, 50,
@@ -34,7 +39,7 @@ class UnitLib(object):
         self.unit_list.append(new_hero)
 
         for hero in cur:
-            new_hero = Hero(*hero[2:])
+            new_hero = Hero(*hero)
             self.unit_list.append(new_hero)
 
 
@@ -50,7 +55,6 @@ class UnitLib(object):
         cur.execute("""SELECT * FROM skills ORDER BY id ASC;""")
 
         self.skill_list = []
-        self.skill_list.append(None)
         for skill in cur:
             new_skill = Skill(*skill)
             self.skill_list.append(new_skill)
@@ -61,13 +65,83 @@ class UnitLib(object):
             self.skill_names[index[0]] = index[1]
             #print(index[0])
 
-        cls.singleton = self
+        for skill in self.skill_list[1:]:
+            skill.link(self)
+
+        cur.execute("""SELECT * FROM skillsets ORDER BY unlockRarity ASC, exclusive ASC;""")
+        for index in cur:
+            hero = self.unit_list[index[0]]
+            skill = self.skill_list[index[1]]
+            if skill.type == SkillType.WEAPON:
+                hero.weapon.append((skill, index[2], index[3]))
+                if skill.exclusive == True: hero.weapon_prf = skill
+            elif skill.type == SkillType.ASSIST   : hero.assist   .append((skill, index[2], index[3]))
+            elif skill.type == SkillType.SPECIAL  : hero.special  .append((skill, index[2], index[3]))
+            elif skill.type == SkillType.PASSIVE_A: hero.passive_a.append((skill, index[2], index[3]))
+            elif skill.type == SkillType.PASSIVE_B: hero.passive_b.append((skill, index[2], index[3]))
+            elif skill.type == SkillType.PASSIVE_C: hero.passive_c.append((skill, index[2], index[3]))
+
+
         print('done.')
 
         return(self)
 
+
+
     @classmethod
-    async def get_unitlib(cls):
+    def initialize_emojis(cls, client):
+        print('indexing skill emoijs..')
+        con = sqlite3.connect("feh/emojis.db", detect_types=sqlite3.PARSE_COLNAMES)
+        cur = con.cursor()
+        cur.execute("""SELECT * FROM skill_emoji ORDER BY id ASC;""")
+        for index in cur:
+            skill = cls.singleton.skill_list[index[0]]
+            skill.icon = client.get_emoji(int(index[1]))
+            if index[2]:
+                skill.w_icon = client.get_emoji(int(index[2]))
+        print('done.')
+
+
+
+    @classmethod
+    def filter_name(cls, name):
+        name = name.replace('+', 'plus')
+        name = name.translate(transtab)
+        print(name)
+        return name
+
+
+
+    @classmethod
+    def get_hero(cls, hero_name):
+        index = cls.singleton.unit_names.get(cls.filter_name(hero_name))
+        if index: return cls.singleton.unit_list[index]
+        else: return None
+
+      
+
+    @classmethod
+    def get_hero_by_id(cls, hero_id):
+        return cls.singleton.unit_list[hero_id]
+
+
+
+    @classmethod
+    def get_skill(cls, skill_name):
+        index = cls.singleton.skill_names.get(cls.filter_name(skill_name))
+        if index: return cls.singleton.skill_list[index]
+        else: return None
+
+
+
+    @classmethod
+    def get_skill_by_id(cls, skill_id):
+        return cls.singleton.skill_list[skill_id]
+
+
+
+    @classmethod
+    def get_unitlib(cls):
         if cls.singleton == None:
-            await cls.initialize()
+            cls.initialize()
         return cls.singleton

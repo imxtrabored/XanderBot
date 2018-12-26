@@ -79,10 +79,8 @@ class Stat(Enum):
 
 class SkillSet(object):
     """Contains learnable skills of a hero"""
-    @staticmethod
-    def create():
-        self = SkillSet()
 
+    def __init__(self):
         self.weapon = []
         self.assist = []
         self.special = []
@@ -91,7 +89,6 @@ class SkillSet(object):
         self.passive_c = []
         self.weapon_prf = None
 
-        return self
 
 
 class Hero(object):
@@ -113,7 +110,7 @@ class Hero(object):
 
 
 
-    def __init__(self, name, epithet, color, weapon_type, move_type,
+    def __init__(self, id, identity, name, epithet, color, weapon_type, move_type,
                  base_hp, base_atk, base_spd, base_def, base_res,
                  grow_hp, grow_atk, grow_spd, grow_def, grow_res,
                  max_hp, max_atk, max_spd, max_def, max_res,
@@ -133,6 +130,8 @@ class Hero(object):
         '''
 
         #initialize unit name
+        self.id = id
+        self.identity = identity
         self.name = name
         self.epithet = epithet
         self.description = description
@@ -148,7 +147,13 @@ class Hero(object):
         self.merges = 0
 
         #skills
-        self.skills = SkillSet.create()
+        self.weapon = []
+        self.assist = []
+        self.special = []
+        self.passive_a = []
+        self.passive_b = []
+        self.passive_c = []
+        self.weapon_prf = None
 
         self.equipped_weapon    = None
         self.equipped_assist    = None
