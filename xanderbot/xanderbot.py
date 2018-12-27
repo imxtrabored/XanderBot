@@ -445,7 +445,7 @@ class XanderBotClient(discord.Client):
                                   inline=False)
         print(skill.icon.id)
         if skill.type == SkillType.WEAPON or skill.type == SKillType.WEAPON_REFINED:
-                    hero_embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/skills/{skill.id}.png')
+                    embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/skills/{skill.id}.png')
         else: embed.set_thumbnail(url=f'https://cdn.discordapp.com/emojis/{skill.icon.id}.png')
 
         return embed
