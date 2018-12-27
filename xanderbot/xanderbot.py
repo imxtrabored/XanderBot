@@ -192,8 +192,7 @@ class XanderBotClient(discord.Client):
         hero_embed = discord.Embed()
         hero_embed = self.format_stats(this_hero, hero_embed, zoom_state)
         
-        hero_embed.set_thumbnail(url='https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{}/Face.png'
-                                 .format(this_hero.id))
+        hero_embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{this_hero.id}/Face.png')
 
         botreply = await message.channel.send(embed=hero_embed)
         self.register_reactable(botreply, message, message.author, this_hero, CMDType.HERO_STATS, hero_embed, [zoom_state])
@@ -445,7 +444,9 @@ class XanderBotClient(discord.Client):
                                                                 generic_refines))),
                                   inline=False)
         print(skill.icon.id)
-        embed.set_thumbnail(url='https://cdn.discordapp.com/emojis/{}.png'.format(skill.icon.id))
+        if skill.type == SkillType.WEAPON or skill.type == SKillType.WEAPON_REFINED:
+                    hero_embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/skills/{skill.id}.png')
+        else: embed.set_thumbnail(url=f'https://cdn.discordapp.com/emojis/{skill.icon.id}.png')
 
         return embed
 

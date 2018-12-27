@@ -72,9 +72,6 @@ class EmojiLib(object):
             elif index[0] == 'Skill_S': self.emojis[SkillType.PASSIVE_SEAL] = client.get_emoji(int(index[1]))
 
             else: self.emojis[index[0]] = client.get_emoji(int(index[1]))
-        print(EmojiLib.get(SkillType.WEAPON))
-        print(EmojiLib.get('Skill_Weapon'))
-
         
         self.emojis[SkillWeaponGroup.R_SWORD] = self.emojis[UnitWeaponType.R_SWORD]
         self.emojis[SkillWeaponGroup.R_TOME ] = self.emojis[UnitWeaponType.R_TOME ]
