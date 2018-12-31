@@ -30,7 +30,7 @@ class UnitLib(object):
         cls.singleton = self
         self.unit_list = []
 
-        new_hero = Hero(0, 'null', 'Null', 'Null Hero',
+        new_hero = Hero(0, 'null', 'Null', 'Null', 'Null Hero',
                 Color.RED, UnitWeaponType.R_SWORD, MoveType.INFANTRY,
                 16, 7, 14, 5, 5,
                 55, 50, 50, 50, 50,
@@ -68,20 +68,25 @@ class UnitLib(object):
         for skill in self.skill_list[1:]:
             skill.link(self)
 
-        cur.execute("""SELECT * FROM skillsets ORDER BY unlockRarity ASC, exclusive ASC;""")
+        cur.execute("""SELECT * FROM skillsets ORDER BY heroid ASC, unlockRarity ASC, exclusive ASC;""")
         for index in cur:
             hero = self.unit_list[index[0]]
             skill = self.skill_list[index[1]]
             if skill.type == SkillType.WEAPON:
-                hero.weapon.append((skill, index[2], index[3]))
+                hero.weapon   .append((skill, index[2], index[3]))
                 if skill.exclusive == True: hero.weapon_prf = skill
-            elif skill.type == SkillType.ASSIST   : hero.assist   .append((skill, index[2], index[3]))
-            elif skill.type == SkillType.SPECIAL  : hero.special  .append((skill, index[2], index[3]))
-            elif skill.type == SkillType.PASSIVE_A: hero.passive_a.append((skill, index[2], index[3]))
-            elif skill.type == SkillType.PASSIVE_B: hero.passive_b.append((skill, index[2], index[3]))
-            elif skill.type == SkillType.PASSIVE_C: hero.passive_c.append((skill, index[2], index[3]))
+            elif skill.type == SkillType.ASSIST   :
+                hero.assist   .append((skill, index[2], index[3]))
+            elif skill.type == SkillType.SPECIAL  :
+                hero.special  .append((skill, index[2], index[3]))
+            elif skill.type == SkillType.PASSIVE_A:
+                hero.passive_a.append((skill, index[2], index[3]))
+            elif skill.type == SkillType.PASSIVE_B:
+                hero.passive_b.append((skill, index[2], index[3]))
+            elif skill.type == SkillType.PASSIVE_C:
+                hero.passive_c.append((skill, index[2], index[3]))
 
-
+            skill.learnable[index[2]].append(hero)
         print('done.')
 
         return(self)
@@ -93,12 +98,22 @@ class UnitLib(object):
         print('indexing skill emoijs..')
         con = sqlite3.connect("feh/emojis.db", detect_types=sqlite3.PARSE_COLNAMES)
         cur = con.cursor()
-        cur.execute("""SELECT * FROM skill_emoji ORDER BY id ASC;""")
+        cur.execute("""SELECT * FROM skill_emoji WHERE id > 0 ORDER BY id ASC;""")
         for index in cur:
             skill = cls.singleton.skill_list[index[0]]
             skill.icon = client.get_emoji(int(index[1]))
             if index[2]:
                 skill.w_icon = client.get_emoji(int(index[2]))
+        
+        cur.execute("""SELECT * FROM skill_emoji WHERE id < 0 ORDER BY id DESC;""")
+        empty_slots = cur.fetchall()
+        Skill.EMPTY_WEAPON   .icon = client.get_emoji(int(empty_slots[0][1]))
+        Skill.EMPTY_ASSIST   .icon = client.get_emoji(int(empty_slots[1][1]))
+        Skill.EMPTY_SPECIAL  .icon = client.get_emoji(int(empty_slots[2][1]))
+        Skill.EMPTY_PASSIVE_A.icon = client.get_emoji(int(empty_slots[3][1]))
+        Skill.EMPTY_PASSIVE_B.icon = client.get_emoji(int(empty_slots[4][1]))
+        Skill.EMPTY_PASSIVE_C.icon = client.get_emoji(int(empty_slots[5][1]))
+        Skill.EMPTY_PASSIVE_S.icon = client.get_emoji(int(empty_slots[6][1]))
         print('done.')
 
 

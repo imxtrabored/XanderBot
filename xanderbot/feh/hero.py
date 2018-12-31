@@ -5,32 +5,32 @@ from feh.skill import Skill
 @unique
 class Color(Enum):
     '''Enum for each unit color'''
-    NONE = 0
-    RED = 1
-    BLUE = 2
-    GREEN = 3
+    NONE      = 0
+    RED       = 1
+    BLUE      = 2
+    GREEN     = 3
     COLORLESS = 4
 
 @unique
 class UnitWeaponType(Enum):
     '''Enum for each weapon type'''
     NONE = 0
-    R_SWORD = 1
-    R_TOME = 2
+    R_SWORD  = 1
+    R_TOME   = 2
     R_BREATH = 3
-    B_LANCE = 4
-    B_TOME = 5
+    B_LANCE  = 4
+    B_TOME   = 5
     B_BREATH = 6
-    G_AXE = 7
-    G_TOME = 8
+    G_AXE    = 7
+    G_TOME   = 8
     G_BREATH = 9
-    C_BOW = 10
+    C_BOW    = 10
     C_DAGGER = 11
-    C_STAFF = 12
+    C_STAFF  = 12
     C_BREATH = 13
-    R_BOW = 14
-    B_BOW = 15
-    G_BOW = 16
+    R_BOW    = 14
+    B_BOW    = 15
+    G_BOW    = 16
     R_DAGGER = 17
     B_DAGGER = 18
     G_DAGGER = 19
@@ -39,30 +39,30 @@ class UnitWeaponType(Enum):
 class MoveType(Enum):
     '''Enum for each movement type'''
     INFANTRY = 1
-    ARMOR = 2
-    CAVALRY = 3
-    FLIER = 4
+    ARMOR    = 2
+    CAVALRY  = 3
+    FLIER    = 4
 
 @unique
 class TomeType(Enum):
     '''Enum for tome elements, UNUSED'''
-    NONE = 1
-    FIRE = 2
+    NONE    = 1
+    FIRE    = 2
     THUNDER = 3
-    WIND = 4
-    DARK = 5
-    LIGHT = 6
+    WIND    = 4
+    DARK    = 5
+    LIGHT   = 6
 
 @unique
 class LegendElement(Enum):
     '''Enum for elements of Legendary Heroes'''
-    NONE = 1
-    FIRE = 2
+    NONE  = 1
+    FIRE  = 2
     WATER = 3
-    WIND = 4
+    WIND  = 4
     EARTH = 5
     LIGHT = 6
-    DARK = 7
+    DARK  = 7
     ASTRA = 8
     ANIMA = 9
 
@@ -70,24 +70,19 @@ class LegendElement(Enum):
 class Stat(Enum):
     '''Enum for each unit stat'''
     NONE = 1
-    HP = 2
-    ATK = 3
-    SPD = 4
-    DEF = 5
-    RES = 6
+    HP   = 2
+    ATK  = 3
+    SPD  = 4
+    DEF  = 5
+    RES  = 6
 
-
-class SkillSet(object):
-    """Contains learnable skills of a hero"""
-
-    def __init__(self):
-        self.weapon = []
-        self.assist = []
-        self.special = []
-        self.passive_a = []
-        self.passive_b = []
-        self.passive_c = []
-        self.weapon_prf = None
+@unique
+class Rarity(Enum):
+    ONE   = 1
+    TWO   = 2
+    THREE = 3
+    FOUR  = 4
+    FIVE  = 5
 
 
 
@@ -110,20 +105,23 @@ class Hero(object):
 
 
 
-    def __init__(self, id, identity, name, epithet, color, weapon_type, move_type,
-                 base_hp, base_atk, base_spd, base_def, base_res,
-                 grow_hp, grow_atk, grow_spd, grow_def, grow_res,
-                 max_hp, max_atk, max_spd, max_def, max_res,
-                 is_legend = False, legend_element = LegendElement.NONE,
-                 legend_boost = Stat.NONE, tome_type = TomeType.NONE,
-                 description = 'No information available.', bvid = 0x0000,
-                 art_portrait = '', art_attack = '', art_damaged = '',
-                 art_special = '', artist = "Unknown", vo_en = 'Unknown',
-                 vo_jp = 'Unknown', is_story = False, is_seasonal = False,
-                 is_grail = False, is_veteran = False, is_trainee = False,
-                 is_dancer = False, is_brave = False, is_sigurd=False,
-                 generation = 1
-                 ):
+    def __init__(
+            self, id, identity, name, short_name, epithet, color,
+            weapon_type, move_type,
+            base_hp, base_atk, base_spd, base_def, base_res,
+            grow_hp, grow_atk, grow_spd, grow_def, grow_res,
+            max_hp, max_atk, max_spd, max_def, max_res,
+            is_legend = False, legend_element = LegendElement.NONE,
+            legend_boost = Stat.NONE, tome_type = TomeType.NONE,
+            description = 'No information available.', bvid = 0x0000,
+            art_portrait = '', art_attack = '', art_damaged = '',
+            art_special = '', artist = "Unknown", vo_en = 'Unknown',
+            vo_jp = 'Unknown',
+            is_story = False, is_seasonal = False, is_grail = False,
+            is_veteran = False, is_trainee = False, is_dancer = False,
+            is_brave = False, is_sigurd=False,
+            generation = 1
+    ):
         '''
         Initializes an instance of a unit. The fields that aren't pre-defined
         are ones that a unit really wouldn't make much sense without.
@@ -133,6 +131,7 @@ class Hero(object):
         self.id = id
         self.identity = identity
         self.name = name
+        self.short_name = short_name
         self.epithet = epithet
         self.description = description
         self.bvid = bvid
@@ -141,7 +140,7 @@ class Hero(object):
         self.color = Color(color)
         self.weapon_type = UnitWeaponType(weapon_type)
         self.move_type = MoveType(move_type)
-        #self.tome_type = TomeType(tome_type)
+        self.tome_type = TomeType(tome_type)
         self.rarity = 5
         self.level = 40
         self.merges = 0
@@ -273,6 +272,7 @@ class Hero(object):
         self.is_tempest_bonus = False
 
 
+
     def get_boons_banes(self):
         boon_hp, boon_atk, boon_spd, boon_def, boon_res = 0, 0, 0, 0, 0
         five_star_boons = {5, 25, 45, 70}
@@ -287,26 +287,26 @@ class Hero(object):
         #one_star_subbanes = {15, 30, 45, 60, 75}
         
         if self.rarity == 5:
-            if self.grow_hp  in five_star_boons: boon_hp  = 1
+            if   self.grow_hp  in five_star_boons: boon_hp  =  1
             elif self.grow_hp  in five_star_banes: boon_hp  = -1
-            if self.grow_atk in five_star_boons: boon_atk = 1
+            if   self.grow_atk in five_star_boons: boon_atk =  1
             elif self.grow_atk in five_star_banes: boon_atk = -1
-            if self.grow_spd in five_star_boons: boon_spd = 1
+            if   self.grow_spd in five_star_boons: boon_spd =  1
             elif self.grow_spd in five_star_banes: boon_spd = -1
-            if self.grow_def in five_star_boons: boon_def = 1
+            if   self.grow_def in five_star_boons: boon_def =  1
             elif self.grow_def in five_star_banes: boon_def = -1
-            if self.grow_res in five_star_boons: boon_res = 1
+            if   self.grow_res in five_star_boons: boon_res =  1
             elif self.grow_res in five_star_banes: boon_res = -1
         elif self.rarity == 4:
-            if self.grow_hp  in four_star_boons: boon_hp  = 1
+            if   self.grow_hp  in four_star_boons: boon_hp  =  1
             elif self.grow_hp  in four_star_banes: boon_hp  = -1
-            if self.grow_atk in four_star_boons: boon_atk = 1
+            if   self.grow_atk in four_star_boons: boon_atk =  1
             elif self.grow_atk in four_star_banes: boon_atk = -1
-            if self.grow_spd in four_star_boons: boon_spd = 1
+            if   self.grow_spd in four_star_boons: boon_spd =  1
             elif self.grow_spd in four_star_banes: boon_spd = -1
-            if self.grow_def in four_star_boons: boon_def = 1
+            if   self.grow_def in four_star_boons: boon_def =  1
             elif self.grow_def in four_star_banes: boon_def = -1
-            if self.grow_res in four_star_boons: boon_res = 1
+            if   self.grow_res in four_star_boons: boon_res =  1
             elif self.grow_res in four_star_banes: boon_res = -1
 
         return boon_hp, boon_atk, boon_spd, boon_def, boon_res

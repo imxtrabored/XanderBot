@@ -1,7 +1,7 @@
 import sqlite3
 
 from feh.hero import Color, UnitWeaponType, MoveType
-from feh.hero import LegendElement, Stat
+from feh.hero import LegendElement, Stat, Rarity
 from feh.skill import SkillType, SkillWeaponGroup
 
 class CompoundEmoji(tuple):
@@ -27,6 +27,7 @@ class EmojiLib(object):
 
         cur.execute("""SELECT * FROM emojis;""")
         for index in cur:
+            # ok look this is (probably) still better than storing python objects in db
             if   index[0] == 'Stat_HP'        : self.emojis[Stat.HP ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Stat_Attack'    : self.emojis[Stat.ATK] = client.get_emoji(int(index[1]))
             elif index[0] == 'Stat_Speed'     : self.emojis[Stat.SPD] = client.get_emoji(int(index[1]))
@@ -70,6 +71,11 @@ class EmojiLib(object):
             elif index[0] == 'Skill_B': self.emojis[SkillType.PASSIVE_B] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_C': self.emojis[SkillType.PASSIVE_C] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_S': self.emojis[SkillType.PASSIVE_SEAL] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Rarity_1': self.emojis[Rarity.ONE  ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Rarity_2': self.emojis[Rarity.TWO  ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Rarity_3': self.emojis[Rarity.THREE] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Rarity_4': self.emojis[Rarity.FOUR ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Rarity_5': self.emojis[Rarity.FIVE ] = client.get_emoji(int(index[1]))
 
             else: self.emojis[index[0]] = client.get_emoji(int(index[1]))
         

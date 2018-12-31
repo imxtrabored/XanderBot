@@ -4,20 +4,27 @@ import asyncio
 from copy import copy
 from collections import namedtuple
 from enum import Enum
+from functools import reduce
 
 from feh.emojilib import EmojiLib
 from feh.hero import Hero, Color, UnitWeaponType, MoveType
-from feh.hero import LegendElement, Stat
+from feh.hero import LegendElement, Stat, Rarity
 from feh.skill import Skill, SkillType, SkillWeaponGroup
 from feh.unitlib import UnitLib
 
+
+
 BotReply = namedtuple('BotReply', 'bot_msg user_msg user feh_obj cmd_type embed data')
+
+
+
 class CMDType(Enum):
     HERO = 1
     HERO_STATS = 2
     HERO_SKILLS = 3
     SKILL = 4
     SORT = 5
+
 
 
 class XanderBotClient(discord.Client):
@@ -117,21 +124,13 @@ class XanderBotClient(discord.Client):
 
 
     def format_stats(self, hero, embed, zoom_state):
-        embed.title = ''.join((
-            hero.name,
-            ': ',
-            hero.epithet,
-            ' ',
-            str(EmojiLib.get(hero.weapon_type)),
-            str(EmojiLib.get(hero.move_type))
-        ))
-        if   hero.rarity == 5: desc_rarity = str(EmojiLib.get('Rarity_5')) * 5
-        elif hero.rarity == 4: desc_rarity = str(EmojiLib.get('Rarity_4')) * 4
-        elif hero.rarity == 3: desc_rarity = str(EmojiLib.get('Rarity_3')) * 3
-        elif hero.rarity == 2: desc_rarity = str(EmojiLib.get('Rarity_2')) * 2
-        else                 : desc_rarity = str(EmojiLib.get('Rarity_1')) * 1
-        desc_level = ''.join((desc_rarity, '     LV. ', str(hero.level), '+', str(hero.merges)))
-        BST = ''.join(('BST: ', str(hero.max_total)))
+        title = (f'{hero.name}: {hero.epithet} '
+                 f'{EmojiLib.get(hero.weapon_type)}'
+                 f'{EmojiLib.get(hero.move_type)}'
+                 )
+        
+        desc_rarity = str(EmojiLib.get(Rarity(hero.rarity))) * hero.rarity
+        desc_level = f'{desc_rarity} LV. {hero.level}+{hero.merges}'
         desc_stat = ''
         if zoom_state:
             lv1_stats = 'HP: ' + str(hero.lv1_hp)
@@ -145,43 +144,47 @@ class XanderBotClient(discord.Client):
             max_stats += '\nDefense: ' + str(hero.max_def)
             max_stats += '\nResistance: ' + str(hero.max_res)
         else:
-            stat_emojis = ' · '.join([
-                str(EmojiLib.get(Stat.HP )),
-                str(EmojiLib.get(Stat.ATK)),
-                str(EmojiLib.get(Stat.SPD)),
-                str(EmojiLib.get(Stat.DEF)),
-                str(EmojiLib.get(Stat.RES)),
-                BST
-            ])
+            stat_emojis = (
+                    f'{EmojiLib.get(Stat.HP )} · '
+                    f'{EmojiLib.get(Stat.ATK)} · '
+                    f'{EmojiLib.get(Stat.SPD)} · '
+                    f'{EmojiLib.get(Stat.DEF)} · '
+                    f'{EmojiLib.get(Stat.RES)} · '
+                    f'BST: {hero.max_total}'
+            )
             lvl1_stats = ' |'.join([
-                str(hero.lv1_hp ).rjust(2),
-                str(hero.lv1_atk).rjust(2),
-                str(hero.lv1_spd).rjust(2),
-                str(hero.lv1_def).rjust(2),
-                str(hero.lv1_res).rjust(2)
+                f'{str(hero.lv1_hp ).rjust(2)} |'
+                f'{str(hero.lv1_atk).rjust(2)} |'
+                f'{str(hero.lv1_spd).rjust(2)} |'
+                f'{str(hero.lv1_def).rjust(2)} |'
+                f'{str(hero.lv1_res).rjust(2)}'
             ])
             superboons = [
-                ' ' if x == 0 else '+' if x > 0 else '-'
-                for x in hero.get_boons_banes()
+                    ' ' if x == 0 else '+' if x > 0 else '-'
+                    for x in hero.get_boons_banes()
             ]
             max_stats = ''.join([
-                str(hero.max_hp ).rjust(2), superboons[0], '|',
-                str(hero.max_atk).rjust(2), superboons[1], '|', 
-                str(hero.max_spd).rjust(2), superboons[2], '|',
-                str(hero.max_def).rjust(2), superboons[3], '|',
-                str(hero.max_res).rjust(2), superboons[4]
+                f'{str(hero.max_hp ).rjust(2)}{superboons[0]}|'
+                f'{str(hero.max_atk).rjust(2)}{superboons[1]}|'
+                f'{str(hero.max_spd).rjust(2)}{superboons[2]}|'
+                f'{str(hero.max_def).rjust(2)}{superboons[3]}|'
+                f'{str(hero.max_res).rjust(2)}{superboons[4]}'
             ])
-            desc_stat = '\n'.join((stat_emojis, '```', lvl1_stats, max_stats, '```'))
+            desc_stat = f'{stat_emojis}\n```\n{lvl1_stats}\n{max_stats}\n```'
 
         embed.clear_fields()
-        embed.description = '\n'.join((desc_level + '\n', desc_stat))
-        embed.add_field(name=embed.title, value=embed.description, inline=False)
-        embed.title=''
-        embed.description=''
-        
+        description = f'{desc_level}\n\n{desc_stat}'
+        embed.add_field(name = title,
+                        value = description,
+                        inline = False)
+
         if zoom_state:
-            embed.add_field(name='Level 1 Stats', value=lv1_stats, inline=True)
-            embed.add_field(name='Level 40 Stats', value=max_stats, inline=True)
+            embed.add_field(name = 'Level 1 Stats',
+                            value = lv1_stats,
+                            inline = True)
+            embed.add_field(name = 'Level 40 Stats',
+                            value = max_stats,
+                            inline = True)
         return embed
 
 
@@ -195,13 +198,14 @@ class XanderBotClient(discord.Client):
         hero_embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{this_hero.id}/Face.png')
 
         botreply = await message.channel.send(embed=hero_embed)
-        self.register_reactable(botreply, message, message.author, this_hero, CMDType.HERO_STATS, hero_embed, [zoom_state])
+        self.register_reactable(botreply, message, message.author, this_hero,
+                                CMDType.HERO_STATS, hero_embed, [zoom_state])
         await botreply.add_reaction('🔍')
-        await botreply.add_reaction(EmojiLib.get('Rarity_1'))
-        await botreply.add_reaction(EmojiLib.get('Rarity_2'))
-        await botreply.add_reaction(EmojiLib.get('Rarity_3'))
-        await botreply.add_reaction(EmojiLib.get('Rarity_4'))
-        await botreply.add_reaction(EmojiLib.get('Rarity_5'))
+        await botreply.add_reaction(EmojiLib.get(Rarity.ONE  ))
+        await botreply.add_reaction(EmojiLib.get(Rarity.TWO  ))
+        await botreply.add_reaction(EmojiLib.get(Rarity.THREE))
+        await botreply.add_reaction(EmojiLib.get(Rarity.FOUR ))
+        await botreply.add_reaction(EmojiLib.get(Rarity.FIVE ))
         await botreply.add_reaction('➕')
         await botreply.add_reaction('➖')
 
@@ -210,15 +214,15 @@ class XanderBotClient(discord.Client):
     async def react_stats(self, reaction, bot_msg, user_msg, user, hero, cmd_type, embed, data):
         if   reaction.emoji == '🔍':
             data[0] = not data[0]
-        elif reaction.emoji == EmojiLib.get('Rarity_1'):
+        elif reaction.emoji == EmojiLib.get(Rarity.ONE  ):
             hero.update_stat_mods(rarity = 1)
-        elif reaction.emoji == EmojiLib.get('Rarity_2'):
+        elif reaction.emoji == EmojiLib.get(Rarity.TWO  ):
             hero.update_stat_mods(rarity = 2)
-        elif reaction.emoji == EmojiLib.get('Rarity_3'):
+        elif reaction.emoji == EmojiLib.get(Rarity.THREE):
             hero.update_stat_mods(rarity = 3)
-        elif reaction.emoji == EmojiLib.get('Rarity_4'):
+        elif reaction.emoji == EmojiLib.get(Rarity.FOUR ):
             hero.update_stat_mods(rarity = 4)
-        elif reaction.emoji == EmojiLib.get('Rarity_5'):
+        elif reaction.emoji == EmojiLib.get(Rarity.FIVE ):
             hero.update_stat_mods(rarity = 5)
         elif reaction.emoji == '➕':
             hero.update_stat_mods(merges = hero.merges + 1)
@@ -238,56 +242,96 @@ class XanderBotClient(discord.Client):
 
 
     def format_hero_skills(self, hero, embed, zoom_state):
-        embed.title = ''.join((
-            hero.name,
-            ': ',
-            hero.epithet,
-            ' ',
-            str(EmojiLib.get(hero.weapon_type)),
-            str(EmojiLib.get(hero.move_type))
-        ))
-        if   hero.rarity == 5: desc_rarity = str(EmojiLib.get('Rarity_5')) * 5
-        elif hero.rarity == 4: desc_rarity = str(EmojiLib.get('Rarity_4')) * 4
-        elif hero.rarity == 3: desc_rarity = str(EmojiLib.get('Rarity_3')) * 3
-        elif hero.rarity == 2: desc_rarity = str(EmojiLib.get('Rarity_2')) * 2
-        else                 : desc_rarity = str(EmojiLib.get('Rarity_1')) * 1
+        embed.title = (f'{hero.name}: {hero.epithet} '
+                       f'{EmojiLib.get(hero.weapon_type)}'
+                       f'{EmojiLib.get(hero.move_type)}')
 
+        desc_rarity = (str(EmojiLib.get(Rarity(hero.rarity))) * hero.rarity
+                       if not zoom_state else '-')
         desc_skills = ''
         if zoom_state:
-            lv1_stats = 'HP: ' + str(hero.lv1_hp)
-            lv1_stats += '\nAttack: ' + str(hero.lv1_atk)
-            lv1_stats += '\nSpeed: ' + str(hero.lv1_spd)
-            lv1_stats += '\nDefense: ' + str(hero.lv1_def)
-            lv1_stats += '\nResistance: ' + str(hero.lv1_res)
-            max_stats = 'HP: '     + str(hero.max_hp)
-            max_stats += '\nAttack: ' + str(hero.max_atk)
-            max_stats += '\nSpeed: ' + str(hero.max_spd)
-            max_stats += '\nDefense: ' + str(hero.max_def)
-            max_stats += '\nResistance: ' + str(hero.max_res)
+            weapon    = ([f'{EmojiLib.get(Rarity(skill[1]))} · '
+                          f'{skill[0].icon} '
+                          f'{skill[0].name}'
+                          for skill in hero.weapon   ]
+                          if hero.weapon    else ('None',))
+            assist    = ([f'{EmojiLib.get(Rarity(skill[1]))} · '
+                          f'{skill[0].icon} '
+                          f'{skill[0].name}'
+                          for skill in hero.assist   ]
+                          if hero.assist    else ('None',))
+            special   = ([f'{EmojiLib.get(Rarity(skill[1]))} · '
+                          f'{skill[0].icon} '
+                          f'{skill[0].name}'
+                          for skill in hero.special  ]
+                          if hero.special   else ('None',))
+            passive_a = ([f'{EmojiLib.get(Rarity(skill[1]))} · '
+                          f'{skill[0].icon} '
+                          f'{skill[0].name}'
+                          for skill in hero.passive_a]
+                          if hero.passive_a else ('None',))
+            passive_b = ([f'{EmojiLib.get(Rarity(skill[1]))} · '
+                          f'{skill[0].icon} '
+                          f'{skill[0].name}'
+                          for skill in hero.passive_b]
+                          if hero.passive_b else ('None',))
+            passive_c = ([f'{EmojiLib.get(Rarity(skill[1]))} · '
+                          f'{skill[0].icon} '
+                          f'{skill[0].name}'
+                          for skill in hero.passive_c]
+                          if hero.passive_c else ('None',))
+
         else:
-            weapon    = next((s[0].name for s in hero.weapon   [::-1] if s[1] <= hero.rarity), 'None')
-            assist    = next((s[0].name for s in hero.assist   [::-1] if s[1] <= hero.rarity), 'None')
-            special   = next((s[0].name for s in hero.special  [::-1] if s[1] <= hero.rarity), 'None')
-            passive_a = next((str(s[0].icon) + str(s[0].rank) for s in hero.passive_a[::-1] if s[1] <= hero.rarity), str(EmojiLib.get(SkillType.PASSIVE_A)))
-            passive_b = next((str(s[0].icon) + str(s[0].rank) for s in hero.passive_b[::-1] if s[1] <= hero.rarity), str(EmojiLib.get(SkillType.PASSIVE_B)))
-            passive_c = next((str(s[0].icon) + str(s[0].rank) for s in hero.passive_c[::-1] if s[1] <= hero.rarity), str(EmojiLib.get(SkillType.PASSIVE_C)))
+            weapon    = next((s[0] for s in hero.weapon [::-1]
+                              if s[1] <= hero.rarity), Skill.EMPTY_WEAPON )
+            assist    = next((s[0] for s in hero.assist [::-1]
+                              if s[1] <= hero.rarity), Skill.EMPTY_ASSIST )
+            special   = next((s[0] for s in hero.special[::-1]
+                              if s[1] <= hero.rarity), Skill.EMPTY_SPECIAL)
+            passive_a = next((s[0] for s in hero.passive_a[::-1]
+                              if s[1] <= hero.rarity), Skill.EMPTY_PASSIVE_A)
+            passive_b = next((s[0] for s in hero.passive_b[::-1]
+                              if s[1] <= hero.rarity), Skill.EMPTY_PASSIVE_B)
+            passive_c = next((s[0] for s in hero.passive_c[::-1]
+                              if s[1] <= hero.rarity), Skill.EMPTY_PASSIVE_C)
             desc_skills = (
-                f'{str(EmojiLib.get(SkillType.WEAPON ))}{weapon }\n'
-                f'{str(EmojiLib.get(SkillType.ASSIST ))}{assist }\n'
-                f'{str(EmojiLib.get(SkillType.SPECIAL))}{special}\n\n'
-                f'{passive_a} · {passive_b} · {passive_c}'
+                f'{EmojiLib.get(SkillType.WEAPON )}{weapon .name}\n'
+                f'{EmojiLib.get(SkillType.ASSIST )}{assist .name}\n'
+                f'{EmojiLib.get(SkillType.SPECIAL)}{special.name}\n\n'
+                f'{passive_a.icon}'
+                f'{passive_a.skill_rank if passive_a.skill_rank > 0 else ""} · '
+                f'{passive_b.icon}'
+                f'{passive_b.skill_rank if passive_b.skill_rank > 0 else ""} · '
+                f'{passive_c.icon}'
+                f'{passive_c.skill_rank if passive_c.skill_rank > 0 else ""}'
             )
-            print(EmojiLib.get(SkillType.WEAPON ))
 
         embed.clear_fields()
-        embed.description = '\n'.join((desc_rarity + '\n', desc_skills))
+        embed.description = f'{desc_rarity}\n\n{desc_skills}'
         embed.add_field(name=embed.title, value=embed.description, inline=False)
         embed.title=''
         embed.description=''
         
         if zoom_state:
-            embed.add_field(name='Level 1 Stats', value=lv1_stats, inline=True)
-            embed.add_field(name='Level 40 Stats', value=max_stats, inline=True)
+            print(weapon)
+            embed.add_field(name = f'{EmojiLib.get(SkillType.WEAPON   )} '
+                                    'Weapon' ,
+                            value = '\n'.join(weapon   ), inline = True )
+            embed.add_field(name = f'{EmojiLib.get(SkillType.ASSIST   )} '
+                                    'Assist' ,
+                            value = '\n'.join(assist   ), inline = True )
+            embed.add_field(name = f'{EmojiLib.get(SkillType.SPECIAL  )} '
+                                    'Special',
+                            value = '\n'.join(special  ), inline = False)
+            embed.add_field(name = f'{EmojiLib.get(SkillType.PASSIVE_A)} '
+                                    'Passive',
+                            value = '\n'.join(passive_a), inline = True )
+            embed.add_field(name = f'{EmojiLib.get(SkillType.PASSIVE_B)} '
+                                    'Passive',
+                            value = '\n'.join(passive_b), inline = True )
+            embed.add_field(name = f'{EmojiLib.get(SkillType.PASSIVE_C)} '
+                                    'Passive',
+                            value = '\n'.join(passive_c), inline = False)
         return embed
         return
 
@@ -303,29 +347,31 @@ class XanderBotClient(discord.Client):
                                  .format(this_hero.id))
 
         botreply = await message.channel.send(embed=hero_embed)
-        self.register_reactable(botreply, message, message.author, this_hero, CMDType.HERO_SKILLS, hero_embed, [zoom_state])
+        self.register_reactable(botreply, message, message.author, this_hero,
+                                CMDType.HERO_SKILLS, hero_embed, [zoom_state])
         await botreply.add_reaction('🔍')
-        await botreply.add_reaction(EmojiLib.get('Rarity_1'))
-        await botreply.add_reaction(EmojiLib.get('Rarity_2'))
-        await botreply.add_reaction(EmojiLib.get('Rarity_3'))
-        await botreply.add_reaction(EmojiLib.get('Rarity_4'))
-        await botreply.add_reaction(EmojiLib.get('Rarity_5'))
+        await botreply.add_reaction(EmojiLib.get(Rarity.ONE  ))
+        await botreply.add_reaction(EmojiLib.get(Rarity.TWO  ))
+        await botreply.add_reaction(EmojiLib.get(Rarity.THREE))
+        await botreply.add_reaction(EmojiLib.get(Rarity.FOUR ))
+        await botreply.add_reaction(EmojiLib.get(Rarity.FIVE ))
 
 
 
-    async def react_hero_skills(self, reaction, bot_msg, user_msg, user, hero, cmd_type, embed, data):
+    async def react_hero_skills(self, reaction, bot_msg, user_msg, user, hero,
+                                cmd_type, embed, data):
         print(reaction.emoji)
         if   reaction.emoji == '🔍':
             data[0] = not data[0]
-        elif reaction.emoji == EmojiLib.get('Rarity_1'):
+        elif reaction.emoji == EmojiLib.get(Rarity.ONE  ):
             hero.update_stat_mods(rarity = 1)
-        elif reaction.emoji == EmojiLib.get('Rarity_2'):
+        elif reaction.emoji == EmojiLib.get(Rarity.TWO  ):
             hero.update_stat_mods(rarity = 2)
-        elif reaction.emoji == EmojiLib.get('Rarity_3'):
+        elif reaction.emoji == EmojiLib.get(Rarity.THREE):
             hero.update_stat_mods(rarity = 3)
-        elif reaction.emoji == EmojiLib.get('Rarity_4'):
+        elif reaction.emoji == EmojiLib.get(Rarity.FOUR ):
             hero.update_stat_mods(rarity = 4)
-        elif reaction.emoji == EmojiLib.get('Rarity_5'):
+        elif reaction.emoji == EmojiLib.get(Rarity.FIVE ):
             hero.update_stat_mods(rarity = 5)
         elif reaction.emoji == '💾':
             embed.set_footer(text = 'Coming Soon!',
@@ -341,33 +387,50 @@ class XanderBotClient(discord.Client):
 
 
     def format_skill(self, skill, embed, zoom_state):
-        title = ' '.join((str(skill.icon), skill.name, ' · ',
-                          (str(EmojiLib.get(skill.weapon_type)) if skill.weapon_type
-                           else str(EmojiLib.get(skill.type))),
-                          (str(EmojiLib.get(SkillType.PASSIVE_SEAL))
-                           if skill.type != SkillType.PASSIVE_SEAL and skill.is_seal
-                           else '')))
-        weapon_desc = (' '.join(('Mt:', str(skill.disp_atk),
-                                 'Rng:', str(skill.range)))
-                       if (skill.type == SkillType.WEAPON or skill.type == SkillType.WEAPON_REFINED) else None)
+        type_icon = (EmojiLib.get(skill.weapon_type)
+                     if skill.weapon_type else EmojiLib.get(skill.type))
+        seal_icon = (EmojiLib.get(SkillType.PASSIVE_SEAL)
+                     if skill.type != SkillType.PASSIVE_SEAL and skill.is_seal
+                     else "")
+        title = f'{skill.icon} {skill.name} · {type_icon}{seal_icon}'
 
-        s_type = ''.join(('Type: ',
-                          (str(EmojiLib.get(skill.weapon_type)) if skill.weapon_type
-                           else str(EmojiLib.get(skill.type))),
-                          (str(EmojiLib.get(SkillType.PASSIVE_SEAL))
-                           if skill.type != SkillType.PASSIVE_SEAL and skill.is_seal
-                           else '')
-                          ))
+        if (skill.type == SkillType.WEAPON
+            or skill.type == SkillType.WEAPON_REFINED
+            ):
+            if any([
+                    skill.eff_infantry,
+                    skill.eff_armor,
+                    skill.eff_cavalry,
+                    skill.eff_flier,
+                    skill.eff_magic,
+                    skill.eff_dragon
+            ]):
+                eff_list = [' Eff: ']
+                if skill.eff_infantry: eff_list.append(str(EmojiLib.get(MoveType.INFANTRY)))
+                if skill.eff_armor   : eff_list.append(str(EmojiLib.get(MoveType.ARMOR   )))
+                if skill.eff_cavalry : eff_list.append(str(EmojiLib.get(MoveType.CAVALRY )))
+                if skill.eff_flier   : eff_list.append(str(EmojiLib.get(MoveType.FLIER   )))
+                if skill.eff_magic   :
+                    eff_list.append(str(EmojiLib.get(SkillWeaponGroup.R_TOME)))
+                    eff_list.append(str(EmojiLib.get(SkillWeaponGroup.B_TOME)))
+                    eff_list.append(str(EmojiLib.get(SkillWeaponGroup.G_TOME)))
+                if skill.eff_dragon  : eff_list.append(str(EmojiLib.get(SkillWeaponGroup.S_BREATH)))
+                effective = ''.join(eff_list)
+            else: effective = ''
 
-        prereq = (' '.join(('**Requires:**',
+            weapon_desc = (f'Mt: {skill.disp_atk} Rng: {skill.range}{effective}')
+        else: weapon_desc = None
+
+        prereq = (' '.join(['**Requires:**',
                             str(skill.prereq1.icon), skill.prereq1.name,
-                            'or', str(skill.prereq2.icon), skill.prereq2.name))
+                            'or', str(skill.prereq2.icon), skill.prereq2.name])
                   if skill.prereq2
                   else
                   ' '.join(('**Requires:**', str(skill.prereq1.icon), skill.prereq1.name))
                   if skill.prereq1
                   else None
-                  ) if not skill.exclusive else 'This skill can only be equipped by its original unit.'
+                  ) if not skill.exclusive else (
+                        '_This skill can only be equipped by its original unit._')
 
         restrictions = None
         if skill.type != SkillType.WEAPON:
@@ -400,52 +463,215 @@ class XanderBotClient(discord.Client):
                 if not skill.c_breath: restrict_list.append(str(EmojiLib.get(UnitWeaponType.C_BREATH)))
                 if len(restrict_list) > 1:
                     restrictions = ''.join(restrict_list)
-        '''description += '**Promotes into:** '
-        for s in skill.postreq: description += s.name'''
-        sp = '**SP: ** ' + str(skill.sp)
-        embed.clear_fields()
-        embed.add_field(name=title,
-                              value='\n'.join(
-                                  filter(None,(weapon_desc,
-                                               skill.description,
-                                               #s_type,
-                                               prereq,
-                                               restrictions,
-                                               sp))),
-                              inline=False)
 
-        if skill.refinable:
-            refined_title = 'Weapon Refinery'
-            refined_skill_str = None
+        sp = f'**SP:** {skill.sp}'
+
+        if (skill.type == SkillType.WEAPON and not skill.exclusive
+            and ((skill.tier <= 2 and not skill.is_staff) or skill.tier <= 1)):
+            learnable = 'Basic weapon available to most eligible heroes.'
+        elif skill.type == SkillType.ASSIST and skill.is_staff:
+            learnable = 'Basic assist available to all staff-users.'
+        elif reduce(lambda x, y: x + len(y), skill.learnable[1:], 0) > 20:
+            learnable = 'Over 20 heroes know this skill.'
+        else:
+            learnable = '\n'.join(filter(None, [
+                    f'{EmojiLib.get(Rarity(count))}: '
+                    f'{", ".join((hero.short_name for hero in hero_list))}'
+                    if hero_list else None
+                    for count, hero_list in enumerate(skill.learnable[1:], 1)
+            ]))
+
+        embed.clear_fields()
+        if zoom_state:
+            if skill.postreq:
+                prf_postreq_count = reduce(
+                        (lambda x, y: x + 1 if y.exclusive else x),
+                        skill.postreq,
+                        0
+                )
+                # optimize note?
+                postreq_list = (', '.join(filter(None, [
+                        f'{postreq.icon} {postreq.name}'
+                        if not postreq.exclusive else None
+                        for postreq in skill.postreq
+                ]))
+                if len(skill.postreq) - prf_postreq_count < 10
+                else ', '.join(filter(None, [
+                        f'{postreq.name}'
+                        if not postreq.exclusive else None
+                        for postreq in skill.postreq
+                ])))
+
+                prf_postreqs = (f' and {prf_postreq_count} Prf skills.'
+                                if prf_postreq_count else '')
+            else:
+                postreq_list = 'None'
+                prf_postreqs = ''
+
+            postreqs = f'**Required for:** {postreq_list}{prf_postreqs}'
+
+            cumul_sp = f'**Cumulative SP:** {skill.get_cumul_sp_recursive()}'
+
+            description = '\n'.join(filter(None, [
+                    weapon_desc,
+                    skill.description,
+                    prereq,
+                    restrictions,
+                    sp,
+                    cumul_sp,
+                    '**Available from:**',
+                    learnable,
+                    postreqs
+            ]))
+        else:
+            description = '\n'.join(filter(None, [
+                    weapon_desc,
+                    skill.description,
+                    prereq,
+                    restrictions,
+                    sp,
+                    '**Available from:**',
+                    learnable
+            ]))
+
+        embed.add_field(
+                name = title,
+                value = description,
+                inline = False
+        )
+
+        if skill.refinable or skill.evolves_to:
+            if zoom_state:
+                refine_secondary = (
+                        f', {skill.refine_stones} '
+                        f'{EmojiLib.get("Currency_Refining_Stone")}'
+                        if skill.refine_stones else
+                        f', {skill.refine_dew} '
+                        f'{EmojiLib.get("Currency_Divine_Dew")}'
+                        if skill.refine_dew else ''
+                )
+                refine_cost = (
+                        f' {skill.refine_sp} SP, '
+                        f'{skill.refine_medals} '
+                        f'{EmojiLib.get("Currency_Arena_Medal")}'
+                        f'{refine_secondary}'
+                )
+            else: refine_cost = ''
+
+            refine_header = (f'**Refine options:**{refine_cost}'
+                             if skill.refinable else None)
             if skill.refined_version:
                 refined_skill = skill.refined_version
-                refined_title = ''.join(('Weapon Refinery\n', str(refined_skill.icon), ' Refined ', skill.name))
-                refined_w_desc = (' '.join(('Mt:', str(refined_skill.disp_atk),
-                                            'Rng:', str(refined_skill.range)))
-                                if refined_skill.type == SkillType.WEAPON or refined_skill.type == SkillType.WEAPON_REFINED
-                                else None)
-                refined_skill_str = '\n'.join(filter(None, (refined_w_desc, refined_skill.description)))
+                ref_type_icon = (EmojiLib.get(skill.weapon_type)
+                                 if skill.weapon_type
+                                 else EmojiLib.get(skill.type))
+                refined_title = (f'Weapon Refinery\n{refined_skill.icon} '
+                                 f'Refined {skill.name} · {type_icon}'
+                                 )
+                if any([
+                        refined_skill.eff_infantry,
+                        refined_skill.eff_armor,
+                        refined_skill.eff_cavalry,
+                        refined_skill.eff_flier,
+                        refined_skill.eff_magic,
+                        refined_skill.eff_dragon
+                ]):
+                    eff_list = [' Eff: ']
+                    if refined_skill.eff_infantry: eff_list.append(str(EmojiLib.get(MoveType.INFANTRY)))
+                    if refined_skill.eff_armor   : eff_list.append(str(EmojiLib.get(MoveType.ARMOR   )))
+                    if refined_skill.eff_cavalry : eff_list.append(str(EmojiLib.get(MoveType.CAVALRY )))
+                    if refined_skill.eff_flier   : eff_list.append(str(EmojiLib.get(MoveType.FLIER   )))
+                    if refined_skill.eff_magic   :
+                        eff_list.append(str(EmojiLib.get(SkillWeaponGroup.R_TOME)))
+                        eff_list.append(str(EmojiLib.get(SkillWeaponGroup.B_TOME)))
+                        eff_list.append(str(EmojiLib.get(SkillWeaponGroup.G_TOME)))
+                    if refined_skill.eff_dragon  : eff_list.append(str(EmojiLib.get(SkillWeaponGroup.S_BREATH)))
+                    effective = ''.join(eff_list)
+                else: effective = ''
+                refined_w_desc = (
+                        f'Mt: {refined_skill.disp_atk} '
+                        f'Rng: {refined_skill.range}{effective}'
+                        if (refined_skill.type == SkillType.WEAPON
+                            or refined_skill.type == SkillType.WEAPON_REFINED
+                            )
+                        else None
+                )
+                refined_skill_str = '\n'.join(filter(None, (
+                        refined_w_desc, refined_skill.description
+                )))
+            else:
+                refined_title = 'Weapon Refinery'
+                refined_skill_str = None
 
-            refine_eff = (': '.join((str(skill.refine_eff.icon), skill.refine_eff.description))
+            refine_eff = (f'{skill.refine_eff.icon}: '
+                          f'{skill.refine_eff.description}'
                           if skill.refine_eff else None)
-            general_refine_list = []
-            if skill.refine_staff1: general_refine_list.append(str(skill.refine_staff1.icon))
-            if skill.refine_staff2: general_refine_list.append(str(skill.refine_staff2.icon))
-            if skill.refine_atk   : general_refine_list.append(str(skill.refine_atk.   icon))
-            if skill.refine_spd   : general_refine_list.append(str(skill.refine_spd.   icon))
-            if skill.refine_def   : general_refine_list.append(str(skill.refine_def.   icon))
-            if skill.refine_res   : general_refine_list.append(str(skill.refine_res.   icon))
-            generic_refines = ', '.join(general_refine_list)
 
-            embed.add_field(name=refined_title,
-                                  value='\n'.join(filter(None, (refined_skill_str,
-                                                                '**Refine options:**',
-                                                                refine_eff,
-                                                                generic_refines))),
-                                  inline=False)
-        print(skill.icon.id)
-        if skill.type == SkillType.WEAPON or skill.type == SkillType.WEAPON_REFINED:
-                    embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/skills/{skill.id}.png')
+            if zoom_state:
+                generic_refines = '\n'.join(filter(None, [
+                        f'{refine.icon}: {refine.description}'
+                        if refine else None
+                        for refine in [
+                                skill.refine_staff1,
+                                skill.refine_staff2,
+                                skill.refine_atk,
+                                skill.refine_spd,
+                                skill.refine_def,
+                                skill.refine_res
+                        ]
+                ]))
+            else:
+                generic_refines = ', '.join(filter(None, [
+                        str(refine.icon) if refine else None
+                        for refine in [
+                                skill.refine_staff1,
+                                skill.refine_staff2,
+                                skill.refine_atk,
+                                skill.refine_spd,
+                                skill.refine_def,
+                                skill.refine_res
+                        ]
+                ]))
+
+            if zoom_state and skill.evolves_to:
+                evolve_secondary = (
+                        f', {skill.evolve_stones} '
+                        f'{EmojiLib.get("Currency_Refining_Stone")}'
+                        if skill.evolve_stones else
+                        f', {skill.evolve_dew} '
+                        f'{EmojiLib.get("Currency_Divine_Dew")}'
+                        if skill.evolve_dew else ''
+                )
+                evolve_cost = (
+                        f': {skill.evolves_to.sp} SP, '
+                        f'{skill.evolve_medals} '
+                        f'{EmojiLib.get("Currency_Arena_Medal")}'
+                        f'{evolve_secondary}'
+                )
+            else: evolve_cost = ''
+
+            evolution = (f'**Evolves into:** '
+                         f'{skill.evolves_to.icon} {skill.evolves_to.name}'
+                         f'{evolve_cost}'
+                         if skill.evolves_to else None)
+
+            refine_desc = '\n'.join(filter(None, [
+                    refined_skill_str,
+                    refine_header,
+                    refine_eff,
+                    generic_refines,
+                    evolution
+            ]))
+            embed.add_field(
+                    name = refined_title,
+                    value = refine_desc,
+                    inline = False
+            )
+        if (skill.type == SkillType.WEAPON
+                or skill.type == SkillType.WEAPON_REFINED
+                or (skill.type == SkillType.ASSIST and skill.is_staff)
+        ):
+            embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/skills/{skill.id}.png')
         else: embed.set_thumbnail(url=f'https://cdn.discordapp.com/emojis/{skill.icon.id}.png')
 
         return embed
@@ -453,7 +679,7 @@ class XanderBotClient(discord.Client):
 
 
     async def cmd_skill(self, message, tokens):
-        this_skill = self.unit_library.get_skill(tokens[0])
+        this_skill = UnitLib.get_skill(tokens[0])
         skill_embed = discord.Embed()
         zoom_state = False
         self.format_skill(this_skill, skill_embed, zoom_state)
@@ -466,19 +692,23 @@ class XanderBotClient(discord.Client):
 
 
     async def react_skill(self, reaction, bot_msg, user_msg, user, skill, cmd_type, embed, data):
+        manage_msg = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
+
         if reaction.emoji == '🔍':
             data[0] = not data[0]
+            if manage_msg: await bot_msg.remove_reaction(reaction, user)
         elif reaction.emoji == '⬆':
             skill[0] = skill[0].postreq[0] if len(skill[0].postreq) > 0 else skill[0]
+            if manage_msg: await bot_msg.remove_reaction(reaction, user)
         elif reaction.emoji == '⬇':
             skill[0] = skill[0].prereq1 if skill[0].prereq1 else skill[0]
+            if manage_msg: await bot_msg.remove_reaction(reaction, user)
         elif reaction.emoji == '👁':
             embed.set_author(name=str(skill[0].id))
+            if manage_msg: await bot_msg.remove_reaction(reaction, user)
         else: return
         embed = self.format_skill(skill[0], embed, data[0])
         await bot_msg.edit(embed = embed)
-        if bot_msg.channel.permissions_for(bot_msg.author).manage_messages:
-            await bot_msg.remove_reaction(reaction, user)
 
 
 
@@ -498,28 +728,32 @@ class XanderBotClient(discord.Client):
             lower_message = lower_message[4:]
 
         #TODO: kind of gross line, also investigate if RE or map is faster here?
-        tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
 
         if   lower_message.startswith('hero') or lower_message.startswith('unit'):
+            tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
             await self.cmd_hero(message, tokens)
         elif lower_message.startswith('stat'):
+            tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
             await self.cmd_stats(message, tokens)
         elif lower_message.startswith('skills'):
+            tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
             await self.cmd_hero_skills(message, tokens)
         elif lower_message.startswith('skill'):
+            tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
             await self.cmd_skill(message, tokens)
 
         #debug commands
 
-        if lower_message.startswith('2emotes'):
-            print("asdfasdf")
+        if (lower_message.startswith('emojis')
+            and (message.author.id == 151913154803269633
+                 or message.author.id == 196379129472352256)):
             emojilisttemp = sorted(self.emojis, key=lambda q: (q.name))
             for e in emojilisttemp:
                 print(e.name)
                 await message.channel.send(str(e) + str(e.id))
 
         if lower_message.startswith('whoami'):
-            await message.channel.send("You're <" + str(message.author.id) + '>!')
+            await message.channel.send(f"You're <{message.author.id}>!")
 
         if lower_message.startswith('test'):
             counter = 0
