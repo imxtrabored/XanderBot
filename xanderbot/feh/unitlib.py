@@ -1,11 +1,12 @@
-from string import punctuation
+from copy import copy
+from string import punctuation, whitespace
 
 from feh.hero import Hero, Color, UnitWeaponType, MoveType
 from feh.hero import LegendElement, Stat
 from feh.skill import Skill, SkillType
 import sqlite3
 
-transtab = str.maketrans('', '', punctuation + ' ')
+transtab = str.maketrans('', '', punctuation + whitespace)
 
 class UnitLib(object):
     '''Library of units, loaded into memory'''
@@ -118,8 +119,8 @@ class UnitLib(object):
 
 
 
-    @classmethod
-    def filter_name(cls, name):
+    @staticmethod
+    def filter_name(name):
         name = name.replace('+', 'plus')
         name = name.translate(transtab)
         print(name)
@@ -130,7 +131,7 @@ class UnitLib(object):
     @classmethod
     def get_hero(cls, hero_name):
         index = cls.singleton.unit_names.get(cls.filter_name(hero_name))
-        if index: return cls.singleton.unit_list[index]
+        if index: return copy(cls.singleton.unit_list[index])
         else: return None
 
       

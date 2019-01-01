@@ -67,6 +67,16 @@ class LegendElement(Enum):
     ANIMA = 9
 
 @unique
+class LegendStat(Enum):
+    '''Enum for each unit stat'''
+    NONE = 1
+    HP   = 2
+    ATK  = 3
+    SPD  = 4
+    DEF  = 5
+    RES  = 6
+
+@unique
 class Stat(Enum):
     '''Enum for each unit stat'''
     NONE = 1
@@ -112,14 +122,14 @@ class Hero(object):
             grow_hp, grow_atk, grow_spd, grow_def, grow_res,
             max_hp, max_atk, max_spd, max_def, max_res,
             is_legend = False, legend_element = LegendElement.NONE,
-            legend_boost = Stat.NONE, tome_type = TomeType.NONE,
+            legend_boost = LegendStat.NONE, tome_type = TomeType.NONE,
             description = 'No information available.', bvid = 0x0000,
             art_portrait = '', art_attack = '', art_damaged = '',
             art_special = '', artist = "Unknown", vo_en = 'Unknown',
             vo_jp = 'Unknown',
             is_story = False, is_seasonal = False, is_grail = False,
             is_veteran = False, is_trainee = False, is_dancer = False,
-            is_brave = False, is_sigurd=False,
+            is_brave = False, is_sigurd = False,
             generation = 1
     ):
         '''
@@ -208,6 +218,8 @@ class Hero(object):
         self.lv1_spd = base_spd
         self.lv1_def = base_def
         self.lv1_res = base_res
+        self.lv1_total = (self.lv1_hp + self.lv1_atk + self.lv1_spd
+                          + self.lv1_def + self.lv1_res)
 
         self.grow_hp  = grow_hp
         self.grow_atk = grow_atk
@@ -241,7 +253,7 @@ class Hero(object):
         #legendary hero stuff
         self.is_legend = is_legend
         self.legend_element = LegendElement(legend_element)
-        self.legend_boost = Stat(legend_boost)
+        self.legend_boost = LegendStat(legend_boost)
 
         #other
         self.is_story = is_story
@@ -285,8 +297,10 @@ class Hero(object):
         #two_star_subbanes = {25, 45, 75}
         #one_star_subboons = {10, 25, 40, 55, 70}
         #one_star_subbanes = {15, 30, 45, 60, 75}
-        
-        if self.rarity == 5:
+        if self.boon != Stat.NONE or self.bane != Stat.NONE:
+            return boon_hp, boon_atk, boon_spd, boon_def, boon_res
+
+        elif self.rarity == 5:
             if   self.grow_hp  in five_star_boons: boon_hp  =  1
             elif self.grow_hp  in five_star_banes: boon_hp  = -1
             if   self.grow_atk in five_star_boons: boon_atk =  1
@@ -342,6 +356,8 @@ class Hero(object):
             self.lv1_res
             + Hero.STATS_RARITY[self.rarity - 1][self.grow_res//5]
             )
+        self.max_total = (self.max_hp + self.max_atk + self.max_spd
+                          + self.max_def + self.max_res)
 
     def modify_rmod(self, stat_enum, amount):
         '''this is a convenience method to make update_rarity look cleaner'''
@@ -437,9 +453,11 @@ class Hero(object):
         if self.boon != boon:
             self.modify_iv(self.boon, False)
             self.modify_iv(boon, True)
+            self.boon = boon
         if self.bane != bane:
             self.modify_iv(self.bane, True)
             self.modify_iv(bane, False)
+            self.bane = bane
 
 
     def modify_merge(self, stat_enum, amount):
@@ -464,9 +482,10 @@ class Hero(object):
         self.merges = new_merges
         modify = 0
         if new_merges >= 5:
-            modify = 2
-            new_merges -= 5
             if new_merges == 10: modify = 4
+            else:
+                modify = 2
+                new_merges -= 5
 
         self.merge_hp  = self.iv_hp  + modify
         self.merge_atk = self.iv_atk + modify

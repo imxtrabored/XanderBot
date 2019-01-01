@@ -1,7 +1,7 @@
 import sqlite3
 
 from feh.hero import Color, UnitWeaponType, MoveType
-from feh.hero import LegendElement, Stat, Rarity
+from feh.hero import LegendElement, LegendStat, Stat, Rarity
 from feh.skill import SkillType, SkillWeaponGroup
 
 class CompoundEmoji(tuple):
@@ -64,6 +64,10 @@ class EmojiLib(object):
             elif index[0] == 'L_Element_Dark' : self.emojis[LegendElement.DARK ] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Element_Astra': self.emojis[LegendElement.ASTRA] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Element_Anima': self.emojis[LegendElement.ANIMA] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Attack'    : self.emojis[LegendStat.ATK] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Speed'     : self.emojis[LegendStat.SPD] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Defense'   : self.emojis[LegendStat.DEF] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Resistance': self.emojis[LegendStat.RES] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Weapon' : self.emojis[SkillType.WEAPON ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Assist' : self.emojis[SkillType.ASSIST ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Special': self.emojis[SkillType.SPECIAL] = client.get_emoji(int(index[1]))
