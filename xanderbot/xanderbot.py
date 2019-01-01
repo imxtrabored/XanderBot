@@ -114,6 +114,15 @@ class XanderBotClient(discord.Client):
                 if plus_test.isdecimal():
                     merges = int(plus_test)
                 elif (
+                        token == 'plushp'
+                        or token == 'hpplus'
+                        or token == 'plushitpoint'
+                        or token == 'plushitpoints'
+                        or token == 'hitpointplus'
+                        or token == 'hitpointsplus'
+                ):
+                    boon = Stat.HP
+                elif (
                         token == 'plusatk'
                         or token == 'atkplus'
                         or token == 'plusattack'
@@ -147,7 +156,9 @@ class XanderBotClient(discord.Client):
                     # try skill
                     pass
             elif 'minus' in token:
-                if 'atk' in token or 'attack' in token:
+                if 'hp' in token or 'hitpoint' in token:
+                    bane = Stat.HP
+                elif 'atk' in token or 'attack' in token:
                     bane = Stat.ATK
                 elif 'spd' in token or 'speed' in token:
                     bane = Stat.SPD
