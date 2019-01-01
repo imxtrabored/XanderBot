@@ -185,7 +185,6 @@ class XanderBotClient(discord.Client):
                     elif skill.type == SkillType.PASSIVE_SEAL:
                         hero.equipped_passive_s = skill
 
-
         hero.update_stat_mods(boon = boon, bane = bane, merges = merges, rarity = rarity)
 
 
@@ -764,11 +763,11 @@ class XanderBotClient(discord.Client):
             heroes = []
             for param in tokens:
                 this_hero = UnitLib.get_hero(param)
-                if this_hero: heroes.append[this_hero]
+                if this_hero: heroes.append(this_hero)
                 else:
-                    XanderBotClient.process_hero_mods(this_hero, [param])
+                    XanderBotClient.process_hero_mods(heroes[-1], [param])
             hero_embed.set_author(
-                    name = ('Please delimit heroes with semicolons in'
+                    name = ('Please delimit heroes with semicolons (;) in '
                             'the future to improve speed and clarity.')
             )
             # hero_embed = self.format_stats(this_hero, hero_embed, zoom_state)
@@ -778,8 +777,9 @@ class XanderBotClient(discord.Client):
             heroes = []
             for param in hero_list:
                 this_hero = UnitLib.get_hero(param[0])
-                if this_hero: heroes.append(this_hero)
-                XanderBotClient.process_hero_mods(this_hero, param[1:])
+                if this_hero:
+                    heroes.append(this_hero)
+                    XanderBotClient.process_hero_mods(this_hero, param[1:])
         # modify duplicate hero names (detect dupes using id)
         counts = {k:v for k,v in
                   Counter([h.id for h in heroes]).items()
