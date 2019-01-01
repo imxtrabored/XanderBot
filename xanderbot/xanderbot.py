@@ -386,6 +386,8 @@ class XanderBotClient(discord.Client):
             legend_info = (f'{EmojiLib.get(hero.legend_element)}'
                            f'{EmojiLib.get(hero.legend_boost)}'
                            )
+        else: legend_info = ''
+
         title = (
                 f'{hero.name}: {hero.epithet} '
                 f'{EmojiLib.get(hero.weapon_type)}'
