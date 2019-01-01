@@ -38,7 +38,7 @@ class CMDType(Enum):
 class XanderBotClient(discord.Client):
 
 
-    def __init__(self, *, loop=None, **options):
+    def __init__(self, *, loop = None, **options):
         super().__init__(loop = loop, options = options)
         FILENAME = '../tokens.txt'
         file = open (FILENAME, 'r')
@@ -64,7 +64,7 @@ class XanderBotClient(discord.Client):
 
     async def forget_reactable(self, bot_msg):
         try:
-            await asyncio.sleep(600)
+            await asyncio.sleep(900)
         except asyncio.CancelledError:
             pass
         finally:
@@ -772,7 +772,7 @@ class XanderBotClient(discord.Client):
         hero_embed = discord.Embed()
         if ';' not in tokens:
             # slow mode
-            tokens = map(str.strip, tokens.split(','))
+            tokens = tokens.split(',')
             heroes = []
             for param in tokens:
                 this_hero = UnitLib.get_hero(param)
@@ -1163,39 +1163,48 @@ class XanderBotClient(discord.Client):
             lower_message = lower_message[2:]
         elif lower_message.startswith('feh?'):
             lower_message = lower_message[4:]
+        try:
+            #TODO: kind of gross line, also investigate if RE or map is faster here?
 
-        #TODO: kind of gross line, also investigate if RE or map is faster here?
-
-        if   lower_message.startswith('hero') or lower_message.startswith('unit'):
-            tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
-            await self.cmd_hero(message, tokens)
-        elif lower_message.startswith('stat'):
-            tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
-            await self.cmd_stats(message, tokens)
-        elif lower_message.startswith('skills'):
-            tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
-            await self.cmd_hero_skills(message, tokens)
-        elif lower_message.startswith('compare'):
-            tokens = [s.strip() for s in lower_message.split(' ', 1)][1]
-            await self.cmd_compare(message, tokens)
-        elif lower_message.startswith('skill'):
-            tokens = [s.strip() for s in lower_message.split(' ', 1)[1].split(',')]
-            await self.cmd_skill(message, tokens)
+            if   lower_message.startswith('hero') or lower_message.startswith('unit'):
+                tokens = lower_message.split(' ', 1)[1].split(',')
+                await self.cmd_hero(message, tokens)
+            elif lower_message.startswith('stat'):
+                tokens = lower_message.split(' ', 1)[1].split(',')
+                await self.cmd_stats(message, tokens)
+            elif lower_message.startswith('skills'):
+                tokens = lower_message.split(' ', 1)[1].split(',')
+                await self.cmd_hero_skills(message, tokens)
+            elif lower_message.startswith('compare'):
+                tokens = lower_message.split(' ', 1)[1]
+                await self.cmd_compare(message, tokens)
+            elif lower_message.startswith('skill'):
+                tokens = lower_message.split(' ', 1)[1].split(',')
+                await self.cmd_skill(message, tokens)
+        except:
+            await message.channel.send("Some error has occured, but I don't have good error messages yet.")
 
         #debug commands
 
         if (lower_message.startswith('emojis')
-            and (message.author.id == 151913154803269633
-                 or message.author.id == 196379129472352256)):
+              and (message.author.id == 151913154803269633
+              or message.author.id == 196379129472352256)):
             emojilisttemp = sorted(self.emojis, key=lambda q: (q.name))
             for e in emojilisttemp:
                 print(e.name)
                 await message.channel.send(str(e) + str(e.id))
 
-        if lower_message.startswith('whoami'):
+        elif (lower_message.startswith('say')
+            and (message.author.id == 151913154803269633
+                 or message.author.id == 196379129472352256)):
+            payload = message.content.split(' ', 2)[1:]
+            await self.get_channel(int(payload[0])).send(payload[1])
+
+
+        elif lower_message.startswith('whoami'):
             await message.channel.send(f"You're <{message.author.id}>!")
 
-        if lower_message.startswith('test'):
+        elif lower_message.startswith('test'):
             counter = 0
             tmp = await message.channel.send('Calculating messages...')
             async for msg in message.channel.history(limit=100):

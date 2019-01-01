@@ -86,6 +86,7 @@ class Stat(Enum):
     DEF  = 5
     RES  = 6
 
+
 @unique
 class Rarity(Enum):
     ONE   = 1
