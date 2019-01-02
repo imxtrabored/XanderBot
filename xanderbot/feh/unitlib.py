@@ -89,6 +89,7 @@ class UnitLib(object):
 
             skill.learnable[index[2]].append(hero)
         print('done.')
+        con.close()
 
         return(self)
 
@@ -153,6 +154,18 @@ class UnitLib(object):
     @classmethod
     def get_skill_by_id(cls, skill_id):
         return cls.singleton.skill_list[skill_id]
+
+
+
+    @staticmethod
+    def insert_alias(hero, name):
+        con = sqlite3.connect("feh/fehdata.db", detect_types=sqlite3.PARSE_COLNAMES)
+        cur = con.cursor()
+        cur.execute('INSERT INTO hero_dict ("name", "index") VALUES (?, ?)',
+                    (name, hero.id))
+        con.commit()
+        con.close()
+        UnitLib.singleton.unit_names[name] = hero.id
 
 
 

@@ -1195,10 +1195,37 @@ class XanderBotClient(discord.Client):
                 await message.channel.send(str(e) + str(e.id))
 
         elif (lower_message.startswith('say')
-            and (message.author.id == 151913154803269633
-                 or message.author.id == 196379129472352256)):
+              and (message.author.id == 151913154803269633
+              or message.author.id == 196379129472352256)):
             payload = message.content.split(' ', 2)[1:]
             await self.get_channel(int(payload[0])).send(payload[1])
+
+        elif lower_message.startswith('addalias'):
+            names = [
+                    XanderBotClient.filter_name(n)
+                    for n in lower_message.split(' ', 1)[1].split(',')
+            ]
+            heroes = [UnitLib.get_hero(n) for n in names]
+            if heroes[0] and not heroes[1]:
+                UnitLib.insert_alias(heroes[0], names[1])
+                await message.channel.send(f'Added alias {names[1]} for {heroes[0].short_name}.')
+                me = client.get_user(151913154803269633)
+                dm = client.get_user(151913154803269633).dm_channel
+                if not dm: dm = await me.create_dm()
+                await dm.send((f'{message.author.name}#{message.author.discriminator}'
+                               f'added {names[1]} for {heroes[0].short_name}.'))
+            elif heroes[1] and not heroes[0]:
+                UnitLib.insert_alias(heroes[1], names[0])
+                await message.channel.send(f'Added alias {names[0]} for {heroes[1].short_name}.')
+                me = client.get_user(151913154803269633)
+                dm = client.get_user(151913154803269633).dm_channel
+                if not dm: dm = await me.create_dm()
+                await dm.send((f'{message.author.name}#{message.author.discriminator}'
+                               f'added {names[0]} for {heroes[1].short_name}.'))
+            elif heroes[0] and heroes[1]:
+                await message.channel.send('All names are already aliases!')
+            else:
+                message.channel.send('Cannot find a valid hero name; need at least one.')
 
 
         elif lower_message.startswith('whoami'):
