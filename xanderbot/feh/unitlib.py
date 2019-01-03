@@ -25,7 +25,17 @@ class UnitLib(object):
         con = sqlite3.connect("feh/fehdata.db", detect_types=sqlite3.PARSE_COLNAMES)
         cur = con.cursor()
 
-        cur.execute("""SELECT * FROM hero ORDER BY id ASC;""")
+        cur.execute(
+                """SELECT id, identity, name, short_name, epithet, color,
+                weapon_type, move_type, base_hp, base_atk,base_spd, base_def,
+                base_res, grow_hp, grow_atk, grow_spd, grow_def, grow_res,
+                max_hp, max_atk, max_spd, max_def, max_res, is_legend,
+                legend_element, legend_boost, tome_type, description, bvid,
+                artist, vo_en, vo_jp, is_story, is_seasonal, is_grail,
+                is_veteran, is_trainee, is_dancer, is_brave, is_sigurd, 
+                generation
+                FROM hero ORDER BY id ASC;"""
+        )
 
         self = UnitLib()
         cls.singleton = self
@@ -48,12 +58,30 @@ class UnitLib(object):
         self.unit_names['null'] = 0
         self.unit_names['zero'] = 0
 
-        cur.execute("""SELECT * FROM hero_dict;""")
+        cur.execute("""SELECT name, id FROM hero_dict;""")
         for index in cur:
             self.unit_names[index[0]] = index[1]
             #print(index[0])
 
-        cur.execute("""SELECT * FROM skills ORDER BY id ASC;""")
+        cur.execute(
+                """SELECT id, identity, name, description, type, weapon_type,
+                staff_exclusive, is_seal, is_refine, is_refined_variant, range,
+                disp_atk, eff_infantry, eff_armor, eff_cavalry, eff_flier,
+                eff_magic, eff_dragon, hp, atk, spd, def, res, cd_mod,
+                special_cd, prereq1, prereq2, sp, exclusive, infantry, armor,
+                cavalry, flier, r_sword, r_tome, r_breath, b_lance, b_tome,
+                b_breath, g_axe, g_tome, g_breath, c_bow, c_dagger, c_staff,
+                c_breath, r_bow, b_bow, g_bow, r_dagger, b_dagger, g_dagger,
+                refinable, refined_version, refine_sp, refine_medals,
+                refine_stones, refine_dew, refine_eff, refine_staff1,
+                refine_staff2, refine_atk, refine_spd, refine_def, refine_res,
+                evolves_to, evolve_medals, evolve_stones, evolve_dew,
+                evolves_from, seal_badge_color, seal_great_badges,
+                seal_small_badges, seal_coins, skill_rank, tier,
+                fn_pre_combat, fn_on_attack, fn_on_defend, fn_post_combat,
+                fn_on_assist
+                FROM skills ORDER BY id ASC;"""
+        )
 
         self.skill_list = []
         for skill in cur:
@@ -61,7 +89,7 @@ class UnitLib(object):
             self.skill_list.append(new_skill)
         #self.skill_list.append(await Skill.create('null'))
         self.skill_names = dict()
-        cur.execute("""SELECT * FROM skills_dict;""")
+        cur.execute("""SELECT name, id FROM skills_dict;""")
         for index in cur:
             self.skill_names[index[0]] = index[1]
             #print(index[0])
@@ -69,7 +97,12 @@ class UnitLib(object):
         for skill in self.skill_list[1:]:
             skill.link(self)
 
-        cur.execute("""SELECT * FROM skillsets ORDER BY heroid ASC, unlockRarity ASC, exclusive ASC;""")
+        cur.execute(
+                """SELECT heroid, skillid, unlockRarity, defaultRarity, type,
+                exclusive
+                FROM skillsets
+                ORDER BY heroid ASC,  unlockRarity ASC,  exclusive ASC;"""
+        )
         for index in cur:
             hero = self.unit_list[index[0]]
             skill = self.skill_list[index[1]]
@@ -100,14 +133,20 @@ class UnitLib(object):
         print('indexing skill emoijs..')
         con = sqlite3.connect("feh/emojis.db", detect_types=sqlite3.PARSE_COLNAMES)
         cur = con.cursor()
-        cur.execute("""SELECT * FROM skill_emoji WHERE id > 0 ORDER BY id ASC;""")
+        cur.execute(
+                """SELECT id, typeemoteid, weapontypeemoteid 
+                FROM skill_emoji WHERE id > 0 ORDER BY id ASC;"""
+        )
         for index in cur:
             skill = cls.singleton.skill_list[index[0]]
             skill.icon = client.get_emoji(int(index[1]))
             if index[2]:
                 skill.w_icon = client.get_emoji(int(index[2]))
         
-        cur.execute("""SELECT * FROM skill_emoji WHERE id < 0 ORDER BY id DESC;""")
+        cur.execute(
+                """SELECT id, typeemoteid, weapontypeemoteid 
+                FROM skill_emoji WHERE id < 0 ORDER BY id DESC;"""
+        )
         empty_slots = cur.fetchall()
         Skill.EMPTY_WEAPON   .icon = client.get_emoji(int(empty_slots[0][1]))
         Skill.EMPTY_ASSIST   .icon = client.get_emoji(int(empty_slots[1][1]))
@@ -158,14 +197,26 @@ class UnitLib(object):
 
 
     @staticmethod
-    def insert_alias(hero, name):
+    def insert_hero_alias(hero, name):
         con = sqlite3.connect("feh/fehdata.db", detect_types=sqlite3.PARSE_COLNAMES)
         cur = con.cursor()
-        cur.execute('INSERT INTO hero_dict ("name", "index") VALUES (?, ?)',
+        cur.execute('INSERT INTO hero_dict (name, id) VALUES (?, ?)',
                     (name, hero.id))
         con.commit()
         con.close()
         UnitLib.singleton.unit_names[name] = hero.id
+
+
+
+    @staticmethod
+    def insert_skill_alias(skill, name):
+        con = sqlite3.connect("feh/fehdata.db", detect_types=sqlite3.PARSE_COLNAMES)
+        cur = con.cursor()
+        cur.execute('INSERT INTO skills_dict (name, id) VALUES (?, ?)',
+                    (name, skill.id))
+        con.commit()
+        con.close()
+        UnitLib.singleton.unit_names[name] = skill.id
 
 
 

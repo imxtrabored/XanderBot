@@ -42,6 +42,37 @@ class SpecialTrigger(Enum):
 class Skill(object):
     '''Represents a skill in FEH'''
 
+    __slots__ = (
+            'id', 'identity', 'name', 'description', 'type', 'weapon_type',
+            'is_staff', 'is_seal', 'is_refine', 'is_refined_variant',
+            'range', 'disp_atk', 'icon', 'w_icon',
+            'eff_infantry', 'eff_armor', 'eff_cavalry', 'eff_flier',
+            'eff_magic', 'eff_dragon',
+            'bonus_hp', 'bonus_atk', 'bonus_spd', 'bonus_def', 'bonus_res',
+            'cd_mod', 'special_cd',
+            'prereq1', 'prereq1_id', 'prereq2', 'prereq2_id', 'postreq',
+            'sp', 'exclusive', 'learnable',
+            'infantry', 'armor', 'cavalry', 'flier',
+            'r_sword', 'r_tome', 'r_breath', 'b_lance', 'b_tome', 'b_breath',
+            'g_axe', 'g_tome', 'g_breath', 'c_bow', 'c_dagger', 'c_staff',
+            'c_breath', 'r_bow', 'b_bow', 'g_bow', 'r_dagger', 'b_dagger',
+            'g_dagger',
+            'refinable', 'refined_version', 'refined_version_id',
+            'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
+            'refine_eff', 'refine_eff_id', 'refine_staff1', 'refine_staff1_id',
+            'refine_staff2', 'refine_staff2_id',
+            'refine_atk', 'refine_atk_id', 'refine_spd', 'refine_spd_id',
+            'refine_def', 'refine_def_id', 'refine_res', 'refine_res_id',
+            'evolves_to', 'evolves_to_id',
+            'evolve_medals', 'evolve_stones', 'evolve_dew',
+            'evolves_from', 'evolves_from_id',
+            'seal_badge_color', 'seal_great_badges', 'seal_small_badges',
+            'seal_coins',
+            'skill_rank', 'tier',
+            'fn_pre_combat', 'fn_on_attack', 'fn_on_defend',
+            'fn_post_combat', 'fn_on_assist' 
+    )
+
     def __init__(
             self, id, identity, name, description, type, weapon_type = 0,
             staff_exclusive = False, is_seal = False, is_refine = False,
@@ -115,7 +146,6 @@ class Skill(object):
         self.postreq = []
         self.sp = sp
         self.exclusive = exclusive
-        self.evolves_from = []
 
         #learnable
         self.learnable = [
@@ -196,8 +226,8 @@ class Skill(object):
         self.seal_coins        = seal_coins
 
         #combat
-        self.pre_combat = None
-        self.post_combat = None
+        #self.pre_combat = None
+        #self.post_combat = None
 
 
 
@@ -208,7 +238,8 @@ class Skill(object):
         else:
             self.tier = self.prereq1.get_rank_recursive()
             if self.prereq2: self.prereq2.get_rank_recursive()
-        if self.tier > 3 and self.type != SkillType.WEAPON: print(self.name)
+        # if self.tier > 3 and self.type != SkillType.WEAPON: print(self.name)
+        # if self.tier >= 3 and self.name.endswith('2'): print(self.name)
         return self.tier + 1
 
 
@@ -226,8 +257,8 @@ class Skill(object):
         if self.prereq2_id:
             self.prereq2 = unit_lib.get_skill_by_id(self.prereq2_id)
             self.prereq2.postreq.append(self)
-        if self.evolves_to_id     :
-            self.evolves_to      = unit_lib.get_skill_by_id(self.evolves_to_id     )
+        if self.evolves_to_id:
+            self.evolves_to = unit_lib.get_skill_by_id(self.evolves_to_id     )
             self.evolves_to.evolves_from = self
         # if self.evolves_from_id   : self.evolves_from    = unit_lib.get_skill_by_id(self.evolves_from_id   )
         if self.refined_version_id: self.refined_version = unit_lib.get_skill_by_id(self.refined_version_id)
@@ -239,7 +270,8 @@ class Skill(object):
         if self.refine_def_id     : self.refine_def      = unit_lib.get_skill_by_id(self.refine_def_id     )
         if self.refine_res_id     : self.refine_res      = unit_lib.get_skill_by_id(self.refine_res_id     )
         # note: replace this error checking line
-        if self.prereq1 == self: print(self.name+', '+str(self.prereq1_id-1))
+        # if self.prereq1 == self: print(self.name+', '+str(self.prereq1_id-1))
+
         self.get_rank_recursive()
 
 

@@ -25,7 +25,7 @@ class EmojiLib(object):
 
         self.emojis = dict()
 
-        cur.execute("""SELECT * FROM emojis;""")
+        cur.execute("""SELECT name, id FROM emojis;""")
         for index in cur:
             # ok look this is (probably) still better than storing python objects in db
             if   index[0] == 'Stat_HP'        : self.emojis[Stat.HP ] = client.get_emoji(int(index[1]))
@@ -111,7 +111,7 @@ class EmojiLib(object):
         ))
 
         print('done.')
-
+        con.close()
         return(self.emojis)
 
 

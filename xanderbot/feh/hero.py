@@ -100,6 +100,35 @@ class Rarity(Enum):
 class Hero(object):
     '''Representation of a unit in FEH'''
 
+    #optimization
+    __slots__ = (
+            'id', 'identity', 'name', 'short_name', 'epithet', 'color',
+            'weapon_type', 'move_type', 'rarity', 'level', 'merges',
+            'weapon', 'assist', 'special', 'passive_a', 'passive_b',
+            'passive_c', 'weapon_prf',
+            'equipped_weapon', 'equipped_assist', 'equipped_special',
+            'equipped_passive_a', 'equipped_passive_b', 'equipped_passive_c',
+            'equipped_passive_s',
+            'base_hp', 'base_atk', 'base_spd', 'base_def', 'base_res',
+            'iv_hp', 'iv_atk', 'iv_spd', 'iv_def', 'iv_res',
+            'merge_hp', 'merge_atk', 'merge_spd', 'merge_def', 'merge_res',
+            'rmod_hp', 'rmod_atk', 'rmod_spd', 'rmod_def', 'rmod_res',
+            'lv1_hp', 'lv1_atk', 'lv1_spd', 'lv1_def', 'lv1_res',
+            'grow_hp', 'grow_atk', 'grow_spd', 'grow_def', 'grow_res',
+            'max_hp', 'max_atk', 'max_spd', 'max_def', 'max_res',
+            'curr_hp', 'curr_atk', 'curr_spd', 'curr_def', 'curr_res',
+            'base_total', 'lv1_total', 'grow_total', 'max_total',
+            'boon', 'bane', 'summoner_support_level',
+            'is_legend', 'legend_element', 'legend_boost', 'tome_type',
+            'description', 'bvid',
+            'art_portrait', 'art_attack', 'art_damaged', 'art_special',
+            'artist', 'vo_en', 'vo_jp',
+            'is_story', 'is_seasonal', 'is_grail', 'is_veteran', 'is_trainee',
+            'is_dancer', 'is_brave', 'is_sigurd', 'generation',
+            'is_arena_bonus', 'is_aether_bonus', 'is_aether_bonus_next',
+            'is_tempest_bonus'
+    )
+
     # we could calculate this easily, but this is faster anyways
     STATS_RARITY = (
         (0, 1, 3, 4, 6, 8, 9, 11, 13, 14,

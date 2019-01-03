@@ -44,9 +44,7 @@ class XanderBotClient(discord.Client):
         file = open (FILENAME, 'r')
         self.token = file.readline().rstrip('\n')
         file.close()
-        print('loading data...')
-        self.unit_library = UnitLib.initialize()
-        print('done.')
+        UnitLib.initialize()
         self.reactable_library = dict()
         self.editable_library = dict()
 
@@ -57,7 +55,7 @@ class XanderBotClient(discord.Client):
         print(self.user.name)
         print(self.user.id)
         print('------')
-        self.emojilib = EmojiLib.initialize(self)
+        EmojiLib.initialize(self)
         UnitLib.initialize_emojis(self)
 
 
@@ -92,6 +90,8 @@ class XanderBotClient(discord.Client):
 
     @staticmethod
     def process_hero_mods(hero, args):
+        hero = copy(hero)
+        bad_args = []
         rarity = hero.rarity
         merges = hero.merges
         boon = hero.boon
@@ -195,8 +195,11 @@ class XanderBotClient(discord.Client):
                         else: hero.equipped_passive_c = skill
                     elif skill.type == SkillType.PASSIVE_SEAL:
                         hero.equipped_passive_s = skill
+                else:
+                    bad_args.append(token)
 
         hero.update_stat_mods(boon = boon, bane = bane, merges = merges, rarity = rarity)
+        return hero, bad_args
 
 
 
@@ -341,7 +344,15 @@ class XanderBotClient(discord.Client):
 
     async def cmd_stats(self, message, tokens):
         zoom_state = False
+        if not tokens:
+            await message.channel.send('No input detected!')
+            return
         this_hero = copy(UnitLib.get_hero(tokens[0]))
+        if not this_hero:
+            await message.channel.send(
+                    f'Hero not found: {tokens[0]}. '
+                    "Don't forget that modifiers should be delimited by commas.")
+            return
         XanderBotClient.process_hero_mods(this_hero, tokens[1:])
         hero_embed = discord.Embed()
         hero_embed = self.format_stats(this_hero, hero_embed, zoom_state)
@@ -496,14 +507,21 @@ class XanderBotClient(discord.Client):
 
 
     async def cmd_hero_skills(self, message, tokens):
+        if not tokens:
+            await message.channel.send('No input detected!')
+            return
         zoom_state = False
         this_hero = copy(UnitLib.get_hero(tokens[0]))
+        if not this_hero:
+            await message.channel.send(
+                    f'Hero not found: {tokens[0]}. '
+                    "Don't forget that modifiers should be delimited by commas.")
+            return
         XanderBotClient.process_hero_mods(this_hero, tokens[1:])
         hero_embed = discord.Embed()
         hero_embed = self.format_hero_skills(this_hero, hero_embed, zoom_state)
         
-        hero_embed.set_thumbnail(url='https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{}/Face.png'
-                                 .format(this_hero.id))
+        hero_embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{this_hero.id}/Face.png')
 
         botreply = await message.channel.send(embed=hero_embed)
         self.register_reactable(botreply, message, message.author, this_hero,
@@ -552,7 +570,8 @@ class XanderBotClient(discord.Client):
             embed.description = 'No heroes found.'
             return embed
         elif len(heroes) == 1:
-            return self.format_stats(self, heroes[0], embed, zoom_state)
+            embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{heroes[0]}/Face.png')
+            return self.format_stats(heroes[0], embed, zoom_state)
         elif len(heroes) == 2:
             title = (f'Comparing {heroes[0].short_name} '
                      f'and {heroes[1].short_name}:')
@@ -768,8 +787,14 @@ class XanderBotClient(discord.Client):
 
 
     async def cmd_compare(self, message, tokens):
+        if len(tokens) < 2:
+            await message.channel.send('No input detected!')
+            return
+        tokens = tokens[1]
         zoom_state = False
         hero_embed = discord.Embed()
+        print(tokens)
+        bad_args = []
         if ';' not in tokens:
             # slow mode
             tokens = tokens.split(',')
@@ -778,10 +803,15 @@ class XanderBotClient(discord.Client):
                 this_hero = UnitLib.get_hero(param)
                 if this_hero: heroes.append(this_hero)
                 else:
-                    XanderBotClient.process_hero_mods(heroes[-1], [param])
+                    if len(heroes) == 0:
+                        bad_args.append(param)
+                    else:
+                        heroes[-1], bad_arg = self.process_hero_mods(heroes[-1], [param])
+                        bad_args.extend(bad_arg)
+
             hero_embed.set_author(
-                    name = ('Please delimit heroes with semicolons (;) in '
-                            'the future to improve speed and clarity.')
+                    name = ('Please delimit compared heroes with semicolons (;)'
+                            'in the future to improve speed and clarity.')
             )
             # hero_embed = self.format_stats(this_hero, hero_embed, zoom_state)
         else:
@@ -791,8 +821,10 @@ class XanderBotClient(discord.Client):
             for param in hero_list:
                 this_hero = UnitLib.get_hero(param[0])
                 if this_hero:
+                    this_hero, bad_arg = self.process_hero_mods(this_hero, param[1:])
                     heroes.append(this_hero)
-                    XanderBotClient.process_hero_mods(this_hero, param[1:])
+                    bad_args.extend(bad_arg)
+                else: bad_args.append(param[0])
         # modify duplicate hero names (detect dupes using id)
         counts = {k:v for k,v in
                   Counter([h.id for h in heroes]).items()
@@ -805,8 +837,12 @@ class XanderBotClient(discord.Client):
                 counts[item] -= 1
         hero_embed = self.format_compare(heroes, hero_embed, zoom_state)
 
-
-        botreply = await message.channel.send(embed=hero_embed)
+        if bad_args:
+            content = ('I did not understand the following arguments: '
+                       f'{", ".join(bad_args)}')
+        else:
+            content = ''
+        botreply = await message.channel.send(content = content, embed = hero_embed)
         self.register_reactable(botreply, message, message.author, 'this_hero',
                                 CMDType.HERO_COMPARE, hero_embed, [zoom_state])
 
@@ -901,8 +937,9 @@ class XanderBotClient(discord.Client):
         if (skill.type == SkillType.WEAPON and not skill.exclusive
             and ((skill.tier <= 2 and not skill.is_staff) or skill.tier <= 1)):
             learnable = 'Basic weapon available to most eligible heroes.'
-        elif skill.type == SkillType.ASSIST and skill.is_staff:
-            learnable = 'Basic assist available to all staff-users.'
+        elif (skill.type == SkillType.ASSIST and skill.is_staff
+              and skill.tier <= 1):
+            learnable = 'Basic assist available to all staff users.'
         # elif reduce(lambda x, y: x + len(y), skill.learnable[1:], 0) > 20:
         elif (
                 len(skill.learnable[1]) + len(skill.learnable[2])
@@ -1116,7 +1153,13 @@ class XanderBotClient(discord.Client):
 
 
     async def cmd_skill(self, message, tokens):
+        if not tokens:
+            await message.channel.send('No input detected!')
+            return
         this_skill = UnitLib.get_skill(tokens[0])
+        if not this_skill:
+            await message.channel.send(f'Skill not found: {tokens[0]}.')
+            return
         skill_embed = discord.Embed()
         zoom_state = False
         self.format_skill(this_skill, skill_embed, zoom_state)
@@ -1163,40 +1206,49 @@ class XanderBotClient(discord.Client):
             lower_message = lower_message[2:]
         elif lower_message.startswith('feh?'):
             lower_message = lower_message[4:]
-        try:
+        split_command = lower_message.split(' ', 1)
+        if len(split_command) > 1:
+            tokens = split_command[1].split(',')
+        else: tokens = []
+        #try:
             #TODO: kind of gross line, also investigate if RE or map is faster here?
 
-            if   lower_message.startswith('hero') or lower_message.startswith('unit'):
-                tokens = lower_message.split(' ', 1)[1].split(',')
-                await self.cmd_hero(message, tokens)
-            elif lower_message.startswith('stat'):
-                tokens = lower_message.split(' ', 1)[1].split(',')
-                await self.cmd_stats(message, tokens)
-            elif lower_message.startswith('skills'):
-                tokens = lower_message.split(' ', 1)[1].split(',')
-                await self.cmd_hero_skills(message, tokens)
-            elif lower_message.startswith('compare'):
-                tokens = lower_message.split(' ', 1)[1]
-                await self.cmd_compare(message, tokens)
-            elif lower_message.startswith('skill'):
-                tokens = lower_message.split(' ', 1)[1].split(',')
-                await self.cmd_skill(message, tokens)
-        except:
-            await message.channel.send("Some error has occured, but I don't have good error messages yet.")
+        if   lower_message.startswith('hero') or lower_message.startswith('unit'):
+            await self.cmd_hero(message, tokens)
+        elif lower_message.startswith('stat'):
+            await self.cmd_stats(message, tokens)
+        elif lower_message.startswith('skills'):
+            await self.cmd_hero_skills(message, tokens)
+        elif lower_message.startswith('compare'):
+            await self.cmd_compare(message, split_command)
+        elif lower_message.startswith('skill '):
+            await self.cmd_skill(message, tokens)
+        #except:
+        #    await message.channel.send("An unknown error has occured.")
 
         #debug commands
 
         if (lower_message.startswith('emojis')
-              and (message.author.id == 151913154803269633
-              or message.author.id == 196379129472352256)):
+            and (message.author.id == 151913154803269633
+                 or message.author.id == 196379129472352256)):
             emojilisttemp = sorted(self.emojis, key=lambda q: (q.name))
             for e in emojilisttemp:
                 print(e.name)
                 await message.channel.send(str(e) + str(e.id))
 
+        elif (lower_message.startswith('reload')
+              and (message.author.id == 151913154803269633
+                   or message.author.id == 196379129472352256)):
+            reply = await message.channel.send(
+                    'Rebuilding hero, skill, and emoji indices...')
+            UnitLib.initialize()
+            UnitLib.initialize_emojis(self)
+            EmojiLib.initialize(self)
+            await reply.edit(content='Done rebuilding hero, skill, and emoji indices.')
+
         elif (lower_message.startswith('say')
               and (message.author.id == 151913154803269633
-              or message.author.id == 196379129472352256)):
+                   or message.author.id == 196379129472352256)):
             payload = message.content.split(' ', 2)[1:]
             await self.get_channel(int(payload[0])).send(payload[1])
 
@@ -1205,27 +1257,68 @@ class XanderBotClient(discord.Client):
                     XanderBotClient.filter_name(n)
                     for n in lower_message.split(' ', 1)[1].split(',')
             ]
+            if len(names) != 2:
+                await message.channel.send(
+                        'Wrong number of names found. '
+                        'Please enter two names, separated by a comma.'
+                )
             heroes = [UnitLib.get_hero(n) for n in names]
             if heroes[0] and not heroes[1]:
-                UnitLib.insert_alias(heroes[0], names[1])
-                await message.channel.send(f'Added alias {names[1]} for {heroes[0].short_name}.')
+                UnitLib.insert_hero_alias(heroes[0], names[1])
+                await message.channel.send(
+                        f'Added alias {names[1]} for {heroes[0].short_name}.')
                 me = client.get_user(151913154803269633)
                 dm = client.get_user(151913154803269633).dm_channel
                 if not dm: dm = await me.create_dm()
-                await dm.send((f'{message.author.name}#{message.author.discriminator}'
-                               f'added {names[1]} for {heroes[0].short_name}.'))
+                await dm.send(f'{message.author.name}#{message.author.discriminator} '
+                              f'added alias {names[1]} for {heroes[0].short_name}.')
             elif heroes[1] and not heroes[0]:
-                UnitLib.insert_alias(heroes[1], names[0])
-                await message.channel.send(f'Added alias {names[0]} for {heroes[1].short_name}.')
+                UnitLib.insert_hero_alias(heroes[1], names[0])
+                await message.channel.send(
+                        f'Added alias {names[0]} for {heroes[1].short_name}.')
                 me = client.get_user(151913154803269633)
                 dm = client.get_user(151913154803269633).dm_channel
                 if not dm: dm = await me.create_dm()
-                await dm.send((f'{message.author.name}#{message.author.discriminator}'
-                               f'added {names[0]} for {heroes[1].short_name}.'))
+                await dm.send(f'{message.author.name}#{message.author.discriminator} '
+                              f'added alias {names[0]} for {heroes[1].short_name}.')
             elif heroes[0] and heroes[1]:
-                await message.channel.send('All names are already aliases!')
+                await message.channel.send('All names are already hero aliases!')
             else:
                 message.channel.send('Cannot find a valid hero name; need at least one.')
+
+        elif lower_message.startswith('skillalias'):
+            names = [
+                    XanderBotClient.filter_name(n)
+                    for n in lower_message.split(' ', 1)[1].split(',')
+            ]
+            if len(names) != 2:
+                await message.channel.send(
+                        'Wrong number of names found. '
+                        'Please enter two names, separated by a comma.'
+                )
+            skills = [UnitLib.get_skill(n) for n in names]
+            if skills[0] and not skills[1]:
+                UnitLib.insert_skill_alias(skills[0], names[1])
+                await message.channel.send(
+                        f'Added alias {names[1]} for {skills[0].name}.')
+                me = client.get_user(151913154803269633)
+                dm = client.get_user(151913154803269633).dm_channel
+                if not dm: dm = await me.create_dm()
+                await dm.send(f'{message.author.name}#{message.author.discriminator} '
+                              f'added alias {names[1]} for {skills[0].name}.')
+            elif skills[1] and not skills[0]:
+                UnitLib.insert_skill_alias(skills[1], names[0])
+                await message.channel.send(
+                        f'Added alias {names[0]} for {skills[1].name}.')
+                me = client.get_user(151913154803269633)
+                dm = client.get_user(151913154803269633).dm_channel
+                if not dm: dm = await me.create_dm()
+                await dm.send(f'{message.author.name}#{message.author.discriminator} '
+                              f'added alias {names[0]} for {skills[1].name}.')
+            elif skills[0] and skills[1]:
+                await message.channel.send('All names are already skill aliases!')
+            else:
+                message.channel.send('Cannot find a valid skill name; need at least one.')
 
 
         elif lower_message.startswith('whoami'):
