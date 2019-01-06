@@ -43,34 +43,34 @@ class Skill(object):
     '''Represents a skill in FEH'''
 
     __slots__ = (
-            'id', 'identity', 'name', 'description', 'type', 'weapon_type',
-            'is_staff', 'is_seal', 'is_refine', 'is_refined_variant',
-            'range', 'disp_atk', 'icon', 'w_icon',
-            'eff_infantry', 'eff_armor', 'eff_cavalry', 'eff_flier',
-            'eff_magic', 'eff_dragon',
-            'bonus_hp', 'bonus_atk', 'bonus_spd', 'bonus_def', 'bonus_res',
-            'cd_mod', 'special_cd',
-            'prereq1', 'prereq1_id', 'prereq2', 'prereq2_id', 'postreq',
-            'sp', 'exclusive', 'learnable',
-            'infantry', 'armor', 'cavalry', 'flier',
-            'r_sword', 'r_tome', 'r_breath', 'b_lance', 'b_tome', 'b_breath',
-            'g_axe', 'g_tome', 'g_breath', 'c_bow', 'c_dagger', 'c_staff',
-            'c_breath', 'r_bow', 'b_bow', 'g_bow', 'r_dagger', 'b_dagger',
-            'g_dagger',
-            'refinable', 'refined_version', 'refined_version_id',
-            'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
-            'refine_eff', 'refine_eff_id', 'refine_staff1', 'refine_staff1_id',
-            'refine_staff2', 'refine_staff2_id',
-            'refine_atk', 'refine_atk_id', 'refine_spd', 'refine_spd_id',
-            'refine_def', 'refine_def_id', 'refine_res', 'refine_res_id',
-            'evolves_to', 'evolves_to_id',
-            'evolve_medals', 'evolve_stones', 'evolve_dew',
-            'evolves_from', 'evolves_from_id',
-            'seal_badge_color', 'seal_great_badges', 'seal_small_badges',
-            'seal_coins',
-            'skill_rank', 'tier',
-            'fn_pre_combat', 'fn_on_attack', 'fn_on_defend',
-            'fn_post_combat', 'fn_on_assist' 
+        'id', 'identity', 'name', 'description', 'type', 'weapon_type',
+        'is_staff', 'is_seal', 'is_refine', 'is_refined_variant',
+        'range', 'disp_atk', 'icon', 'w_icon',
+        'eff_infantry', 'eff_armor', 'eff_cavalry', 'eff_flier',
+        'eff_magic', 'eff_dragon',
+        'bonus_hp', 'bonus_atk', 'bonus_spd', 'bonus_def', 'bonus_res',
+        'cd_mod', 'special_cd',
+        'prereq1', 'prereq1_id', 'prereq2', 'prereq2_id', 'postreq',
+        'sp', 'exclusive', 'learnable',
+        'infantry', 'armor', 'cavalry', 'flier',
+        'r_sword', 'r_tome', 'r_breath', 'b_lance', 'b_tome', 'b_breath',
+        'g_axe', 'g_tome', 'g_breath', 'c_bow', 'c_dagger', 'c_staff',
+        'c_breath', 'r_bow', 'b_bow', 'g_bow', 'r_dagger', 'b_dagger',
+        'g_dagger',
+        'refinable', 'refined_version', 'refined_version_id',
+        'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
+        'refine_eff', 'refine_eff_id', 'refine_staff1', 'refine_staff1_id',
+        'refine_staff2', 'refine_staff2_id',
+        'refine_atk', 'refine_atk_id', 'refine_spd', 'refine_spd_id',
+        'refine_def', 'refine_def_id', 'refine_res', 'refine_res_id',
+        'evolves_to', 'evolves_to_id',
+        'evolve_medals', 'evolve_stones', 'evolve_dew',
+        'evolves_from', 'evolves_from_id',
+        'seal_badge_color', 'seal_great_badges', 'seal_small_badges',
+        'seal_coins',
+        'skill_rank', 'tier',
+        'fn_pre_combat', 'fn_on_attack', 'fn_on_defend',
+        'fn_post_combat', 'fn_on_assist' 
     )
 
     def __init__(
@@ -137,6 +137,7 @@ class Skill(object):
         self.bonus_def = bonus_def
         self.bonus_res = bonus_res
         self.cd_mod    = cd_mod
+        self.special_cd = special_cd
 
         #prereq
         self.prereq1_id = prereq1
@@ -258,17 +259,25 @@ class Skill(object):
             self.prereq2 = unit_lib.get_skill_by_id(self.prereq2_id)
             self.prereq2.postreq.append(self)
         if self.evolves_to_id:
-            self.evolves_to = unit_lib.get_skill_by_id(self.evolves_to_id     )
+            self.evolves_to = unit_lib.get_skill_by_id(self.evolves_to_id)
             self.evolves_to.evolves_from = self
         # if self.evolves_from_id   : self.evolves_from    = unit_lib.get_skill_by_id(self.evolves_from_id   )
-        if self.refined_version_id: self.refined_version = unit_lib.get_skill_by_id(self.refined_version_id)
-        if self.refine_eff_id     : self.refine_eff      = unit_lib.get_skill_by_id(self.refine_eff_id     )
-        if self.refine_staff1_id  : self.refine_staff1   = unit_lib.get_skill_by_id(self.refine_staff1_id  )
-        if self.refine_staff2_id  : self.refine_staff2   = unit_lib.get_skill_by_id(self.refine_staff2_id  )
-        if self.refine_atk_id     : self.refine_atk      = unit_lib.get_skill_by_id(self.refine_atk_id     )
-        if self.refine_spd_id     : self.refine_spd      = unit_lib.get_skill_by_id(self.refine_spd_id     )
-        if self.refine_def_id     : self.refine_def      = unit_lib.get_skill_by_id(self.refine_def_id     )
-        if self.refine_res_id     : self.refine_res      = unit_lib.get_skill_by_id(self.refine_res_id     )
+        if self.refined_version_id:
+            self.refined_version = unit_lib.get_skill_by_id(self.refined_version_id)
+        if self.refine_eff_id     :
+            self.refine_eff      = unit_lib.get_skill_by_id(self.refine_eff_id     )
+        if self.refine_staff1_id  :
+            self.refine_staff1   = unit_lib.get_skill_by_id(self.refine_staff1_id  )
+        if self.refine_staff2_id  :
+            self.refine_staff2   = unit_lib.get_skill_by_id(self.refine_staff2_id  )
+        if self.refine_atk_id     :
+            self.refine_atk      = unit_lib.get_skill_by_id(self.refine_atk_id     )
+        if self.refine_spd_id     :
+            self.refine_spd      = unit_lib.get_skill_by_id(self.refine_spd_id     )
+        if self.refine_def_id     :
+            self.refine_def      = unit_lib.get_skill_by_id(self.refine_def_id     )
+        if self.refine_res_id     :
+            self.refine_res      = unit_lib.get_skill_by_id(self.refine_res_id     )
         # note: replace this error checking line
         # if self.prereq1 == self: print(self.name+', '+str(self.prereq1_id-1))
 
@@ -281,34 +290,35 @@ class Skill(object):
 
 
 
-Skill.EMPTY_WEAPON    = Skill(-1, 'null weapon'   , 'None',
-                              'Empty weapon slot'     , SkillType.WEAPON
-                              )
-Skill.EMPTY_ASSIST    = Skill(-2, 'null assist'   , 'None',
-                              'Empty assist slot'     , SkillType.ASSIST
-                              )
-Skill.EMPTY_SPECIAL   = Skill(-3, 'null special'  , 'None',
-                              'Empty special slot'    , SkillType.SPECIAL
-                              )
-Skill.EMPTY_PASSIVE_A = Skill(-4, 'null passive a', 'None',
-                              'Empty A passive slot'  , SkillType.PASSIVE_A
-                              )
-Skill.EMPTY_PASSIVE_B = Skill(-5, 'null passive b', 'None',
-                              'Empty B passive slot'  , SkillType.PASSIVE_B
-                              )
-Skill.EMPTY_PASSIVE_C = Skill(-6, 'null passive c', 'None',
-                              'Empty C passive slot'  , SkillType.PASSIVE_C
-                              )
-Skill.EMPTY_PASSIVE_S = Skill(-7, 'null passive s', 'None',
-                              'Empty Sacred Seal slot', SkillType.PASSIVE_SEAL
-                              )
+Skill.EMPTY_WEAPON    = Skill(
+    -1, 'null weapon'   , 'None', 'Empty weapon slot'     ,
+    SkillType.WEAPON
+)
+Skill.EMPTY_ASSIST    = Skill(
+    -2, 'null assist'   , 'None', 'Empty assist slot'     ,
+    SkillType.ASSIST
+)
+Skill.EMPTY_SPECIAL   = Skill(
+    -3, 'null special'  , 'None', 'Empty special slot'    ,
+    SkillType.SPECIAL
+)
+Skill.EMPTY_PASSIVE_A = Skill(
+    -4, 'null passive a', 'None', 'Empty A passive slot'  ,
+    SkillType.PASSIVE_A
+)
+Skill.EMPTY_PASSIVE_B = Skill(
+    -5, 'null passive b', 'None', 'Empty B passive slot'  ,
+    SkillType.PASSIVE_B
+)
+Skill.EMPTY_PASSIVE_C = Skill(
+    -6, 'null passive c', 'None', 'Empty C passive slot'  ,
+    SkillType.PASSIVE_C
+)
+Skill.EMPTY_PASSIVE_S = Skill(
+    -7, 'null passive s', 'None', 'Empty Sacred Seal slot',
+    SkillType.PASSIVE_SEAL
+)
 
 class SpecialSkill(Skill):
 
-    @staticmethod
-    async def create(skill_name = 'null'):
-        self = await Skill.create(skill_name)
-        
-        self.special_cooldown = 2
-        self.proc = SpecialTrigger.UNIT_ATTACK
-        self.special_proc = None
+    pass

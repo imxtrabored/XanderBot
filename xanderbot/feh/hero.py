@@ -102,35 +102,36 @@ class Hero(object):
 
     #optimization
     __slots__ = (
-            'id', 'identity', 'name', 'short_name', 'epithet', 'color',
-            'weapon_type', 'move_type', 'rarity', 'level', 'merges',
-            'weapon', 'assist', 'special', 'passive_a', 'passive_b',
-            'passive_c', 'weapon_prf',
-            'equipped_weapon', 'equipped_assist', 'equipped_special',
-            'equipped_passive_a', 'equipped_passive_b', 'equipped_passive_c',
-            'equipped_passive_s',
-            'base_hp', 'base_atk', 'base_spd', 'base_def', 'base_res',
-            'iv_hp', 'iv_atk', 'iv_spd', 'iv_def', 'iv_res',
-            'merge_hp', 'merge_atk', 'merge_spd', 'merge_def', 'merge_res',
-            'rmod_hp', 'rmod_atk', 'rmod_spd', 'rmod_def', 'rmod_res',
-            'lv1_hp', 'lv1_atk', 'lv1_spd', 'lv1_def', 'lv1_res',
-            'grow_hp', 'grow_atk', 'grow_spd', 'grow_def', 'grow_res',
-            'max_hp', 'max_atk', 'max_spd', 'max_def', 'max_res',
-            'curr_hp', 'curr_atk', 'curr_spd', 'curr_def', 'curr_res',
-            'base_total', 'lv1_total', 'grow_total', 'max_total',
-            'boon', 'bane', 'summoner_support_level',
-            'is_legend', 'legend_element', 'legend_boost', 'tome_type',
-            'description', 'bvid',
-            'art_portrait', 'art_attack', 'art_damaged', 'art_special',
-            'artist', 'vo_en', 'vo_jp',
-            'is_story', 'is_seasonal', 'is_grail', 'is_veteran', 'is_trainee',
-            'is_dancer', 'is_brave', 'is_sigurd', 'generation',
-            'is_arena_bonus', 'is_aether_bonus', 'is_aether_bonus_next',
-            'is_tempest_bonus'
+        'id', 'identity', 'name', 'short_name', 'epithet', 'color',
+        'weapon_type', 'move_type', 'rarity', 'level', 'merges',
+        'weapon', 'assist', 'special', 'passive_a', 'passive_b',
+        'passive_c', 'weapon_prf',
+        'equipped_weapon', 'equipped_assist', 'equipped_special',
+        'equipped_passive_a', 'equipped_passive_b', 'equipped_passive_c',
+        'equipped_passive_s',
+        'base_hp', 'base_atk', 'base_spd', 'base_def', 'base_res',
+        'iv_hp', 'iv_atk', 'iv_spd', 'iv_def', 'iv_res',
+        'merge_hp', 'merge_atk', 'merge_spd', 'merge_def', 'merge_res',
+        'rmod_hp', 'rmod_atk', 'rmod_spd', 'rmod_def', 'rmod_res',
+        'lv1_hp', 'lv1_atk', 'lv1_spd', 'lv1_def', 'lv1_res',
+        'grow_hp', 'grow_atk', 'grow_spd', 'grow_def', 'grow_res',
+        'max_hp', 'max_atk', 'max_spd', 'max_def', 'max_res',
+        'curr_hp', 'curr_atk', 'curr_spd', 'curr_def', 'curr_res',
+        'base_total', 'lv1_total', 'grow_total', 'max_total',
+        'boon', 'bane', 'summoner_support_level',
+        'is_legend', 'legend_element', 'legend_boost', 'tome_type',
+        'description', 'bvid',
+        'art_portrait', 'art_attack', 'art_damaged', 'art_special',
+        'artist', 'vo_en', 'vo_jp', 'alt_base_id', 'alt_base', 'alt_list',
+        'is_story', 'is_seasonal', 'is_grail', 'is_veteran', 'is_trainee',
+        'is_dancer', 'is_brave', 'is_sigurd', 'generation',
+        'is_arena_bonus', 'is_aether_bonus', 'is_aether_bonus_next',
+        'is_tempest_bonus', 'newmerges'
     )
 
     # we could calculate this easily, but this is faster anyways
     STATS_RARITY = (
+        (),
         (0, 1, 3, 4, 6, 8, 9, 11, 13, 14,
          16, 18, 19, 21, 23, 24, 26, 28),
         (0, 1, 3, 5, 7, 8, 10, 12, 14, 15,
@@ -140,7 +141,7 @@ class Hero(object):
         (0, 1, 3, 6, 8, 10, 12, 14, 16, 18,
          20, 22, 24, 26, 28, 31, 33, 35),
         (0, 1, 4, 6, 8, 10, 13, 15, 17, 19,
-         22, 24, 26, 28, 30, 33, 35, 37)
+         22, 24, 26, 28, 30, 33, 35, 37),
     )
 
 
@@ -156,7 +157,7 @@ class Hero(object):
             description = 'No information available.', bvid = 0x0000,
             art_portrait = '', art_attack = '', art_damaged = '',
             art_special = '', artist = "Unknown", vo_en = 'Unknown',
-            vo_jp = 'Unknown',
+            vo_jp = 'Unknown', alt_base_id = None,
             is_story = False, is_seasonal = False, is_grail = False,
             is_veteran = False, is_trainee = False, is_dancer = False,
             is_brave = False, is_sigurd = False,
@@ -307,11 +308,17 @@ class Hero(object):
         self.vo_en = vo_en
         self.vo_jp = vo_jp
 
+        self.alt_base_id = alt_base_id
+        self_alt_base = None
+        self.alt_list = []
+
         #bonus units
         self.is_arena_bonus = False
         self.is_aether_bonus = False
         self.is_aether_bonus_next = False
         self.is_tempest_bonus = False
+
+        self.newmerges = False
 
 
 
@@ -360,32 +367,32 @@ class Hero(object):
         '''
         updates max stats from lv1, growth, merges, and rarity
         '''
-        self.lv1_hp  = self.merge_hp  + self.rmod_hp
-        self.lv1_atk = self.merge_atk + self.rmod_atk
-        self.lv1_spd = self.merge_spd + self.rmod_spd
-        self.lv1_def = self.merge_def + self.rmod_def
-        self.lv1_res = self.merge_res + self.rmod_res
+        self.lv1_hp  = self.iv_hp  + self.merge_hp  + self.rmod_hp
+        self.lv1_atk = self.iv_atk + self.merge_atk + self.rmod_atk
+        self.lv1_spd = self.iv_spd + self.merge_spd + self.rmod_spd
+        self.lv1_def = self.iv_def + self.merge_def + self.rmod_def
+        self.lv1_res = self.iv_res + self.merge_res + self.rmod_res
 
         self.max_hp  = (
             self.lv1_hp
-            + Hero.STATS_RARITY[self.rarity - 1][self.grow_hp //5]
-            )
+            + Hero.STATS_RARITY[self.rarity][self.grow_hp // 5]
+        )
         self.max_atk = (
             self.lv1_atk
-            + Hero.STATS_RARITY[self.rarity - 1][self.grow_atk//5]
-            )
+            + Hero.STATS_RARITY[self.rarity][self.grow_atk// 5]
+        )
         self.max_spd = (
             self.lv1_spd
-            + Hero.STATS_RARITY[self.rarity - 1][self.grow_spd//5]
-            )
+            + Hero.STATS_RARITY[self.rarity][self.grow_spd// 5]
+        )
         self.max_def = (
             self.lv1_def
-            + Hero.STATS_RARITY[self.rarity - 1][self.grow_def//5]
-            )
+            + Hero.STATS_RARITY[self.rarity][self.grow_def// 5]
+        )
         self.max_res = (
             self.lv1_res
-            + Hero.STATS_RARITY[self.rarity - 1][self.grow_res//5]
-            )
+            + Hero.STATS_RARITY[self.rarity][self.grow_res// 5]
+        )
         self.max_total = (self.max_hp + self.max_atk + self.max_spd
                           + self.max_def + self.max_res)
 
@@ -428,7 +435,7 @@ class Hero(object):
             (self.base_spd, 3, Stat.SPD),
             (self.base_res, 1, Stat.RES),
             (self.base_def, 2, Stat.DEF),
-            (            0, 0, Stat.HP )
+            (            0, 0, Stat.HP ),
             ]
         stats.sort(key=lambda sl: (sl[0], sl[1]))
 
@@ -511,45 +518,93 @@ class Hero(object):
 
         self.merges = new_merges
         modify = 0
-        if new_merges >= 5:
+
+        if new_merges == 0:
+            self.merge_hp  = 0
+            self.merge_atk = 0
+            self.merge_spd = 0
+            self.merge_def = 0
+            self.merge_res = 0
+            return
+
+        elif new_merges >= 5:
             if new_merges == 10: modify = 4
             else:
                 modify = 2
                 new_merges -= 5
 
-        self.merge_hp  = self.iv_hp  + modify
-        self.merge_atk = self.iv_atk + modify
-        self.merge_spd = self.iv_spd + modify
-        self.merge_def = self.iv_def + modify
-        self.merge_res = self.iv_res + modify
-        if new_merges % 5 == 0: return
+        self.merge_hp  = modify
+        self.merge_atk = modify
+        self.merge_spd = modify
+        self.merge_def = modify
+        self.merge_res = modify
 
         stats = [
             (self.base_hp , 4, Stat.HP ),
             (self.base_atk, 3, Stat.ATK),
             (self.base_spd, 2, Stat.SPD),
             (self.base_def, 1, Stat.DEF),
-            (self.base_res, 0, Stat.RES)
-            ]
-        stats.sort(key=lambda sl: (sl[0], sl[1]), reverse=True)
+            (self.base_res, 0, Stat.RES),
+        ]
+        stats.sort(key = lambda sl: (sl[0], sl[1]), reverse = True)
+
+        if self.newmerges:
+            if self.bane == Stat.NONE:
+                for i in range(3):
+                    self.modify_merge(stats[i][2], 1)
+            elif self.bane == Stat.HP:
+                self.modify_merge(
+                    Stat.HP,
+                    Hero.STATS_RARITY[self.rarity][(self.grow_hp + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_hp // 5] + 1
+                )
+            elif self.bane == Stat.ATK:
+                self.modify_merge(
+                    Stat.ATK,
+                    Hero.STATS_RARITY[self.rarity][(self.grow_atk + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_atk // 5] + 1
+                )
+            elif self.bane == Stat.SPD:
+                self.modify_merge(
+                    Stat.SPD,
+                    Hero.STATS_RARITY[self.rarity][(self.grow_spd + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_spd // 5] + 1
+                )
+            elif self.bane == Stat.DEF:
+                self.modify_merge(
+                    Stat.DEF,
+                    Hero.STATS_RARITY[self.rarity][(self.grow_def + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_def // 5] + 1
+                )
+            elif self.bane == Stat.RES:
+                self.modify_merge(
+                    Stat.RES,
+                    Hero.STATS_RARITY[self.rarity][(self.grow_res + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_res // 5] + 1
+                )            
 
         for i in range(new_merges * 2):
             self.modify_merge(stats[i % 4][2], 1)
 
 
     def update_stat_mods(
-        self, *, boon = None, bane = None, merges = None, rarity = None):
-        if boon and bane:
+        self, *, boon = None, bane = None, merges = None, rarity = None
+    ):
+        if ((boon and bane)
+            and ((boon != Stat.NONE and bane != Stat.NONE)
+                 or (boon == bane))):
             self.update_ivs(boon, bane)
-        if merges != None:
-            self.update_merges(merges)
+            update_boons = True
+        else: update_boons = False
         if rarity:
             self.update_rarity(rarity)
-        if rarity or (boon and bane) or (merges != None):
+        if merges != None:
+            self.update_merges(merges)
+        if rarity or update_boons or merges != None or newmerges != None:
             self.recalc_stats()
 
 
 
 class CombatHero(Hero):
     '''Representation of a unit in combat'''
-
+    pass

@@ -131,6 +131,3 @@ class EmojiLib(object):
             cls.initialize()
         return cls.singleton.emojis
 
-
-
-

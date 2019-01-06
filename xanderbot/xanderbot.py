@@ -57,7 +57,31 @@ class XanderBotClient(discord.Client):
         print('------')
         EmojiLib.initialize(self)
         UnitLib.initialize_emojis(self)
-
+        self.restrict_emojis = (
+            str(EmojiLib.get(MoveType.INFANTRY      )),
+            str(EmojiLib.get(MoveType.ARMOR         )),
+            str(EmojiLib.get(MoveType.CAVALRY       )),
+            str(EmojiLib.get(MoveType.FLIER         )),
+            str(EmojiLib.get(UnitWeaponType.R_SWORD )),
+            str(EmojiLib.get(UnitWeaponType.R_TOME  )),
+            str(EmojiLib.get(UnitWeaponType.R_BOW   )),
+            str(EmojiLib.get(UnitWeaponType.R_DAGGER)),
+            str(EmojiLib.get(UnitWeaponType.R_BREATH)),
+            str(EmojiLib.get(UnitWeaponType.B_LANCE )),
+            str(EmojiLib.get(UnitWeaponType.B_TOME  )),
+            str(EmojiLib.get(UnitWeaponType.B_BOW   )),
+            str(EmojiLib.get(UnitWeaponType.B_DAGGER)),
+            str(EmojiLib.get(UnitWeaponType.B_BREATH)),
+            str(EmojiLib.get(UnitWeaponType.G_AXE   )),
+            str(EmojiLib.get(UnitWeaponType.G_TOME  )),
+            str(EmojiLib.get(UnitWeaponType.G_BOW   )),
+            str(EmojiLib.get(UnitWeaponType.G_DAGGER)),
+            str(EmojiLib.get(UnitWeaponType.G_BREATH)),
+            str(EmojiLib.get(UnitWeaponType.C_BOW   )),
+            str(EmojiLib.get(UnitWeaponType.C_DAGGER)),
+            str(EmojiLib.get(UnitWeaponType.C_STAFF )),
+            str(EmojiLib.get(UnitWeaponType.C_BREATH)),
+        )
 
 
     async def forget_reactable(self, bot_msg):
@@ -90,13 +114,13 @@ class XanderBotClient(discord.Client):
 
     @staticmethod
     def process_hero_mods(hero, args):
-        hero = copy(hero)
         bad_args = []
         rarity = hero.rarity
         merges = hero.merges
         boon = hero.boon
         bane = hero.bane
         level = hero.level
+        futuremerges = False
         for token in args:
             token = XanderBotClient.filter_name(token[:24])
             print(token)
@@ -106,56 +130,110 @@ class XanderBotClient(discord.Client):
                            .replace('rarity', ''))
             if rarity_test.isdecimal():
                 rarity = int(rarity_test)
+            elif 'plusplus' in token or 'futuremerge' in token:
+                merges = int(non_decimal.sub('', token))
+                hero.newmerges = True
             elif 'merge' in token:
                 merges = int(non_decimal.sub('', token))
+                hero.newmerges = False
             elif 'plus' in token:
                 # this might be merges, iv, or a skill
                 plus_test = token.replace('plus', '')
                 if plus_test.isdecimal():
                     merges = int(plus_test)
+                    futuremerges = False
                 elif (
-                        token == 'plushp'
-                        or token == 'hpplus'
-                        or token == 'plushitpoint'
-                        or token == 'plushitpoints'
-                        or token == 'hitpointplus'
-                        or token == 'hitpointsplus'
+                        token in [
+                            'plushp'       ,
+                            'hpplus'       ,
+                            'plushitpoint' ,
+                            'plushitpoints',
+                            'hitpointplus' ,
+                            'hitpointsplus',
+                        ]
                 ):
                     boon = Stat.HP
                 elif (
-                        token == 'plusatk'
-                        or token == 'atkplus'
-                        or token == 'plusattack'
-                        or token == 'attackplus'
+                        token in (
+                            'plusatk'   ,
+                            'atkplus'   ,
+                            'plusattack',
+                            'attackplus',
+                        )
                 ):
                     boon = Stat.ATK
                 elif (
-                        token == 'plusspd'
-                        or token == 'spdplus'
-                        or token == 'plusspeed'
-                        or token == 'speedplus'
+                        token in (
+                            'plusspd'  ,
+                            'spdplus'  ,
+                            'plusspeed',
+                            'speedplus',
+                        )
                 ):
                     boon = Stat.SPD
                 elif (
-                        token == 'plusdef'
-                        or token == 'defplus'
-                        or token == 'plusdefense'
-                        or token == 'defenseplus'
-                        or token == 'plusdefence'
-                        or token == 'defenceplus'
+                        token in (
+                            'plusdef'    ,
+                            'defplus'    ,
+                            'plusdefense',
+                            'defenseplus',
+                            'plusdefence',
+                            'defenceplus',
+                        )
                 ):
                     boon = Stat.DEF
                 elif (
-                        token == 'plusres'
-                        or token == 'resplus'
-                        or token == 'plusresistance'
-                        or token == 'resistanceplus'
+                        token in (
+                            'plusres'       ,
+                            'resplus'       ,
+                            'plusresistance',
+                            'resistanceplus',
+                        )
                 ):
                     boon = Stat.RES
                 else:
-                    # try skill
-                    pass
-            elif 'minus' in token:
+                    skill = UnitLib.get_skill(token)
+                    if skill:
+                        if skill.type == SkillType.WEAPON:
+                            hero.equipped_weapon = skill
+                        elif skill.type == SkillType.ASSIST:
+                            hero.equipped_assist = skill
+                        elif skill.type == SkillType.SPECIAL:
+                            hero.equipped_special = skill
+                        elif skill.type == SkillType.PASSIVE_A:
+                            if (hero.equipped_passive_a
+                                and not hero.equipped_passive_s
+                                and skill.is_seal):
+                                hero.equipped_passive_s = skill
+                            else: hero.equipped_passive_a = skill
+                        elif skill.type == SkillType.PASSIVE_B:
+                            if (hero.equipped_passive_b
+                                and not hero.equipped_passive_s
+                                and skill.is_seal):
+                                hero.equipped_passive_s = skill
+                            else: hero.equipped_passive_b = skill
+                        elif skill.type == SkillType.PASSIVE_C:
+                            if (hero.equipped_passive_c
+                                and not hero.equipped_passive_s
+                                and skill.is_seal):
+                                hero.equipped_passive_s = skill
+                            else: hero.equipped_passive_c = skill
+                        elif skill.type == SkillType.PASSIVE_SEAL:
+                            hero.equipped_passive_s = skill
+                    else:
+                        bad_args.append(token)
+            elif 'boon' in token or 'asset' in token:
+                if 'hp' in token or 'hitpoint' in token:
+                    boon = Stat.HP
+                elif 'atk' in token or 'attack' in token:
+                    boon = Stat.ATK
+                elif 'spd' in token or 'speed' in token:
+                    boon = Stat.SPD
+                elif 'def' in token or 'defense' in token or 'defence' in token:
+                    boon = Stat.DEF
+                elif 'res' in token or 'resistance' in token:
+                    boon = Stat.RES
+            elif 'minus' in token or 'bane' in token or 'flaw' in token:
                 if 'hp' in token or 'hitpoint' in token:
                     bane = Stat.HP
                 elif 'atk' in token or 'attack' in token:
@@ -198,7 +276,15 @@ class XanderBotClient(discord.Client):
                 else:
                     bad_args.append(token)
 
-        hero.update_stat_mods(boon = boon, bane = bane, merges = merges, rarity = rarity)
+        if (boon == Stat.NONE or bane == Stat.NONE) and boon != bane:
+            boon = Stat.NONE
+            bane = Stat.NONE
+            bad_args.append(f'{hero.short_name} mismatched asset/flaw')
+            # return some error
+        print(boon)
+        print(bane)
+        hero.update_stat_mods(boon = boon, bane = bane, merges = merges,
+                              rarity = rarity)
         return hero, bad_args
 
 
@@ -267,43 +353,43 @@ class XanderBotClient(discord.Client):
         desc_stat = ''
         if zoom_state:
             superboons = [
-                    '' if x == 0 else ' (+)' if x > 0 else ' (-)'
-                    for x in hero.get_boons_banes()
+                '' if x == 0 else ' (+)' if x > 0 else ' (-)'
+                for x in hero.get_boons_banes()
             ]
             lv1_stats = (
-                    f'{EmojiLib.get(Stat.HP)} HP: '
-                    f'{hero.lv1_hp}\n'
-                    f'{EmojiLib.get(Stat.ATK)} Attack: '
-                    f'{hero.lv1_atk}\n'
-                    f'{EmojiLib.get(Stat.SPD)} Speed: '
-                    f'{hero.lv1_spd}\n'
-                    f'{EmojiLib.get(Stat.DEF)} Defense: '
-                    f'{hero.lv1_def}\n'
-                    f'{EmojiLib.get(Stat.RES)} Resistance: '
-                    f'{hero.lv1_res}\n\n'
-                    f'Total: {hero.lv1_total}'
+                f'{EmojiLib.get(Stat.HP)} HP: '
+                f'{hero.lv1_hp}\n'
+                f'{EmojiLib.get(Stat.ATK)} Attack: '
+                f'{hero.lv1_atk}\n'
+                f'{EmojiLib.get(Stat.SPD)} Speed: '
+                f'{hero.lv1_spd}\n'
+                f'{EmojiLib.get(Stat.DEF)} Defense: '
+                f'{hero.lv1_def}\n'
+                f'{EmojiLib.get(Stat.RES)} Resistance: '
+                f'{hero.lv1_res}\n\n'
+                f'Total: {hero.lv1_total}'
             )
             max_stats = (
-                    f'{EmojiLib.get(Stat.HP)} HP: '
-                    f'{hero.max_hp}{superboons[0]}\n'
-                    f'{EmojiLib.get(Stat.ATK)} Attack: '
-                    f'{hero.max_atk}{superboons[1]}\n'
-                    f'{EmojiLib.get(Stat.SPD)} Speed: '
-                    f'{hero.max_spd}{superboons[2]}\n'
-                    f'{EmojiLib.get(Stat.DEF)} Defense: '
-                    f'{hero.max_def}{superboons[3]}\n'
-                    f'{EmojiLib.get(Stat.RES)} Resistance: '
-                    f'{hero.max_res}{superboons[4]}\n\n'
-                    f'Total: {hero.max_total}'
+                f'{EmojiLib.get(Stat.HP)} HP: '
+                f'{hero.max_hp}{superboons[0]}\n'
+                f'{EmojiLib.get(Stat.ATK)} Attack: '
+                f'{hero.max_atk}{superboons[1]}\n'
+                f'{EmojiLib.get(Stat.SPD)} Speed: '
+                f'{hero.max_spd}{superboons[2]}\n'
+                f'{EmojiLib.get(Stat.DEF)} Defense: '
+                f'{hero.max_def}{superboons[3]}\n'
+                f'{EmojiLib.get(Stat.RES)} Resistance: '
+                f'{hero.max_res}{superboons[4]}\n\n'
+                f'Total: {hero.max_total}'
             )
         else:
             stat_emojis = (
-                    f'{EmojiLib.get(Stat.HP )} · '
-                    f'{EmojiLib.get(Stat.ATK)} · '
-                    f'{EmojiLib.get(Stat.SPD)} · '
-                    f'{EmojiLib.get(Stat.DEF)} · '
-                    f'{EmojiLib.get(Stat.RES)} · '
-                    f'BST: {hero.max_total}'
+                f'{EmojiLib.get(Stat.HP )} · '
+                f'{EmojiLib.get(Stat.ATK)} · '
+                f'{EmojiLib.get(Stat.SPD)} · '
+                f'{EmojiLib.get(Stat.DEF)} · '
+                f'{EmojiLib.get(Stat.RES)} · '
+                f'BST: {hero.max_total}'
             )
             lvl1_stats = ' |'.join([
                 f'{str(hero.lv1_hp ).rjust(2)} |'
@@ -353,13 +439,17 @@ class XanderBotClient(discord.Client):
                     f'Hero not found: {tokens[0]}. '
                     "Don't forget that modifiers should be delimited by commas.")
             return
-        XanderBotClient.process_hero_mods(this_hero, tokens[1:])
+        hero, bad_args = XanderBotClient.process_hero_mods(this_hero, tokens[1:])
         hero_embed = discord.Embed()
         hero_embed = self.format_stats(this_hero, hero_embed, zoom_state)
         
         hero_embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{this_hero.id}/Face.png')
-
-        botreply = await message.channel.send(embed=hero_embed)
+        if bad_args:
+            content = ('I did not understand the following arguments: '
+                       f'{", ".join(bad_args)}')
+        else:
+            content = ''
+        botreply = await message.channel.send(embed = hero_embed, content = content)
         self.register_reactable(botreply, message, message.author, this_hero,
                                 CMDType.HERO_STATS, hero_embed, [zoom_state])
         await botreply.add_reaction('🔍')
@@ -370,26 +460,51 @@ class XanderBotClient(discord.Client):
         await botreply.add_reaction(EmojiLib.get(Rarity.FIVE ))
         await botreply.add_reaction('➕')
         await botreply.add_reaction('➖')
+        await botreply.add_reaction('🔟')
 
 
 
     async def react_stats(self, reaction, bot_msg, user_msg, user, hero, cmd_type, embed, data):
+        manage_msg = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
         if   reaction.emoji == '🔍':
             data[0] = not data[0]
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.ONE  ):
             hero.update_stat_mods(rarity = 1)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.TWO  ):
             hero.update_stat_mods(rarity = 2)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.THREE):
             hero.update_stat_mods(rarity = 3)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.FOUR ):
             hero.update_stat_mods(rarity = 4)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.FIVE ):
             hero.update_stat_mods(rarity = 5)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == '➕':
             hero.update_stat_mods(merges = hero.merges + 1)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == '➖':
             hero.update_stat_mods(merges = hero.merges - 1)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
+        elif reaction.emoji == '🔟':
+            hero.update_stat_mods(merges = 10)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
+        elif reaction.emoji == '⏩':
+            hero.newmerges = True
+            hero.update_stat_mods(merges = hero.merges)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
+            asyncio.create_task(bot_msg.add_reaction('⏪'))
+            asyncio.create_task(bot_msg.add_reaction('⏩'))
+        elif reaction.emoji == '⏪':
+            hero.newmerges = False
+            hero.update_stat_mods(merges = hero.merges)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
+            asyncio.create_task(bot_msg.add_reaction('⏪'))
+            asyncio.create_task(bot_msg.add_reaction('⏩'))
         elif reaction.emoji == '💾':
             embed.set_footer(text = 'Coming Soon!',
                              icon_url = 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/google/146/floppy-disk_1f4be.png')
@@ -398,8 +513,6 @@ class XanderBotClient(discord.Client):
         else: return
         embed = self.format_stats(hero, embed, data[0])
         await bot_msg.edit(embed = embed)
-        if bot_msg.channel.permissions_for(bot_msg.author).manage_messages:
-            await bot_msg.remove_reaction(reaction, user)
 
 
 
@@ -411,10 +524,10 @@ class XanderBotClient(discord.Client):
         else: legend_info = ''
 
         title = (
-                f'{hero.name}: {hero.epithet} '
-                f'{EmojiLib.get(hero.weapon_type)}'
-                f'{EmojiLib.get(hero.move_type)}'
-                f'{legend_info}'
+            f'{hero.name}: {hero.epithet} '
+            f'{EmojiLib.get(hero.weapon_type)}'
+            f'{EmojiLib.get(hero.move_type)}'
+            f'{legend_info}'
         )
 
         desc_rarity = (str(EmojiLib.get(Rarity(hero.rarity))) * hero.rarity
@@ -453,11 +566,11 @@ class XanderBotClient(discord.Client):
                           if hero.passive_c else ('None',))
 
         else:
-            weapon    = next((s[0] for s in hero.weapon [::-1]
+            weapon    = next((s[0] for s in hero.weapon   [::-1]
                               if s[1] <= hero.rarity), Skill.EMPTY_WEAPON )
-            assist    = next((s[0] for s in hero.assist [::-1]
+            assist    = next((s[0] for s in hero.assist   [::-1]
                               if s[1] <= hero.rarity), Skill.EMPTY_ASSIST )
-            special   = next((s[0] for s in hero.special[::-1]
+            special   = next((s[0] for s in hero.special  [::-1]
                               if s[1] <= hero.rarity), Skill.EMPTY_SPECIAL)
             passive_a = next((s[0] for s in hero.passive_a[::-1]
                               if s[1] <= hero.rarity), Skill.EMPTY_PASSIVE_A)
@@ -514,8 +627,8 @@ class XanderBotClient(discord.Client):
         this_hero = copy(UnitLib.get_hero(tokens[0]))
         if not this_hero:
             await message.channel.send(
-                    f'Hero not found: {tokens[0]}. '
-                    "Don't forget that modifiers should be delimited by commas.")
+                f'Hero not found: {tokens[0]}. '
+                 "Don't forget that modifiers should be delimited by commas.")
             return
         XanderBotClient.process_hero_mods(this_hero, tokens[1:])
         hero_embed = discord.Embed()
@@ -537,19 +650,25 @@ class XanderBotClient(discord.Client):
 
     async def react_hero_skills(self, reaction, bot_msg, user_msg, user, hero,
                                 cmd_type, embed, data):
-        print(reaction.emoji)
+        manage_msg = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
         if   reaction.emoji == '🔍':
             data[0] = not data[0]
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.ONE  ):
             hero.update_stat_mods(rarity = 1)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.TWO  ):
             hero.update_stat_mods(rarity = 2)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.THREE):
             hero.update_stat_mods(rarity = 3)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.FOUR ):
             hero.update_stat_mods(rarity = 4)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == EmojiLib.get(Rarity.FIVE ):
             hero.update_stat_mods(rarity = 5)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == '💾':
             embed.set_footer(text = 'Coming Soon!',
                              icon_url = 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/google/146/floppy-disk_1f4be.png')
@@ -558,8 +677,6 @@ class XanderBotClient(discord.Client):
         else: return
         embed = self.format_hero_skills(hero, embed, data[0])
         await bot_msg.edit(embed = embed)
-        if bot_msg.channel.permissions_for(bot_msg.author).manage_messages:
-            await bot_msg.remove_reaction(reaction, user)
 
 
 
@@ -570,7 +687,7 @@ class XanderBotClient(discord.Client):
             embed.description = 'No heroes found.'
             return embed
         elif len(heroes) == 1:
-            embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{heroes[0]}/Face.png')
+            embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{heroes[0].id}/Face.png')
             return self.format_stats(heroes[0], embed, zoom_state)
         elif len(heroes) == 2:
             title = (f'Comparing {heroes[0].short_name} '
@@ -607,9 +724,9 @@ class XanderBotClient(discord.Client):
 
             embed.add_field(
                     name = (
-                            f'{hero.short_name} '
-                            f'{EmojiLib.get(hero.weapon_type)} '
-                            f'{EmojiLib.get(hero.move_type)} '
+                        f'{hero.short_name} '
+                        f'{EmojiLib.get(hero.weapon_type)} '
+                        f'{EmojiLib.get(hero.move_type)} '
                     ),
                     value = max_stats,
                     inline = True
@@ -621,10 +738,10 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_hp > stat_sort[-1].max_hp:
                 hp_str = (
-                        f'{EmojiLib.get(Stat.HP)} '
-                        f'{stat_sort[0].short_name} has '
-                        f'{stat_sort[0].max_hp - stat_sort[1].max_hp} '
-                        'more HP.'
+                    f'{EmojiLib.get(Stat.HP)} '
+                    f'{stat_sort[0].short_name} has '
+                    f'{stat_sort[0].max_hp - stat_sort[1].max_hp} '
+                    'more HP.'
                 )
             else: hp_str = f'{EmojiLib.get(Stat.HP)} Equal HP'
 
@@ -633,10 +750,10 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_atk > stat_sort[-1].max_atk:
                 atk_str = (
-                        f'{EmojiLib.get(Stat.ATK)} '
-                        f'{stat_sort[0].short_name} has '
-                        f'{stat_sort[0].max_atk - stat_sort[1].max_atk} '
-                        'more Attack.'
+                    f'{EmojiLib.get(Stat.ATK)} '
+                    f'{stat_sort[0].short_name} has '
+                    f'{stat_sort[0].max_atk - stat_sort[1].max_atk} '
+                    'more Attack.'
                 )
             else: atk_str = f'{EmojiLib.get(Stat.ATK)} Equal Attack.'
 
@@ -645,10 +762,10 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_spd > stat_sort[-1].max_spd:
                 spd_str = (
-                        f'{EmojiLib.get(Stat.SPD)} '
-                        f'{stat_sort[0].short_name} has '
-                        f'{stat_sort[0].max_spd - stat_sort[1].max_spd} '
-                        'more Speed.'
+                    f'{EmojiLib.get(Stat.SPD)} '
+                    f'{stat_sort[0].short_name} has '
+                    f'{stat_sort[0].max_spd - stat_sort[1].max_spd} '
+                    'more Speed.'
                 )
             else: spd_str = f'{EmojiLib.get(Stat.SPD)} Equal Speed.'
 
@@ -657,10 +774,10 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_def > stat_sort[-1].max_def:
                 def_str = (
-                        f'{EmojiLib.get(Stat.DEF)} '
-                        f'{stat_sort[0].short_name} has '
-                        f'{stat_sort[0].max_def - stat_sort[1].max_def} '
-                        'more Defense.'
+                    f'{EmojiLib.get(Stat.DEF)} '
+                    f'{stat_sort[0].short_name} has '
+                    f'{stat_sort[0].max_def - stat_sort[1].max_def} '
+                    'more Defense.'
                 )
             else: def_str = f'{EmojiLib.get(Stat.DEF)} Equal Defense.'
 
@@ -669,10 +786,10 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_res > stat_sort[-1].max_res:
                 res_str = (
-                        f'{EmojiLib.get(Stat.RES)} '
-                        f'{stat_sort[0].short_name} has '
-                        f'{stat_sort[0].max_res - stat_sort[1].max_res} '
-                        'more Resistance.'
+                    f'{EmojiLib.get(Stat.RES)} '
+                    f'{stat_sort[0].short_name} has '
+                    f'{stat_sort[0].max_res - stat_sort[1].max_res} '
+                    'more Resistance.'
                 )
             else: res_str = f'{EmojiLib.get(Stat.RES)} Equal Resistance.'
 
@@ -681,9 +798,9 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_total > stat_sort[1].max_total:
                 total_str = (
-                        f'{stat_sort[0].short_name} has '
-                        f'{stat_sort[0].max_total - stat_sort[1].max_total} '
-                        'more total stats.'
+                    f'{stat_sort[0].short_name} has '
+                    f'{stat_sort[0].max_total - stat_sort[1].max_total} '
+                    'more total stats.'
                 )
             else: total_str = 'Equal stat total.'
 
@@ -696,9 +813,9 @@ class XanderBotClient(discord.Client):
                         h.short_name for h in heroes
                         if h.max_hp == stat_sort[0].max_hp])
                 hp_str = (
-                        f'{EmojiLib.get(Stat.HP)} '
-                        f'Greatest HP: {stat_sort[0].max_hp} '
-                        f'({max_list})'
+                    f'{EmojiLib.get(Stat.HP)} '
+                    f'Greatest HP: {stat_sort[0].max_hp} '
+                    f'({max_list})'
                 )
             else: hp_str = (f'{EmojiLib.get(Stat.HP)} '
                             'All heroes have equal HP.')
@@ -711,9 +828,9 @@ class XanderBotClient(discord.Client):
                         h.short_name for h in heroes
                         if h.max_atk == stat_sort[0].max_atk])
                 atk_str = (
-                        f'{EmojiLib.get(Stat.ATK)} '
-                        f'Greatest Attack: {stat_sort[0].max_atk} '
-                        f'({max_list})'
+                    f'{EmojiLib.get(Stat.ATK)} '
+                    f'Greatest Attack: {stat_sort[0].max_atk} '
+                    f'({max_list})'
                 )
             else: atk_str = (f'{EmojiLib.get(Stat.ATK)} '
                              'All heroes have equal Attack.')
@@ -726,9 +843,9 @@ class XanderBotClient(discord.Client):
                         h.short_name for h in heroes
                         if h.max_spd == stat_sort[0].max_spd])
                 spd_str = (
-                        f'{EmojiLib.get(Stat.SPD)} '
-                        f'Greatest Speed: {stat_sort[0].max_spd} '
-                        f'({max_list})'
+                    f'{EmojiLib.get(Stat.SPD)} '
+                    f'Greatest Speed: {stat_sort[0].max_spd} '
+                    f'({max_list})'
                 )
             else: spd_str = (f'{EmojiLib.get(Stat.SPD)} '
                              'All heroes have equal Speed.')
@@ -741,9 +858,9 @@ class XanderBotClient(discord.Client):
                         h.short_name for h in heroes
                         if h.max_def == stat_sort[0].max_def])
                 def_str = (
-                        f'{EmojiLib.get(Stat.DEF)} '
-                        f'Greatest Defense: {stat_sort[0].max_def} '
-                        f'({max_list})'
+                    f'{EmojiLib.get(Stat.DEF)} '
+                    f'Greatest Defense: {stat_sort[0].max_def} '
+                    f'({max_list})'
                 )
             else: def_str = (f'{EmojiLib.get(Stat.DEF)} '
                              'All heroes have equal Defense.')
@@ -756,9 +873,9 @@ class XanderBotClient(discord.Client):
                         h.short_name for h in heroes
                         if h.max_res == stat_sort[0].max_res])
                 res_str = (
-                        f'{EmojiLib.get(Stat.RES)} '
-                        f'Greatest Resistance: {stat_sort[0].max_res} '
-                        f'({max_list})'
+                    f'{EmojiLib.get(Stat.RES)} '
+                    f'Greatest Resistance: {stat_sort[0].max_res} '
+                    f'({max_list})'
                 )
             else: res_str = (f'{EmojiLib.get(Stat.RES)} '
                              'All heroes have equal Resistance.')
@@ -771,8 +888,8 @@ class XanderBotClient(discord.Client):
                         h.short_name for h in heroes
                         if h.max_total == stat_sort[0].max_total])
                 total_str = (
-                        f'Greatest stat total: {stat_sort[0].max_total} '
-                        f'({max_list})'
+                    f'Greatest stat total: {stat_sort[0].max_total} '
+                    f'({max_list})'
                 )
             else: total_str = 'All heroes have equal stat totals.'
 
@@ -826,7 +943,7 @@ class XanderBotClient(discord.Client):
                     bad_args.extend(bad_arg)
                 else: bad_args.append(param[0])
         # modify duplicate hero names (detect dupes using id)
-        counts = {k:v for k,v in
+        counts = {k:v for k, v in
                   Counter([h.id for h in heroes]).items()
                   if v > 1}
         for i in reversed(range(len(heroes))):
@@ -838,7 +955,7 @@ class XanderBotClient(discord.Client):
         hero_embed = self.format_compare(heroes, hero_embed, zoom_state)
 
         if bad_args:
-            content = ('I did not understand the following arguments: '
+            content = ( 'I did not understand the following arguments: '
                        f'{", ".join(bad_args)}')
         else:
             content = ''
@@ -848,7 +965,8 @@ class XanderBotClient(discord.Client):
 
 
 
-    async def react_compare(self, reaction, bot_msg, user_msg, user, hero, cmd_type, embed, data):
+    async def react_compare(self, reaction, bot_msg, user_msg, user, hero,
+                            cmd_type, embed, data):
         pass
 
 
@@ -860,18 +978,17 @@ class XanderBotClient(discord.Client):
                      if skill.type != SkillType.PASSIVE_SEAL and skill.is_seal
                      else "")
         title = f'{skill.icon} {skill.name} · {type_icon}{seal_icon}'
-        print(title)
 
         if (skill.type == SkillType.WEAPON
             or skill.type == SkillType.WEAPON_REFINED
             ):
             if any([
-                    skill.eff_infantry,
-                    skill.eff_armor,
-                    skill.eff_cavalry,
-                    skill.eff_flier,
-                    skill.eff_magic,
-                    skill.eff_dragon
+                skill.eff_infantry,
+                skill.eff_armor   ,
+                skill.eff_cavalry ,
+                skill.eff_flier   ,
+                skill.eff_magic   ,
+                skill.eff_dragon  ,
             ]):
                 eff_list = [' Eff: ']
                 if skill.eff_infantry: eff_list.append(str(EmojiLib.get(MoveType.INFANTRY)))
@@ -887,50 +1004,57 @@ class XanderBotClient(discord.Client):
             else: effective = ''
 
             weapon_desc = (f'Mt: {skill.disp_atk} Rng: {skill.range}{effective}')
+        elif skill.type == SkillType.SPECIAL:
+            weapon_desc = f'{EmojiLib.get(SkillType.SPECIAL)} {skill.special_cd}'
         else: weapon_desc = None
 
-        prereq = (' '.join(['**Requires:**',
-                            str(skill.prereq1.icon), skill.prereq1.name,
-                            'or', str(skill.prereq2.icon), skill.prereq2.name])
-                  if skill.prereq2
-                  else
-                  ' '.join(('**Requires:**', str(skill.prereq1.icon), skill.prereq1.name))
-                  if skill.prereq1
-                  else None
-                  ) if not skill.exclusive else (
-                        '_This skill can only be equipped by its original unit._')
+        prereq = (
+            '_This skill can only be equipped by its original unit._'
+            if skill.exclusive else
+            f'**Requires:** {skill.prereq1.icon} {skill.prereq1.name}'
+            f'or {skill.prereq2.icon} {skill.prereq2.name}'
+            if skill.prereq2
+            else
+            f'**Requires:** {skill.prereq1.icon} {skill.prereq1.name}'
+            if skill.prereq1
+            else None
+        )
 
         restrictions = None
         if skill.type != SkillType.WEAPON:
             if skill.is_staff:
                 restrictions = "_This skill can only be equipped by staff users._"
             else:
-                restrict_list = ['**Cannot use:** ']
-                if not skill.infantry: restrict_list.append(str(EmojiLib.get(MoveType.INFANTRY      )))
-                if not skill.armor   : restrict_list.append(str(EmojiLib.get(MoveType.ARMOR         )))
-                if not skill.cavalry : restrict_list.append(str(EmojiLib.get(MoveType.CAVALRY       )))
-                if not skill.flier   : restrict_list.append(str(EmojiLib.get(MoveType.FLIER         )))
-                if not skill.r_sword : restrict_list.append(str(EmojiLib.get(UnitWeaponType.R_SWORD )))
-                if not skill.r_tome  : restrict_list.append(str(EmojiLib.get(UnitWeaponType.R_TOME  )))
-                if not skill.r_dagger: restrict_list.append(str(EmojiLib.get(UnitWeaponType.R_BOW   )))
-                if not skill.r_bow   : restrict_list.append(str(EmojiLib.get(UnitWeaponType.R_DAGGER)))
-                if not skill.r_breath: restrict_list.append(str(EmojiLib.get(UnitWeaponType.R_BREATH)))
-                if not skill.b_lance : restrict_list.append(str(EmojiLib.get(UnitWeaponType.B_LANCE )))
-                if not skill.b_bow   : restrict_list.append(str(EmojiLib.get(UnitWeaponType.B_TOME  )))
-                if not skill.b_dagger: restrict_list.append(str(EmojiLib.get(UnitWeaponType.B_BOW   )))
-                if not skill.b_tome  : restrict_list.append(str(EmojiLib.get(UnitWeaponType.B_DAGGER)))
-                if not skill.b_breath: restrict_list.append(str(EmojiLib.get(UnitWeaponType.B_BREATH)))
-                if not skill.g_axe   : restrict_list.append(str(EmojiLib.get(UnitWeaponType.G_AXE   )))
-                if not skill.g_bow   : restrict_list.append(str(EmojiLib.get(UnitWeaponType.G_TOME  )))
-                if not skill.g_dagger: restrict_list.append(str(EmojiLib.get(UnitWeaponType.G_BOW   )))
-                if not skill.g_tome  : restrict_list.append(str(EmojiLib.get(UnitWeaponType.G_DAGGER)))
-                if not skill.g_breath: restrict_list.append(str(EmojiLib.get(UnitWeaponType.G_BREATH)))
-                if not skill.c_bow   : restrict_list.append(str(EmojiLib.get(UnitWeaponType.C_BOW   )))
-                if not skill.c_dagger: restrict_list.append(str(EmojiLib.get(UnitWeaponType.C_DAGGER)))
-                if not skill.c_staff : restrict_list.append(str(EmojiLib.get(UnitWeaponType.C_STAFF )))
-                if not skill.c_breath: restrict_list.append(str(EmojiLib.get(UnitWeaponType.C_BREATH)))
-                if len(restrict_list) > 1:
-                    restrictions = ''.join(restrict_list)
+                restrictions = (
+                    skill.infantry,
+                    skill.armor   ,
+                    skill.cavalry ,
+                    skill.flier   ,
+                    skill.r_sword ,
+                    skill.r_tome  ,
+                    skill.r_dagger,
+                    skill.r_bow   ,
+                    skill.r_breath,
+                    skill.b_lance ,
+                    skill.b_bow   ,
+                    skill.b_dagger,
+                    skill.b_tome  ,
+                    skill.b_breath,
+                    skill.g_axe   ,
+                    skill.g_bow   ,
+                    skill.g_dagger,
+                    skill.g_tome  ,
+                    skill.g_breath,
+                    skill.c_bow   ,
+                    skill.c_dagger,
+                    skill.c_staff ,
+                    skill.c_breath,
+                )
+                restrict_list = [self.restrict_emojis[count]
+                                 for count, value in enumerate(restrictions)
+                                 if not value]
+                if restrict_list:
+                    restrictions = f'**Cannot use:** {"".join(restrict_list)}'
 
         sp = f'**SP:** {skill.sp}'
 
@@ -949,32 +1073,32 @@ class XanderBotClient(discord.Client):
             learnable = 'Over 20 heroes know this skill.'
         else:
             learnable = '\n'.join(filter(None, [
-                    f'{EmojiLib.get(Rarity(count))}: '
-                    f'{", ".join((hero.short_name for hero in hero_list))}'
-                    if hero_list else None
-                    for count, hero_list in enumerate(skill.learnable[1:], 1)
+                f'{EmojiLib.get(Rarity(count))}: '
+                f'{", ".join((hero.short_name for hero in hero_list))}'
+                if hero_list else None
+                for count, hero_list in enumerate(skill.learnable[1:], 1)
             ]))
 
         embed.clear_fields()
         if zoom_state:
             if skill.postreq:
                 prf_postreq_count = reduce(
-                        (lambda x, y: x + 1 if y.exclusive else x),
-                        skill.postreq,
-                        0
+                    lambda x, y: x + 1 if y.exclusive else x,
+                    skill.postreq,
+                    0
                 )
                 # optimize note?
-                postreq_list = (', '.join(filter(None, [
-                        f'{postreq.icon} {postreq.name}'
-                        if not postreq.exclusive else None
-                        for postreq in skill.postreq
-                ]))
+                postreq_list = (', '.join([
+                    f'{postreq.icon} {postreq.name}'
+                    for postreq in skill.postreq
+                    if not postreq.exclusive
+                ])
                 if len(skill.postreq) - prf_postreq_count < 10
-                else ', '.join(filter(None, [
-                        f'{postreq.name}'
-                        if not postreq.exclusive else None
-                        for postreq in skill.postreq
-                ])))
+                else ', '.join([
+                    f'{postreq.name}'
+                    for postreq in skill.postreq
+                    if not postreq.exclusive
+                ]))
 
                 prf_postreqs = (f' and {prf_postreq_count} Prf skills.'
                                 if prf_postreq_count else '')
@@ -987,48 +1111,48 @@ class XanderBotClient(discord.Client):
             cumul_sp = f'**Cumulative SP:** {skill.get_cumul_sp_recursive()}'
 
             description = '\n'.join(filter(None, [
-                    weapon_desc,
-                    skill.description,
-                    prereq,
-                    restrictions,
-                    sp,
-                    cumul_sp,
-                    '**Available from:**',
-                    learnable,
-                    postreqs
+                weapon_desc,
+                skill.description,
+                prereq,
+                restrictions,
+                sp,
+                cumul_sp,
+                '**Available from:**',
+                learnable,
+                postreqs
             ]))
         else:
             description = '\n'.join(filter(None, [
-                    weapon_desc,
-                    skill.description,
-                    prereq,
-                    restrictions,
-                    sp,
-                    '**Available from:**',
-                    learnable
+                weapon_desc,
+                skill.description,
+                prereq,
+                restrictions,
+                sp,
+                '**Available from:**',
+                learnable
             ]))
 
         embed.add_field(
-                name = title,
-                value = description,
-                inline = False
+            name = title,
+            value = description,
+            inline = False
         )
 
         if skill.refinable or skill.evolves_to:
             if zoom_state:
                 refine_secondary = (
-                        f', {skill.refine_stones} '
-                        f'{EmojiLib.get("Currency_Refining_Stone")}'
-                        if skill.refine_stones else
-                        f', {skill.refine_dew} '
-                        f'{EmojiLib.get("Currency_Divine_Dew")}'
-                        if skill.refine_dew else ''
+                    f', {skill.refine_stones} '
+                    f'{EmojiLib.get("Currency_Refining_Stone")}'
+                    if skill.refine_stones else
+                    f', {skill.refine_dew} '
+                    f'{EmojiLib.get("Currency_Divine_Dew")}'
+                    if skill.refine_dew else ''
                 )
                 refine_cost = (
-                        f' {skill.refine_sp} SP, '
-                        f'{skill.refine_medals} '
-                        f'{EmojiLib.get("Currency_Arena_Medal")}'
-                        f'{refine_secondary}'
+                    f' {skill.refine_sp} SP, '
+                    f'{skill.refine_medals} '
+                    f'{EmojiLib.get("Currency_Arena_Medal")}'
+                    f'{refine_secondary}'
                 )
             else: refine_cost = ''
 
@@ -1043,12 +1167,12 @@ class XanderBotClient(discord.Client):
                                  f'Refined {skill.name} · {type_icon}'
                                  )
                 if any([
-                        refined_skill.eff_infantry,
-                        refined_skill.eff_armor,
-                        refined_skill.eff_cavalry,
-                        refined_skill.eff_flier,
-                        refined_skill.eff_magic,
-                        refined_skill.eff_dragon
+                    refined_skill.eff_infantry,
+                    refined_skill.eff_armor,
+                    refined_skill.eff_cavalry,
+                    refined_skill.eff_flier,
+                    refined_skill.eff_magic,
+                    refined_skill.eff_dragon
                 ]):
                     eff_list = [' Eff: ']
                     if refined_skill.eff_infantry: eff_list.append(str(EmojiLib.get(MoveType.INFANTRY)))
@@ -1063,15 +1187,15 @@ class XanderBotClient(discord.Client):
                     effective = ''.join(eff_list)
                 else: effective = ''
                 refined_w_desc = (
-                        f'Mt: {refined_skill.disp_atk} '
-                        f'Rng: {refined_skill.range}{effective}'
-                        if (refined_skill.type == SkillType.WEAPON
-                            or refined_skill.type == SkillType.WEAPON_REFINED
-                            )
-                        else None
+                    f'Mt: {refined_skill.disp_atk} '
+                    f'Rng: {refined_skill.range}{effective}'
+                    if (refined_skill.type == SkillType.WEAPON
+                        or refined_skill.type == SkillType.WEAPON_REFINED
+                        )
+                    else None
                 )
                 refined_skill_str = '\n'.join(filter(None, (
-                        refined_w_desc, refined_skill.description
+                    refined_w_desc, refined_skill.description
                 )))
             else:
                 refined_title = 'Weapon Refinery'
@@ -1082,45 +1206,46 @@ class XanderBotClient(discord.Client):
                           if skill.refine_eff else None)
 
             if zoom_state:
-                generic_refines = '\n'.join(filter(None, [
-                        f'{refine.icon}: {refine.description}'
-                        if refine else None
-                        for refine in [
-                                skill.refine_staff1,
-                                skill.refine_staff2,
-                                skill.refine_atk,
-                                skill.refine_spd,
-                                skill.refine_def,
-                                skill.refine_res
-                        ]
-                ]))
+                generic_refines = '\n'.join([
+                    f'{refine.icon}: {refine.description}'
+                    for refine in [
+                        skill.refine_staff1,
+                        skill.refine_staff2,
+                        skill.refine_atk,
+                        skill.refine_spd,
+                        skill.refine_def,
+                        skill.refine_res
+                    ]
+                    if refine
+                ])
             else:
-                generic_refines = ', '.join(filter(None, [
-                        str(refine.icon) if refine else None
-                        for refine in [
-                                skill.refine_staff1,
-                                skill.refine_staff2,
-                                skill.refine_atk,
-                                skill.refine_spd,
-                                skill.refine_def,
-                                skill.refine_res
-                        ]
-                ]))
+                generic_refines = ', '.join([
+                    str(refine.icon)
+                    for refine in [
+                        skill.refine_staff1,
+                        skill.refine_staff2,
+                        skill.refine_atk,
+                        skill.refine_spd,
+                        skill.refine_def,
+                        skill.refine_res
+                    ]
+                    if refine
+                ])
 
             if zoom_state and skill.evolves_to:
                 evolve_secondary = (
-                        f', {skill.evolve_stones} '
-                        f'{EmojiLib.get("Currency_Refining_Stone")}'
-                        if skill.evolve_stones else
-                        f', {skill.evolve_dew} '
-                        f'{EmojiLib.get("Currency_Divine_Dew")}'
-                        if skill.evolve_dew else ''
+                    f', {skill.evolve_stones} '
+                    f'{EmojiLib.get("Currency_Refining_Stone")}'
+                    if skill.evolve_stones else
+                    f', {skill.evolve_dew} '
+                    f'{EmojiLib.get("Currency_Divine_Dew")}'
+                    if skill.evolve_dew else ''
                 )
                 evolve_cost = (
-                        f': {skill.evolves_to.sp} SP, '
-                        f'{skill.evolve_medals} '
-                        f'{EmojiLib.get("Currency_Arena_Medal")}'
-                        f'{evolve_secondary}'
+                    f': {skill.evolves_to.sp} SP, '
+                    f'{skill.evolve_medals} '
+                    f'{EmojiLib.get("Currency_Arena_Medal")}'
+                    f'{evolve_secondary}'
                 )
             else: evolve_cost = ''
 
@@ -1130,16 +1255,16 @@ class XanderBotClient(discord.Client):
                          if skill.evolves_to else None)
 
             refine_desc = '\n'.join(filter(None, [
-                    refined_skill_str,
-                    refine_header,
-                    refine_eff,
-                    generic_refines,
-                    evolution
+                refined_skill_str,
+                refine_header,
+                refine_eff,
+                generic_refines,
+                evolution
             ]))
             embed.add_field(
-                    name = refined_title,
-                    value = refine_desc,
-                    inline = False
+                name = refined_title,
+                value = refine_desc,
+                inline = False
             )
         if (skill.type == SkillType.WEAPON
                 or skill.type == SkillType.WEAPON_REFINED
@@ -1176,19 +1301,83 @@ class XanderBotClient(discord.Client):
 
         if reaction.emoji == '🔍':
             data[0] = not data[0]
-            if manage_msg: await bot_msg.remove_reaction(reaction, user)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == '⬆':
             skill[0] = skill[0].postreq[0] if len(skill[0].postreq) > 0 else skill[0]
-            if manage_msg: await bot_msg.remove_reaction(reaction, user)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == '⬇':
             skill[0] = skill[0].prereq1 if skill[0].prereq1 else skill[0]
-            if manage_msg: await bot_msg.remove_reaction(reaction, user)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         elif reaction.emoji == '👁':
             embed.set_author(name=str(skill[0].id))
-            if manage_msg: await bot_msg.remove_reaction(reaction, user)
+            if manage_msg: asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         else: return
         embed = self.format_skill(skill[0], embed, data[0])
         await bot_msg.edit(embed = embed)
+
+
+
+    async def add_hero_alias(message, tokens):
+        names = [
+            self.filter_name(n)
+            for n in tokens
+        ]
+        if len(names) != 2:
+            await message.channel.send(
+                'Wrong number of names found. '
+                'Please enter two names, separated by a comma.'
+            )
+        heroes = [UnitLib.get_hero(n) for n in names]
+        if heroes[0] and not heroes[1]:
+            UnitLib.insert_hero_alias(heroes[0], names[1])
+            await message.channel.send(
+                f'Added alias {names[1]} for {heroes[0].short_name}.')
+            client.get_user(151913154803269633).send(
+                f'{message.author.name}#{message.author.discriminator} '
+                f'added alias {names[1]} for {heroes[0].short_name}.')
+        elif heroes[1] and not heroes[0]:
+            UnitLib.insert_hero_alias(heroes[1], names[0])
+            await message.channel.send(
+                f'Added alias {names[0]} for {heroes[1].short_name}.')
+            client.get_user(151913154803269633).send(
+                f'{message.author.name}#{message.author.discriminator} '
+                f'added alias {names[0]} for {heroes[1].short_name}.')
+        elif heroes[0] and heroes[1]:
+            await message.channel.send('All names are already hero aliases!')
+        else:
+            await message.channel.send('Cannot find a valid hero name; need at least one.')
+
+
+
+    async def add_skill_alias(message, tokens):
+        names = [
+            XanderBotClient.filter_name(n)
+            for n in lower_message.split(' ', 1)[1].split(',')
+        ]
+        if len(names) != 2:
+            await message.channel.send(
+                'Wrong number of names found. '
+                'Please enter two names, separated by a comma.'
+            )
+        skills = [UnitLib.get_skill(n) for n in names]
+        if skills[0] and not skills[1]:
+            UnitLib.insert_skill_alias(skills[0], names[1])
+            await message.channel.send(
+                f'Added alias {names[1]} for {skills[0].name}.')
+            client.get_user(151913154803269633).send(
+                f'{message.author.name}#{message.author.discriminator} '
+                f'added alias {names[1]} for {skills[0].name}.')
+        elif skills[1] and not skills[0]:
+            UnitLib.insert_skill_alias(skills[1], names[0])
+            await message.channel.send(
+                f'Added alias {names[0]} for {skills[1].name}.')
+            client.get_user(151913154803269633).send(
+                f'{message.author.name}#{message.author.discriminator} '
+                f'added alias {names[0]} for {skills[1].name}.')
+        elif skills[0] and skills[1]:
+            await message.channel.send('All names are already skill aliases!')
+        else:
+            await message.channel.send('Cannot find a valid skill name; need at least one.')
 
 
 
@@ -1210,132 +1399,71 @@ class XanderBotClient(discord.Client):
         if len(split_command) > 1:
             tokens = split_command[1].split(',')
         else: tokens = []
-        #try:
+        try:
             #TODO: kind of gross line, also investigate if RE or map is faster here?
 
-        if   lower_message.startswith('hero') or lower_message.startswith('unit'):
-            await self.cmd_hero(message, tokens)
-        elif lower_message.startswith('stat'):
-            await self.cmd_stats(message, tokens)
-        elif lower_message.startswith('skills'):
-            await self.cmd_hero_skills(message, tokens)
-        elif lower_message.startswith('compare'):
-            await self.cmd_compare(message, split_command)
-        elif lower_message.startswith('skill '):
-            await self.cmd_skill(message, tokens)
-        #except:
-        #    await message.channel.send("An unknown error has occured.")
+            if   lower_message.startswith('hero') or lower_message.startswith('unit'):
+                await self.cmd_hero(message, tokens)
+            elif lower_message.startswith('stat'):
+                await self.cmd_stats(message, tokens)
+            elif lower_message.startswith('skills'):
+                await self.cmd_hero_skills(message, tokens)
+            elif lower_message.startswith('compare'):
+                await self.cmd_compare(message, split_command)
+            elif lower_message.startswith('skill '):
+                await self.cmd_skill(message, tokens)
 
-        #debug commands
 
-        if (lower_message.startswith('emojis')
-            and (message.author.id == 151913154803269633
-                 or message.author.id == 196379129472352256)):
-            emojilisttemp = sorted(self.emojis, key=lambda q: (q.name))
-            for e in emojilisttemp:
-                print(e.name)
-                await message.channel.send(str(e) + str(e.id))
+            #debug commands
 
-        elif (lower_message.startswith('reload')
-              and (message.author.id == 151913154803269633
-                   or message.author.id == 196379129472352256)):
-            reply = await message.channel.send(
+            if (lower_message.startswith('emojis')
+                and (message.author.id == 151913154803269633
+                     or message.author.id == 196379129472352256)):
+                emojilisttemp = sorted(self.emojis, key=lambda q: (q.name))
+                for e in emojilisttemp:
+                    print(e.name)
+                    await message.channel.send(str(e) + str(e.id))
+
+            elif (lower_message.startswith('reload')
+                  and (message.author.id == 151913154803269633
+                       or message.author.id == 196379129472352256)):
+                reply = await message.channel.send(
                     'Rebuilding hero, skill, and emoji indices...')
-            UnitLib.initialize()
-            UnitLib.initialize_emojis(self)
-            EmojiLib.initialize(self)
-            await reply.edit(content='Done rebuilding hero, skill, and emoji indices.')
+                UnitLib.initialize()
+                UnitLib.initialize_emojis(self)
+                EmojiLib.initialize(self)
+                await reply.edit(content = 'Done rebuilding all indices.')
 
-        elif (lower_message.startswith('say')
-              and (message.author.id == 151913154803269633
-                   or message.author.id == 196379129472352256)):
-            payload = message.content.split(' ', 2)[1:]
-            await self.get_channel(int(payload[0])).send(payload[1])
+            elif (lower_message.startswith('say')
+                  and (message.author.id == 151913154803269633
+                       or message.author.id == 196379129472352256)):
+                payload = message.content.split(' ', 2)[1:]
+                await self.get_channel(int(payload[0])).send(payload[1])
 
-        elif lower_message.startswith('addalias'):
-            names = [
-                    XanderBotClient.filter_name(n)
-                    for n in lower_message.split(' ', 1)[1].split(',')
-            ]
-            if len(names) != 2:
-                await message.channel.send(
-                        'Wrong number of names found. '
-                        'Please enter two names, separated by a comma.'
-                )
-            heroes = [UnitLib.get_hero(n) for n in names]
-            if heroes[0] and not heroes[1]:
-                UnitLib.insert_hero_alias(heroes[0], names[1])
-                await message.channel.send(
-                        f'Added alias {names[1]} for {heroes[0].short_name}.')
-                me = client.get_user(151913154803269633)
-                dm = client.get_user(151913154803269633).dm_channel
-                if not dm: dm = await me.create_dm()
-                await dm.send(f'{message.author.name}#{message.author.discriminator} '
-                              f'added alias {names[1]} for {heroes[0].short_name}.')
-            elif heroes[1] and not heroes[0]:
-                UnitLib.insert_hero_alias(heroes[1], names[0])
-                await message.channel.send(
-                        f'Added alias {names[0]} for {heroes[1].short_name}.')
-                me = client.get_user(151913154803269633)
-                dm = client.get_user(151913154803269633).dm_channel
-                if not dm: dm = await me.create_dm()
-                await dm.send(f'{message.author.name}#{message.author.discriminator} '
-                              f'added alias {names[0]} for {heroes[1].short_name}.')
-            elif heroes[0] and heroes[1]:
-                await message.channel.send('All names are already hero aliases!')
-            else:
-                message.channel.send('Cannot find a valid hero name; need at least one.')
+            elif lower_message.startswith('addalias'):
+                await self.add_hero_alias(message, tokens)
 
-        elif lower_message.startswith('skillalias'):
-            names = [
-                    XanderBotClient.filter_name(n)
-                    for n in lower_message.split(' ', 1)[1].split(',')
-            ]
-            if len(names) != 2:
-                await message.channel.send(
-                        'Wrong number of names found. '
-                        'Please enter two names, separated by a comma.'
-                )
-            skills = [UnitLib.get_skill(n) for n in names]
-            if skills[0] and not skills[1]:
-                UnitLib.insert_skill_alias(skills[0], names[1])
-                await message.channel.send(
-                        f'Added alias {names[1]} for {skills[0].name}.')
-                me = client.get_user(151913154803269633)
-                dm = client.get_user(151913154803269633).dm_channel
-                if not dm: dm = await me.create_dm()
-                await dm.send(f'{message.author.name}#{message.author.discriminator} '
-                              f'added alias {names[1]} for {skills[0].name}.')
-            elif skills[1] and not skills[0]:
-                UnitLib.insert_skill_alias(skills[1], names[0])
-                await message.channel.send(
-                        f'Added alias {names[0]} for {skills[1].name}.')
-                me = client.get_user(151913154803269633)
-                dm = client.get_user(151913154803269633).dm_channel
-                if not dm: dm = await me.create_dm()
-                await dm.send(f'{message.author.name}#{message.author.discriminator} '
-                              f'added alias {names[0]} for {skills[1].name}.')
-            elif skills[0] and skills[1]:
-                await message.channel.send('All names are already skill aliases!')
-            else:
-                message.channel.send('Cannot find a valid skill name; need at least one.')
+            elif lower_message.startswith('skillalias'):
+                await self.add_skill_alias(message, tokens)
 
+            elif lower_message.startswith('whoami'):
+                await message.channel.send(f"You're <{message.author.id}>!")
 
-        elif lower_message.startswith('whoami'):
-            await message.channel.send(f"You're <{message.author.id}>!")
+            elif lower_message.startswith('test'):
+                counter = 0
+                tmp = await message.channel.send('Calculating messages...')
+                async for msg in message.channel.history(limit=100):
+                    if msg.author == message.author:
+                        counter += 1
 
-        elif lower_message.startswith('test'):
-            counter = 0
-            tmp = await message.channel.send('Calculating messages...')
-            async for msg in message.channel.history(limit=100):
-                if msg.author == message.author:
-                    counter += 1
-
-            await tmp.edit(content='You have {} messages.'.format(counter))
-        elif message.content.startswith('sleep'):
-            with message.channel.typing():
-                await asyncio.sleep(5.0)
-                await message.channel.send('Done sleeping.')
+                await tmp.edit(content='You have {} messages.'.format(counter))
+            elif message.content.startswith('sleep'):
+                with message.channel.typing():
+                    await asyncio.sleep(5.0)
+                    await message.channel.send('Done sleeping.')
+        except:
+            await message.channel.send("An unknown error has occured.")
+            raise
 
 
 
@@ -1343,8 +1471,6 @@ class XanderBotClient(discord.Client):
         if (reaction.message.author != client.user
             or user == client.user
             or reaction.message.id not in self.reactable_library): return
-        print('reactable ok')
-
         msg_bundle = self.reactable_library[reaction.message.id]
         if user != msg_bundle.user: return
         if(msg_bundle.cmd_type == CMDType.HERO_STATS):
