@@ -528,7 +528,9 @@ class Hero(object):
             return
 
         elif new_merges >= 5:
-            if new_merges == 10: modify = 4
+            if new_merges == 10:
+                modify = 4
+                new_merges == 0
             else:
                 modify = 2
                 new_merges -= 5
@@ -584,7 +586,7 @@ class Hero(object):
                 )            
 
         for i in range(new_merges * 2):
-            self.modify_merge(stats[i % 4][2], 1)
+            self.modify_merge(stats[i % 5][2], 1)
 
 
     def update_stat_mods(

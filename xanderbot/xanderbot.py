@@ -1317,7 +1317,7 @@ class XanderBotClient(discord.Client):
 
 
 
-    async def add_hero_alias(message, tokens):
+    async def add_hero_alias(self, message, tokens):
         names = [
             self.filter_name(n)
             for n in tokens
@@ -1349,7 +1349,7 @@ class XanderBotClient(discord.Client):
 
 
 
-    async def add_skill_alias(message, tokens):
+    async def add_skill_alias(self, message, tokens):
         names = [
             XanderBotClient.filter_name(n)
             for n in lower_message.split(' ', 1)[1].split(',')
