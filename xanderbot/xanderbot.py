@@ -122,28 +122,27 @@ class XanderBotClient(discord.Client):
         level = hero.level
         futuremerges = False
         for token in args:
-            token = XanderBotClient.filter_name(token[:24])
-            print(token)
+            param = XanderBotClient.filter_name(token[:24])
             # rarity, merges, iv, level, "summoned"
             # regex might be faster or slower here idk
-            rarity_test = (token.replace('*', '').replace('star', '')
+            rarity_test = (param.replace('*', '').replace('star', '')
                            .replace('rarity', ''))
             if rarity_test.isdecimal():
                 rarity = int(rarity_test)
-            elif 'plusplus' in token or 'futuremerge' in token:
-                merges = int(non_decimal.sub('', token))
+            elif 'plusplus' in param or 'futuremerge' in param:
+                merges = int(non_decimal.sub('', param))
                 hero.newmerges = True
-            elif 'merge' in token:
-                merges = int(non_decimal.sub('', token))
+            elif 'merge' in param:
+                merges = int(non_decimal.sub('', param))
                 hero.newmerges = False
-            elif 'plus' in token:
+            elif 'plus' in param:
                 # this might be merges, iv, or a skill
-                plus_test = token.replace('plus', '')
+                plus_test = param.replace('plus', '')
                 if plus_test.isdecimal():
                     merges = int(plus_test)
                     futuremerges = False
                 elif (
-                        token in [
+                        param in [
                             'plushp'       ,
                             'hpplus'       ,
                             'plushitpoint' ,
@@ -154,7 +153,7 @@ class XanderBotClient(discord.Client):
                 ):
                     boon = Stat.HP
                 elif (
-                        token in (
+                        param in (
                             'plusatk'   ,
                             'atkplus'   ,
                             'plusattack',
@@ -163,7 +162,7 @@ class XanderBotClient(discord.Client):
                 ):
                     boon = Stat.ATK
                 elif (
-                        token in (
+                        param in (
                             'plusspd'  ,
                             'spdplus'  ,
                             'plusspeed',
@@ -172,7 +171,7 @@ class XanderBotClient(discord.Client):
                 ):
                     boon = Stat.SPD
                 elif (
-                        token in (
+                        param in (
                             'plusdef'    ,
                             'defplus'    ,
                             'plusdefense',
@@ -183,7 +182,7 @@ class XanderBotClient(discord.Client):
                 ):
                     boon = Stat.DEF
                 elif (
-                        token in (
+                        param in (
                             'plusres'       ,
                             'resplus'       ,
                             'plusresistance',
@@ -192,7 +191,7 @@ class XanderBotClient(discord.Client):
                 ):
                     boon = Stat.RES
                 else:
-                    skill = UnitLib.get_skill(token)
+                    skill = UnitLib.get_skill(param)
                     if skill:
                         if skill.type == SkillType.WEAPON:
                             hero.equipped_weapon = skill
@@ -222,30 +221,30 @@ class XanderBotClient(discord.Client):
                             hero.equipped_passive_s = skill
                     else:
                         bad_args.append(token)
-            elif 'boon' in token or 'asset' in token:
-                if 'hp' in token or 'hitpoint' in token:
+            elif 'boon' in param or 'asset' in param:
+                if 'hp' in param or 'hitpoint' in param:
                     boon = Stat.HP
-                elif 'atk' in token or 'attack' in token:
+                elif 'atk' in param or 'attack' in param:
                     boon = Stat.ATK
-                elif 'spd' in token or 'speed' in token:
+                elif 'spd' in param or 'speed' in param:
                     boon = Stat.SPD
-                elif 'def' in token or 'defense' in token or 'defence' in token:
+                elif 'def' in param or 'defense' in param or 'defence' in param:
                     boon = Stat.DEF
-                elif 'res' in token or 'resistance' in token:
+                elif 'res' in param or 'resistance' in param:
                     boon = Stat.RES
-            elif 'minus' in token or 'bane' in token or 'flaw' in token:
-                if 'hp' in token or 'hitpoint' in token:
+            elif 'minus' in param or 'bane' in param or 'flaw' in param:
+                if 'hp' in param or 'hitpoint' in param:
                     bane = Stat.HP
-                elif 'atk' in token or 'attack' in token:
+                elif 'atk' in param or 'attack' in param:
                     bane = Stat.ATK
-                elif 'spd' in token or 'speed' in token:
+                elif 'spd' in param or 'speed' in param:
                     bane = Stat.SPD
-                elif 'def' in token or 'defense' in token or 'defence' in token:
+                elif 'def' in param or 'defense' in param or 'defence' in param:
                     bane = Stat.DEF
-                elif 'res' in token or 'resistance' in token:
+                elif 'res' in param or 'resistance' in param:
                     bane = Stat.RES
             else:
-                skill = UnitLib.get_skill(token)
+                skill = UnitLib.get_skill(param)
                 if skill:
                     if skill.type == SkillType.WEAPON:
                         hero.equipped_weapon = skill
@@ -1011,10 +1010,9 @@ class XanderBotClient(discord.Client):
         prereq = (
             '_This skill can only be equipped by its original unit._'
             if skill.exclusive else
-            f'**Requires:** {skill.prereq1.icon} {skill.prereq1.name}'
+            f'**Requires:** {skill.prereq1.icon} {skill.prereq1.name} '
             f'or {skill.prereq2.icon} {skill.prereq2.name}'
-            if skill.prereq2
-            else
+            if skill.prereq2 else
             f'**Requires:** {skill.prereq1.icon} {skill.prereq1.name}'
             if skill.prereq1
             else None
@@ -1025,7 +1023,7 @@ class XanderBotClient(discord.Client):
             if skill.is_staff:
                 restrictions = "_This skill can only be equipped by staff users._"
             else:
-                restrictions = (
+                skill_restricted = (
                     skill.infantry,
                     skill.armor   ,
                     skill.cavalry ,
@@ -1051,7 +1049,7 @@ class XanderBotClient(discord.Client):
                     skill.c_breath,
                 )
                 restrict_list = [self.restrict_emojis[count]
-                                 for count, value in enumerate(restrictions)
+                                 for count, value in enumerate(skill_restricted)
                                  if not value]
                 if restrict_list:
                     restrictions = f'**Cannot use:** {"".join(restrict_list)}'
@@ -1075,8 +1073,8 @@ class XanderBotClient(discord.Client):
             learnable = '\n'.join(filter(None, [
                 f'{EmojiLib.get(Rarity(count))}: '
                 f'{", ".join((hero.short_name for hero in hero_list))}'
-                if hero_list else None
                 for count, hero_list in enumerate(skill.learnable[1:], 1)
+                if hero_list
             ]))
 
         embed.clear_fields()
@@ -1129,7 +1127,7 @@ class XanderBotClient(discord.Client):
                 restrictions,
                 sp,
                 '**Available from:**',
-                learnable
+                learnable,
             ]))
 
         embed.add_field(
