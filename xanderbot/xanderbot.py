@@ -4,7 +4,7 @@ import re
 
 from collections import Counter, namedtuple
 from copy import copy
-from enum import Enum
+from enum import Enum, auto, unique
 from functools import reduce
 from operator import methodcaller
 from string import punctuation, whitespace
@@ -24,14 +24,23 @@ non_decimal = re.compile(r'[^\d]+')
 BotReply = namedtuple('BotReply', 'bot_msg user_msg user feh_obj cmd_type embed data')
 
 
-
+@unique
 class CMDType(Enum):
-    HERO = 1
-    HERO_STATS = 2
-    HERO_SKILLS = 3
-    HERO_COMPARE = 4
-    SKILL = 5
-    SORT = 6
+    HERO         = auto()
+    HERO_STATS   = auto()
+    HERO_SKILLS  = auto()
+    HERO_COMPARE = auto()
+    SKILL        = auto()
+    SORT         = auto()
+    EMOJIS       = auto()
+    RELOAD       = auto()
+    SAY          = auto()
+    ADDALIAS     = auto()
+    SKILLALIAS   = auto()
+    WHOAMI       = auto()
+    PING         = auto()
+    TEST         = auto()
+    SLEEP        = auto()
 
 
 
@@ -228,9 +237,9 @@ class XanderBotClient(discord.Client):
                     boon = Stat.ATK
                 elif 'spd' in param or 'speed' in param:
                     boon = Stat.SPD
-                elif 'def' in param or 'defense' in param or 'defence' in param:
+                elif 'def' in param:
                     boon = Stat.DEF
-                elif 'res' in param or 'resistance' in param:
+                elif 'res' in param:
                     boon = Stat.RES
             elif 'minus' in param or 'bane' in param or 'flaw' in param:
                 if 'hp' in param or 'hitpoint' in param:
@@ -239,9 +248,9 @@ class XanderBotClient(discord.Client):
                     bane = Stat.ATK
                 elif 'spd' in param or 'speed' in param:
                     bane = Stat.SPD
-                elif 'def' in param or 'defense' in param or 'defence' in param:
+                elif 'def' in param:
                     bane = Stat.DEF
-                elif 'res' in param or 'resistance' in param:
+                elif 'res' in param:
                     bane = Stat.RES
             else:
                 skill = UnitLib.get_skill(param)
@@ -289,48 +298,7 @@ class XanderBotClient(discord.Client):
 
 
     async def cmd_hero(self, message, tokens):
-        this_hero = self.unit_library.get_hero(tokens[0])
-        hero_embed = discord.Embed(title = this_hero.name + ': ' + this_hero.epithet)
-        description = ''
-        description += this_hero.color.name + ' ' + this_hero.weapon_type.name + ' ' + this_hero.move_type.name + '\n'
-        for i in range(this_hero.rarity):
-            description += 'star'
-        description += '\n'
-        description += 'hp:' + str(this_hero.base_hp) + ' atk:' + str(this_hero.base_atk) + ' spd:' + str(this_hero.base_spd) + ' def:' + str(this_hero.base_def) + ' res:' + str(this_hero.base_res) + '\n'
-        description += 'hp:' + str(this_hero.max_hp) + ' atk:' + str(this_hero.max_atk) + ' spd:' + str(this_hero.max_spd) + ' def:' + str(this_hero.max_def) + ' res:' + str(this_hero.max_res)
-        hero_embed.description = description
-        hero_embed.colour = discord.Colour.from_rgb(255, 0, 0)
-        weapons = ''
-        for skill in this_hero.skills.weapon:
-            weapons += skill[0].name + ' ' + str(skill[1]) + ' star\n'
-        if weapons == '': weapons = 'None'
-        hero_embed.add_field(name='Weapons', value=weapons)
-        assists = ''
-        for skill in this_hero.skills.assist:
-            assists += skill[0].name + ' ' + str(skill[1]) + ' star\n'
-        if assists == '': assists = 'None'
-        hero_embed.add_field(name='Assists', value=assists)
-        specials = ''
-        for specials in this_hero.skills.special:
-            specials += skill[0].name + ' ' + str(skill[1]) + ' star\n'
-        if specials == '': specials = 'None'
-        hero_embed.add_field(name='Specials', value=specials)
-        passives_a = ''
-        for skill in this_hero.skills.passive_a:
-            passives_a += skill[0].name + ' ' + str(skill[1]) + ' star\n'
-        if passives_a == '': passives_a = 'None'
-        hero_embed.add_field(name='Passive A', value=passives_a)
-        passives_b = ''
-        for skill in this_hero.skills.passive_b:
-            passives_b += skill[0].name + ' ' + str(skill[1]) + ' star\n'
-        if passives_b == '': passives_b = 'None'
-        hero_embed.add_field(name='Passive B', value=passives_b)
-        passives_c = ''
-        for skill in this_hero.skills.passive_c:
-            passives_c += skill[0].name + ' ' + str(skill[1]) + ' star\n'
-        if passives_c == '': passives_c = 'None'
-        hero_embed.add_field(name='Passive C', value=passives_c)
-        await message.channel.send(embed=hero_embed)
+        message.channel.send('not implemented yet!')
         return
 
 
@@ -1072,7 +1040,7 @@ class XanderBotClient(discord.Client):
         else:
             learnable = '\n'.join(filter(None, [
                 f'{EmojiLib.get(Rarity(count))}: '
-                f'{", ".join((hero.short_name for hero in hero_list))}'
+                f'{", ".join([hero.short_name for hero in hero_list])}'
                 for count, hero_list in enumerate(skill.learnable[1:], 1)
                 if hero_list
             ]))
@@ -1206,27 +1174,27 @@ class XanderBotClient(discord.Client):
             if zoom_state:
                 generic_refines = '\n'.join([
                     f'{refine.icon}: {refine.description}'
-                    for refine in [
+                    for refine in (
                         skill.refine_staff1,
                         skill.refine_staff2,
                         skill.refine_atk,
                         skill.refine_spd,
                         skill.refine_def,
                         skill.refine_res
-                    ]
+                    )
                     if refine
                 ])
             else:
                 generic_refines = ', '.join([
                     str(refine.icon)
-                    for refine in [
+                    for refine in (
                         skill.refine_staff1,
                         skill.refine_staff2,
                         skill.refine_atk,
                         skill.refine_spd,
                         skill.refine_def,
                         skill.refine_res
-                    ]
+                    )
                     if refine
                 ])
 

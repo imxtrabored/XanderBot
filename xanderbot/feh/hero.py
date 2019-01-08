@@ -526,14 +526,12 @@ class Hero(object):
             self.merge_def = 0
             self.merge_res = 0
             return
-
+        elif new_merges == 10:
+            modify = 4
+            new_merges = 0
         elif new_merges >= 5:
-            if new_merges == 10:
-                modify = 4
-                new_merges == 0
-            else:
-                modify = 2
-                new_merges -= 5
+            modify = 2
+            new_merges -= 5
 
         self.merge_hp  = modify
         self.merge_atk = modify
@@ -558,35 +556,41 @@ class Hero(object):
                 self.modify_merge(
                     Stat.HP,
                     Hero.STATS_RARITY[self.rarity][(self.grow_hp + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_hp // 5] + 1
+                    - Hero.STATS_RARITY[self.rarity][self.grow_hp // 5]
+                    + 1
                 )
             elif self.bane == Stat.ATK:
                 self.modify_merge(
                     Stat.ATK,
                     Hero.STATS_RARITY[self.rarity][(self.grow_atk + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_atk // 5] + 1
+                    - Hero.STATS_RARITY[self.rarity][self.grow_atk // 5]
+                    + 1
                 )
             elif self.bane == Stat.SPD:
                 self.modify_merge(
                     Stat.SPD,
                     Hero.STATS_RARITY[self.rarity][(self.grow_spd + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_spd // 5] + 1
+                    - Hero.STATS_RARITY[self.rarity][self.grow_spd // 5]
+                    + 1
                 )
             elif self.bane == Stat.DEF:
                 self.modify_merge(
                     Stat.DEF,
                     Hero.STATS_RARITY[self.rarity][(self.grow_def + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_def // 5] + 1
+                    - Hero.STATS_RARITY[self.rarity][self.grow_def // 5]
+                    + 1
                 )
             elif self.bane == Stat.RES:
                 self.modify_merge(
                     Stat.RES,
                     Hero.STATS_RARITY[self.rarity][(self.grow_res + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_res // 5] + 1
-                )            
+                    - Hero.STATS_RARITY[self.rarity][self.grow_res // 5]
+                    + 1
+                )
 
         for i in range(new_merges * 2):
             self.modify_merge(stats[i % 5][2], 1)
+
 
 
     def update_stat_mods(
