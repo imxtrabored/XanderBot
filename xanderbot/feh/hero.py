@@ -540,11 +540,11 @@ class Hero(object):
         self.merge_res = modify
 
         stats = [
-            (self.base_hp , 4, Stat.HP ),
-            (self.base_atk, 3, Stat.ATK),
-            (self.base_spd, 2, Stat.SPD),
-            (self.base_def, 1, Stat.DEF),
-            (self.base_res, 0, Stat.RES),
+            (self.iv_hp , 4, Stat.HP ),
+            (self.iv_atk, 3, Stat.ATK),
+            (self.iv_spd, 2, Stat.SPD),
+            (self.iv_def, 1, Stat.DEF),
+            (self.iv_res, 0, Stat.RES),
         ]
         stats.sort(key = lambda sl: (sl[0], sl[1]), reverse = True)
 
