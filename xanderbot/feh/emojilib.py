@@ -28,30 +28,34 @@ class EmojiLib(object):
         cur.execute("""SELECT name, id FROM emojis;""")
         for index in cur:
             # ok look this is (probably) still better than storing python objects in db
-            if   index[0] == 'Stat_HP'        : self.emojis[Stat.HP ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Stat_Attack'    : self.emojis[Stat.ATK] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Stat_Speed'     : self.emojis[Stat.SPD] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Stat_Defense'   : self.emojis[Stat.DEF] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Stat_Resistance': self.emojis[Stat.RES] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Red_Sword'       : self.emojis[UnitWeaponType.R_SWORD ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Red_Tome'        : self.emojis[UnitWeaponType.R_TOME  ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Red_Bow'         : self.emojis[UnitWeaponType.R_BOW   ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Red_Dagger'      : self.emojis[UnitWeaponType.R_DAGGER] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Red_Breath'      : self.emojis[UnitWeaponType.R_BREATH] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Blue_Lance'      : self.emojis[UnitWeaponType.B_LANCE ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Blue_Tome'       : self.emojis[UnitWeaponType.B_TOME  ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Blue_Bow'        : self.emojis[UnitWeaponType.B_BOW   ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Blue_Dagger'     : self.emojis[UnitWeaponType.B_DAGGER] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Blue_Breath'     : self.emojis[UnitWeaponType.B_BREATH] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Green_Axe'       : self.emojis[UnitWeaponType.G_AXE   ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Green_Tome'      : self.emojis[UnitWeaponType.G_TOME  ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Green_Bow'       : self.emojis[UnitWeaponType.G_BOW   ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Green_Dagger'    : self.emojis[UnitWeaponType.G_DAGGER] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Green_Breath'    : self.emojis[UnitWeaponType.G_BREATH] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Colorless_Bow'   : self.emojis[UnitWeaponType.C_BOW   ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Colorless_Dagger': self.emojis[UnitWeaponType.C_DAGGER] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Colorless_Staff' : self.emojis[UnitWeaponType.C_STAFF ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'Weapon_Colorless_Breath': self.emojis[UnitWeaponType.C_BREATH] = client.get_emoji(int(index[1]))
+            if   index[0] == 'Stat_HP' : self.emojis[Stat.HP ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Stat_Atk': self.emojis[Stat.ATK] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Stat_Spd': self.emojis[Stat.SPD] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Stat_Def': self.emojis[Stat.DEF] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Stat_Res': self.emojis[Stat.RES] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_R_Sword' : self.emojis[UnitWeaponType.R_SWORD ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_R_Tome'  : self.emojis[UnitWeaponType.R_TOME  ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_R_Bow'   : self.emojis[UnitWeaponType.R_BOW   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_R_Dagger': self.emojis[UnitWeaponType.R_DAGGER] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_R_Breath': self.emojis[UnitWeaponType.R_BREATH] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_B_Lance' : self.emojis[UnitWeaponType.B_LANCE ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_B_Tome'  : self.emojis[UnitWeaponType.B_TOME  ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_B_Bow'   : self.emojis[UnitWeaponType.B_BOW   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_B_Dagger': self.emojis[UnitWeaponType.B_DAGGER] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_B_Breath': self.emojis[UnitWeaponType.B_BREATH] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_G_Axe'   : self.emojis[UnitWeaponType.G_AXE   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_G_Tome'  : self.emojis[UnitWeaponType.G_TOME  ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_G_Bow'   : self.emojis[UnitWeaponType.G_BOW   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_G_Dagger': self.emojis[UnitWeaponType.G_DAGGER] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_G_Breath': self.emojis[UnitWeaponType.G_BREATH] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_C_Bow'   : self.emojis[UnitWeaponType.C_BOW   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_C_Dagger': self.emojis[UnitWeaponType.C_DAGGER] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_C_Staff' : self.emojis[UnitWeaponType.C_STAFF ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_C_Breath': self.emojis[UnitWeaponType.C_BREATH] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_R_Beast' : self.emojis[UnitWeaponType.R_BEAST ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_B_Beast' : self.emojis[UnitWeaponType.B_BEAST ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_G_Beast' : self.emojis[UnitWeaponType.G_BEAST ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_C_Beast' : self.emojis[UnitWeaponType.C_BEAST ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Move_Infantry': self.emojis[MoveType.INFANTRY] = client.get_emoji(int(index[1]))
             elif index[0] == 'Move_Armor'   : self.emojis[MoveType.ARMOR   ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Move_Cavalry' : self.emojis[MoveType.CAVALRY ] = client.get_emoji(int(index[1]))
@@ -64,10 +68,10 @@ class EmojiLib(object):
             elif index[0] == 'L_Element_Dark' : self.emojis[LegendElement.DARK ] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Element_Astra': self.emojis[LegendElement.ASTRA] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Element_Anima': self.emojis[LegendElement.ANIMA] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Stat_Attack'    : self.emojis[LegendStat.ATK] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Stat_Speed'     : self.emojis[LegendStat.SPD] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Stat_Defense'   : self.emojis[LegendStat.DEF] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Stat_Resistance': self.emojis[LegendStat.RES] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Atk': self.emojis[LegendStat.ATK] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Spd': self.emojis[LegendStat.SPD] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Def': self.emojis[LegendStat.DEF] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Res': self.emojis[LegendStat.RES] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Weapon' : self.emojis[SkillType.WEAPON ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Assist' : self.emojis[SkillType.ASSIST ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Special': self.emojis[SkillType.SPECIAL] = client.get_emoji(int(index[1]))
@@ -95,19 +99,25 @@ class EmojiLib(object):
             self.emojis[UnitWeaponType.R_BREATH],
             self.emojis[UnitWeaponType.B_BREATH],
             self.emojis[UnitWeaponType.G_BREATH],
-            self.emojis[UnitWeaponType.C_BREATH]
+            self.emojis[UnitWeaponType.C_BREATH],
         ))
         self.emojis[SkillWeaponGroup.S_BOW] = CompoundEmoji((
             self.emojis[UnitWeaponType.R_BOW],
             self.emojis[UnitWeaponType.B_BOW],
             self.emojis[UnitWeaponType.G_BOW],
-            self.emojis[UnitWeaponType.C_BOW]
+            self.emojis[UnitWeaponType.C_BOW],
         ))
         self.emojis[SkillWeaponGroup.S_DAGGER] = CompoundEmoji((
             self.emojis[UnitWeaponType.R_DAGGER],
             self.emojis[UnitWeaponType.B_DAGGER],
             self.emojis[UnitWeaponType.G_DAGGER],
-            self.emojis[UnitWeaponType.C_DAGGER]
+            self.emojis[UnitWeaponType.C_DAGGER],
+        ))
+        self.emojis[SkillWeaponGroup.S_BEAST] = CompoundEmoji((
+            self.emojis[UnitWeaponType.R_BEAST],
+            self.emojis[UnitWeaponType.B_BEAST],
+            self.emojis[UnitWeaponType.G_BEAST],
+            self.emojis[UnitWeaponType.C_BEAST],
         ))
 
         print('done.')

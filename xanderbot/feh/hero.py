@@ -34,6 +34,10 @@ class UnitWeaponType(Enum):
     R_DAGGER = 17
     B_DAGGER = 18
     G_DAGGER = 19
+    R_BEAST  = 20
+    B_BEAST  = 21
+    G_BEAST  = 22
+    C_BEAST  = 23
 
 @unique
 class MoveType(Enum):
@@ -155,9 +159,8 @@ class Hero(object):
             is_legend = False, legend_element = LegendElement.NONE,
             legend_boost = LegendStat.NONE, tome_type = TomeType.NONE,
             description = 'No information available.', bvid = 0x0000,
-            art_portrait = '', art_attack = '', art_damaged = '',
-            art_special = '', artist = "Unknown", vo_en = 'Unknown',
-            vo_jp = 'Unknown', alt_base_id = None,
+            artist = "Unknown", vo_en = 'Unknown', vo_jp = 'Unknown',
+            alt_base_id = None,
             is_story = False, is_seasonal = False, is_grail = False,
             is_veteran = False, is_trainee = False, is_dancer = False,
             is_brave = False, is_sigurd = False,
@@ -300,10 +303,10 @@ class Hero(object):
         self.generation = generation
 
         #fluff
-        self.art_portrait = art_portrait
-        self.art_attack = art_attack
-        self.art_special = art_special
-        self.art_damaged = art_damaged
+        self.art_portrait = ''
+        self.art_attack = ''
+        self.art_special = ''
+        self.art_damaged = ''
         self.artist = artist
         self.vo_en = vo_en
         self.vo_jp = vo_jp
@@ -608,6 +611,101 @@ class Hero(object):
             self.update_merges(merges)
         if rarity or update_boons or merges != None or newmerges != None:
             self.recalc_stats()
+
+
+
+    def sanity_check(self):
+        if   self.rarity == 5: stat_total = 47
+        elif self.rarity == 4: stat_total = 44
+        elif self.rarity == 3: stat_total = 42
+        elif self.rarity == 2: stat_total = 39
+        elif self.rarity == 1: stat_total = 37
+        else: print(f'{self.identity} invalid rarity: {self.rarity}')
+
+        if self.generation != 1 and self.generation != 2:
+            print(f'{self.identity} invalid generation: {self.generation}')
+
+        growth_rate = 255
+        
+        ranged = self.weapon_type in (
+            UnitWeaponType.R_TOME  ,
+            UnitWeaponType.B_TOME  ,
+            UnitWeaponType.G_TOME  ,
+            UnitWeaponType.C_BOW   ,
+            UnitWeaponType.C_DAGGER,
+            UnitWeaponType.C_STAFF ,
+            UnitWeaponType.R_BOW   ,
+            UnitWeaponType.B_BOW   ,
+            UnitWeaponType.G_BOW   ,
+            UnitWeaponType.R_DAGGER,
+            UnitWeaponType.B_DAGGER,
+            UnitWeaponType.G_DAGGER,
+        )
+
+        if self.is_trainee:
+            stat_total -= 8
+            growth_rate += 30
+        if self.is_veteran:
+            stat_total += 8
+            growth_rate -= 30
+        if self.is_dancer:
+            stat_total -= 8
+        if ranged:
+            stat_total -= 3
+            growth_rate -= 15
+        if self.move_type == MoveType.ARMOR:
+            stat_total += 7
+            growth_rate += 10
+        if self.move_type == MoveType.CAVALRY:
+            stat_total -= 1
+            growth_rate -= 5
+        if self.is_brave:
+            growth_rate += 10
+        if self.generation == 2 and not self.is_dancer:
+            stat_total += 1
+            growth_rate += 10
+            if ranged and not self.move_type == MoveType.ARMOR:
+                growth_rate -= 5
+            if self.move_type == MoveType.CAVALRY:
+                stat_total -= 1
+                growth_rate -= 5
+            if self.move_type == MoveType.FLIER:
+                stat_total -= 1
+            if self.is_sigurd:
+                growth_rate += 5
+        
+        if self.base_total != stat_total:
+            print(f'{self.identity} failed stat total: '
+                  f'expected {stat_total} but got {self.base_total}')
+        if self.grow_total != growth_rate:
+            print(f'{self.identity} failed growth rate: '
+                  f'expected {growth_rate} but got {self.grow_total}')
+
+        max_hp  = (self.base_hp
+                  + Hero.STATS_RARITY[self.rarity][self.grow_hp  // 5])
+        if max_hp  != self.max_hp :
+            print(f'{self.identity} failed max hp: '
+                  f'expected {max_hp } but got {self.max_hp }')
+        max_atk = (self.base_atk
+                  + Hero.STATS_RARITY[self.rarity][self.grow_atk // 5])
+        if max_atk != self.max_atk:
+            print(f'{self.identity} failed max atk: '
+                  f'expected {max_atk} but got {self.max_atk}')
+        max_spd  = (self.base_spd
+                  + Hero.STATS_RARITY[self.rarity][self.grow_spd // 5])
+        if max_spd != self.max_spd:
+            print(f'{self.identity} failed max spd: '
+                  f'expected {max_spd} but got {self.max_spd}')
+        max_def = (self.base_def
+                  + Hero.STATS_RARITY[self.rarity][self.grow_def // 5])
+        if max_def != self.max_def:
+            print(f'{self.identity} failed max def: '
+                  f'expected {max_def} but got {self.max_def}')
+        max_res = (self.base_res
+                  + Hero.STATS_RARITY[self.rarity][self.grow_res // 5])
+        if max_res != self.max_res:
+            print(f'{self.identity} failed max res: '
+                  f'expected {max_res} but got {self.max_res}')
 
 
 

@@ -289,8 +289,7 @@ class XanderBotClient(discord.Client):
             bane = Stat.NONE
             bad_args.append(f'{hero.short_name} mismatched asset/flaw')
             # return some error
-        print(boon)
-        print(bane)
+
         hero.update_stat_mods(boon = boon, bane = bane, merges = merges,
                               rarity = rarity)
         return hero, bad_args
@@ -400,7 +399,7 @@ class XanderBotClient(discord.Client):
         if not tokens:
             await message.channel.send('No input detected!')
             return
-        this_hero = copy(UnitLib.get_hero(tokens[0]))
+        this_hero = UnitLib.get_hero(tokens[0])
         if not this_hero:
             await message.channel.send(
                     f'Hero not found: {tokens[0]}. '
@@ -591,7 +590,7 @@ class XanderBotClient(discord.Client):
             await message.channel.send('No input detected!')
             return
         zoom_state = False
-        this_hero = copy(UnitLib.get_hero(tokens[0]))
+        this_hero = UnitLib.get_hero(tokens[0])
         if not this_hero:
             await message.channel.send(
                 f'Hero not found: {tokens[0]}. '
@@ -777,8 +776,8 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_hp > stat_sort[-1].max_hp:
                 max_list = ", ".join([
-                        h.short_name for h in heroes
-                        if h.max_hp == stat_sort[0].max_hp])
+                    h.short_name for h in heroes
+                    if h.max_hp == stat_sort[0].max_hp])
                 hp_str = (
                     f'{EmojiLib.get(Stat.HP)} '
                     f'Greatest HP: {stat_sort[0].max_hp} '
@@ -792,8 +791,8 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_atk > stat_sort[-1].max_atk:
                 max_list = ", ".join([
-                        h.short_name for h in heroes
-                        if h.max_atk == stat_sort[0].max_atk])
+                    h.short_name for h in heroes
+                    if h.max_atk == stat_sort[0].max_atk])
                 atk_str = (
                     f'{EmojiLib.get(Stat.ATK)} '
                     f'Greatest Attack: {stat_sort[0].max_atk} '
@@ -807,8 +806,8 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_spd > stat_sort[-1].max_spd:
                 max_list = ", ".join([
-                        h.short_name for h in heroes
-                        if h.max_spd == stat_sort[0].max_spd])
+                    h.short_name for h in heroes
+                    if h.max_spd == stat_sort[0].max_spd])
                 spd_str = (
                     f'{EmojiLib.get(Stat.SPD)} '
                     f'Greatest Speed: {stat_sort[0].max_spd} '
@@ -822,8 +821,8 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_def > stat_sort[-1].max_def:
                 max_list = ", ".join([
-                        h.short_name for h in heroes
-                        if h.max_def == stat_sort[0].max_def])
+                    h.short_name for h in heroes
+                    if h.max_def == stat_sort[0].max_def])
                 def_str = (
                     f'{EmojiLib.get(Stat.DEF)} '
                     f'Greatest Defense: {stat_sort[0].max_def} '
@@ -837,8 +836,8 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_res > stat_sort[-1].max_res:
                 max_list = ", ".join([
-                        h.short_name for h in heroes
-                        if h.max_res == stat_sort[0].max_res])
+                    h.short_name for h in heroes
+                    if h.max_res == stat_sort[0].max_res])
                 res_str = (
                     f'{EmojiLib.get(Stat.RES)} '
                     f'Greatest Resistance: {stat_sort[0].max_res} '
@@ -852,8 +851,8 @@ class XanderBotClient(discord.Client):
                                 reverse = True)
             if stat_sort[0].max_total > stat_sort[-1].max_total:
                 max_list = ", ".join([
-                        h.short_name for h in heroes
-                        if h.max_total == stat_sort[0].max_total])
+                    h.short_name for h in heroes
+                    if h.max_total == stat_sort[0].max_total])
                 total_str = (
                     f'Greatest stat total: {stat_sort[0].max_total} '
                     f'({max_list})'
@@ -894,7 +893,7 @@ class XanderBotClient(discord.Client):
                         bad_args.extend(bad_arg)
 
             hero_embed.set_author(
-                    name = ('Please delimit compared heroes with semicolons (;)'
+                    name = ('Please delimit compared heroes with semicolons (;) '
                             'in the future to improve speed and clarity.')
             )
             # hero_embed = self.format_stats(this_hero, hero_embed, zoom_state)
@@ -1024,6 +1023,9 @@ class XanderBotClient(discord.Client):
 
         sp = f'**SP:** {skill.sp}'
 
+        learnable_count = (len(skill.learnable[1]) + len(skill.learnable[2])
+                + len(skill.learnable[3]) + len(skill.learnable[4])
+                + len(skill.learnable[5]))
         if (skill.type == SkillType.WEAPON and not skill.exclusive
             and ((skill.tier <= 2 and not skill.is_staff) or skill.tier <= 1)):
             learnable = 'Basic weapon available to most eligible heroes.'
@@ -1031,19 +1033,17 @@ class XanderBotClient(discord.Client):
               and skill.tier <= 1):
             learnable = 'Basic assist available to all staff users.'
         # elif reduce(lambda x, y: x + len(y), skill.learnable[1:], 0) > 20:
-        elif (
-                len(skill.learnable[1]) + len(skill.learnable[2])
-                + len(skill.learnable[3]) + len(skill.learnable[4])
-                + len(skill.learnable[5]) > 20
-        ):
+        elif learnable_count > 20:
             learnable = 'Over 20 heroes know this skill.'
+        elif learnable_count == 0:
+            learnable = 'None'
         else:
-            learnable = '\n'.join(filter(None, [
+            learnable = '\n'.join([
                 f'{EmojiLib.get(Rarity(count))}: '
                 f'{", ".join([hero.short_name for hero in hero_list])}'
                 for count, hero_list in enumerate(skill.learnable[1:], 1)
                 if hero_list
-            ]))
+            ])
 
         embed.clear_fields()
         if zoom_state:
@@ -1317,7 +1317,7 @@ class XanderBotClient(discord.Client):
 
     async def add_skill_alias(self, message, tokens):
         names = [
-            XanderBotClient.filter_name(n)
+            self.filter_name(n)
             for n in lower_message.split(' ', 1)[1].split(',')
         ]
         if len(names) != 2:

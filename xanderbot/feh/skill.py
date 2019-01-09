@@ -28,6 +28,7 @@ class SkillWeaponGroup(Enum):
     S_BOW    = 8
     S_DAGGER = 9
     C_STAFF  = 10
+    S_BEAST  = 11
 
 @unique
 class SpecialTrigger(Enum):
@@ -56,7 +57,7 @@ class Skill(object):
         'r_sword', 'r_tome', 'r_breath', 'b_lance', 'b_tome', 'b_breath',
         'g_axe', 'g_tome', 'g_breath', 'c_bow', 'c_dagger', 'c_staff',
         'c_breath', 'r_bow', 'b_bow', 'g_bow', 'r_dagger', 'b_dagger',
-        'g_dagger',
+        'g_dagger', 'r_beast', 'b_beast', 'g_beast', 'c_beast',
         'refinable', 'refined_version', 'refined_version_id',
         'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
         'refine_eff', 'refine_eff_id', 'refine_staff1', 'refine_staff1_id',
@@ -88,6 +89,7 @@ class Skill(object):
             g_breath = True, c_bow = True, c_dagger = True, c_staff = True,
             c_breath = True, r_bow = True, b_bow = True, g_bow = True,
             r_dagger = True, b_dagger = True, g_dagger = True,
+            r_beast = True, b_beast = True, g_beast = True, c_beast = True,
             refinable = None, refined_version = None, refine_sp = None,
             refine_medals = 0, refine_stones = 0, refine_dew = 0,
             refine_eff = None, refine_staff1 = None, refine_staff2 = None,
@@ -188,6 +190,10 @@ class Skill(object):
         self.r_dagger = r_dagger
         self.b_dagger = b_dagger
         self.g_dagger = g_dagger
+        self.r_beast  = r_beast
+        self.b_beast  = b_beast
+        self.g_beast  = g_beast
+        self.c_beast  = c_beast
 
 
         #refines
@@ -232,13 +238,13 @@ class Skill(object):
 
 
 
-    def get_rank_recursive(self):
+    def set_tier_recursive(self):
         if self.tier: return self.tier + 1
         if not self.prereq1:
             self.tier = 1
         else:
-            self.tier = self.prereq1.get_rank_recursive()
-            if self.prereq2: self.prereq2.get_rank_recursive()
+            self.tier = self.prereq1.set_tier_recursive()
+            if self.prereq2: self.prereq2.set_tier_recursive()
         # if self.tier > 3 and self.type != SkillType.WEAPON: print(self.name)
         # if self.tier >= 3 and self.name.endswith('2'): print(self.name)
         return self.tier + 1
@@ -253,40 +259,35 @@ class Skill(object):
 
     def link(self, unit_lib):
         if self.prereq1_id:
-            self.prereq1 = unit_lib.get_skill_by_id(self.prereq1_id)
+            self.prereq1 = unit_lib.get_rskill_by_id(self.prereq1_id)
             self.prereq1.postreq.append(self)
         if self.prereq2_id:
-            self.prereq2 = unit_lib.get_skill_by_id(self.prereq2_id)
+            self.prereq2 = unit_lib.get_rskill_by_id(self.prereq2_id)
             self.prereq2.postreq.append(self)
         if self.evolves_to_id:
-            self.evolves_to = unit_lib.get_skill_by_id(self.evolves_to_id)
+            self.evolves_to = unit_lib.get_rskill_by_id(self.evolves_to_id)
             self.evolves_to.evolves_from = self
         # if self.evolves_from_id   : self.evolves_from    = unit_lib.get_skill_by_id(self.evolves_from_id   )
         if self.refined_version_id:
-            self.refined_version = unit_lib.get_skill_by_id(self.refined_version_id)
+            self.refined_version = unit_lib.get_rskill_by_id(self.refined_version_id)
         if self.refine_eff_id     :
-            self.refine_eff      = unit_lib.get_skill_by_id(self.refine_eff_id     )
+            self.refine_eff      = unit_lib.get_rskill_by_id(self.refine_eff_id     )
         if self.refine_staff1_id  :
-            self.refine_staff1   = unit_lib.get_skill_by_id(self.refine_staff1_id  )
+            self.refine_staff1   = unit_lib.get_rskill_by_id(self.refine_staff1_id  )
         if self.refine_staff2_id  :
-            self.refine_staff2   = unit_lib.get_skill_by_id(self.refine_staff2_id  )
+            self.refine_staff2   = unit_lib.get_rskill_by_id(self.refine_staff2_id  )
         if self.refine_atk_id     :
-            self.refine_atk      = unit_lib.get_skill_by_id(self.refine_atk_id     )
+            self.refine_atk      = unit_lib.get_rskill_by_id(self.refine_atk_id     )
         if self.refine_spd_id     :
-            self.refine_spd      = unit_lib.get_skill_by_id(self.refine_spd_id     )
+            self.refine_spd      = unit_lib.get_rskill_by_id(self.refine_spd_id     )
         if self.refine_def_id     :
-            self.refine_def      = unit_lib.get_skill_by_id(self.refine_def_id     )
+            self.refine_def      = unit_lib.get_rskill_by_id(self.refine_def_id     )
         if self.refine_res_id     :
-            self.refine_res      = unit_lib.get_skill_by_id(self.refine_res_id     )
+            self.refine_res      = unit_lib.get_rskill_by_id(self.refine_res_id     )
         # note: replace this error checking line
         # if self.prereq1 == self: print(self.name+', '+str(self.prereq1_id-1))
 
-        self.get_rank_recursive()
-
-
-
-    def pre_death_blow(h, s):
-        return
+        self.set_tier_recursive()
 
 
 
@@ -318,6 +319,8 @@ Skill.EMPTY_PASSIVE_S = Skill(
     -7, 'null passive s', 'None', 'Empty Sacred Seal slot',
     SkillType.PASSIVE_SEAL
 )
+
+
 
 class SpecialSkill(Skill):
 

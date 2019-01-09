@@ -46,7 +46,7 @@ class UnitLib(object):
             Color.RED, UnitWeaponType.R_SWORD, MoveType.INFANTRY,
             16, 7, 14, 5, 5,
             55, 50, 50, 50, 50,
-            38, 29, 36, 2, 27,
+            40, 29, 36, 27, 27,
         )
         self.unit_list.append(new_hero)
 
@@ -54,14 +54,17 @@ class UnitLib(object):
             new_hero = Hero(*hero)
             self.unit_list.append(new_hero)
 
-
         self.unit_names = dict()
         self.unit_names['null'] = 0
         self.unit_names['zero'] = 0
 
         cur.execute("""SELECT name, id FROM hero_dict;""")
         for index in cur:
-            self.unit_names[index[0]] = index[1]
+            self.unit_names[index[0]] = self.unit_list[index[1]]
+
+        for hero in self.unit_list:
+            hero.sanity_check()
+
 
         cur.execute(
             """SELECT id, identity, name, description, type, weapon_type,
@@ -83,16 +86,14 @@ class UnitLib(object):
             FROM skills ORDER BY id ASC;"""
         )
 
-        self.skill_list = []
+        self.skill_list = [None,]
         for skill in cur:
             new_skill = Skill(*skill)
             self.skill_list.append(new_skill)
-        #self.skill_list.append(await Skill.create('null'))
         self.skill_names = dict()
         cur.execute("""SELECT name, id FROM skills_dict;""")
         for index in cur:
-            self.skill_names[index[0]] = index[1]
-            #print(index[0])
+            self.skill_names[index[0]] = self.skill_list[index[1]]
 
         for skill in self.skill_list[1:]:
             skill.link(self)
@@ -169,28 +170,24 @@ class UnitLib(object):
 
     @classmethod
     def get_hero(cls, hero_name):
-        index = cls.singleton.unit_names.get(cls.filter_name(hero_name))
-        if index: return copy(cls.singleton.unit_list[index])
-        else: return None
+        return copy(cls.singleton.unit_names.get(cls.filter_name(hero_name)))
 
       
 
     @classmethod
-    def get_hero_by_id(cls, hero_id):
+    def get_rhero_by_id(cls, hero_id):
         return cls.singleton.unit_list[hero_id]
 
 
 
     @classmethod
     def get_skill(cls, skill_name):
-        index = cls.singleton.skill_names.get(cls.filter_name(skill_name))
-        if index: return cls.singleton.skill_list[index]
-        else: return None
+        return copy(cls.singleton.skill_names.get(cls.filter_name(skill_name)))
 
 
 
     @classmethod
-    def get_skill_by_id(cls, skill_id):
+    def get_rskill_by_id(cls, skill_id):
         return cls.singleton.skill_list[skill_id]
 
 
@@ -203,7 +200,7 @@ class UnitLib(object):
                     (name, hero.id))
         con.commit()
         con.close()
-        UnitLib.singleton.unit_names[name] = hero.id
+        UnitLib.singleton.unit_names[name] = hero
 
 
 
@@ -215,7 +212,7 @@ class UnitLib(object):
                     (name, skill.id))
         con.commit()
         con.close()
-        UnitLib.singleton.unit_names[name] = skill.id
+        UnitLib.singleton.unit_names[name] = skill
 
 
 
