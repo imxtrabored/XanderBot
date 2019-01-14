@@ -11,9 +11,10 @@ class CompoundEmoji(tuple):
 
 class EmojiLib(object):
     singleton = None
+    restrict_emojis = ()
 
     @classmethod
-    def initialize(cls, client, sqlite_instance = None):
+    def initialize(cls, client):
         print('building emojilib...')
 
         con = sqlite3.connect("feh/emojis.db", detect_types=sqlite3.PARSE_COLNAMES)
@@ -120,9 +121,39 @@ class EmojiLib(object):
             self.emojis[UnitWeaponType.C_BEAST],
         ))
 
+        EmojiLib.restrict_emojis = (
+            str(self.emojis[MoveType.INFANTRY      ]),
+            str(self.emojis[MoveType.ARMOR         ]),
+            str(self.emojis[MoveType.CAVALRY       ]),
+            str(self.emojis[MoveType.FLIER         ]),
+            str(self.emojis[UnitWeaponType.R_SWORD ]),
+            str(self.emojis[UnitWeaponType.R_TOME  ]),
+            str(self.emojis[UnitWeaponType.R_BOW   ]),
+            str(self.emojis[UnitWeaponType.R_DAGGER]),
+            str(self.emojis[UnitWeaponType.R_BREATH]),
+            str(self.emojis[UnitWeaponType.R_BEAST ]),
+            str(self.emojis[UnitWeaponType.B_LANCE ]),
+            str(self.emojis[UnitWeaponType.B_TOME  ]),
+            str(self.emojis[UnitWeaponType.B_BOW   ]),
+            str(self.emojis[UnitWeaponType.B_DAGGER]),
+            str(self.emojis[UnitWeaponType.B_BREATH]),
+            str(self.emojis[UnitWeaponType.B_BEAST ]),
+            str(self.emojis[UnitWeaponType.G_AXE   ]),
+            str(self.emojis[UnitWeaponType.G_TOME  ]),
+            str(self.emojis[UnitWeaponType.G_BOW   ]),
+            str(self.emojis[UnitWeaponType.G_DAGGER]),
+            str(self.emojis[UnitWeaponType.G_BREATH]),
+            str(self.emojis[UnitWeaponType.G_BEAST ]),
+            str(self.emojis[UnitWeaponType.C_BOW   ]),
+            str(self.emojis[UnitWeaponType.C_DAGGER]),
+            str(self.emojis[UnitWeaponType.C_STAFF ]),
+            str(self.emojis[UnitWeaponType.C_BREATH]),
+            str(self.emojis[UnitWeaponType.C_BEAST ]),
+        )
+
         print('done.')
         con.close()
-        return(self.emojis)
+        return self.emojis
 
 
 
@@ -137,7 +168,7 @@ class EmojiLib(object):
 
     @classmethod
     async def get_lib(cls):
-        if cls.singleton == None:
-            cls.initialize()
+        if cls.singleton is None:
+            pass
         return cls.singleton.emojis
 

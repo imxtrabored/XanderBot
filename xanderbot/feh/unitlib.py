@@ -2,7 +2,6 @@ from copy import copy
 from string import punctuation, whitespace
 
 from feh.hero import Hero, Color, UnitWeaponType, MoveType
-from feh.hero import LegendElement, Stat
 from feh.skill import Skill, SkillType
 import sqlite3
 
@@ -14,7 +13,7 @@ class UnitLib(object):
     singleton = None
 
     @classmethod
-    def initialize(cls, sqlite_instance = None):
+    def initialize(cls):
         print('building unitlib...')
         '''
         sqlite3.register_converter('color', Color)
@@ -63,6 +62,7 @@ class UnitLib(object):
             self.unit_names[index[0]] = self.unit_list[index[1]]
 
         for hero in self.unit_list:
+            hero.link(self)
             hero.sanity_check()
 
 
@@ -143,7 +143,7 @@ class UnitLib(object):
             skill.icon = client.get_emoji(int(index[1]))
             if index[2]:
                 skill.w_icon = client.get_emoji(int(index[2]))
-        
+
         cur.execute(
             """SELECT id, typeemoteid, weapontypeemoteid 
             FROM skill_emoji WHERE id < 0 ORDER BY id DESC;"""
@@ -172,7 +172,7 @@ class UnitLib(object):
     def get_hero(cls, hero_name):
         return copy(cls.singleton.unit_names.get(cls.filter_name(hero_name)))
 
-      
+
 
     @classmethod
     def get_rhero_by_id(cls, hero_id):
@@ -218,6 +218,6 @@ class UnitLib(object):
 
     @classmethod
     def get_unitlib(cls):
-        if cls.singleton == None:
+        if cls.singleton is None:
             cls.initialize()
         return cls.singleton

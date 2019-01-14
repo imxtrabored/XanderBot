@@ -1,4 +1,3 @@
-import asyncio, sqlite3
 from enum import Enum, unique
 
 @unique
@@ -57,7 +56,7 @@ class Skill(object):
         'r_sword', 'r_tome', 'r_breath', 'b_lance', 'b_tome', 'b_breath',
         'g_axe', 'g_tome', 'g_breath', 'c_bow', 'c_dagger', 'c_staff',
         'c_breath', 'r_bow', 'b_bow', 'g_bow', 'r_dagger', 'b_dagger',
-        'g_dagger', 'r_beast', 'b_beast', 'g_beast', 'c_beast',
+        'g_dagger', 'r_beast', 'b_beast', 'g_beast', 'c_beast', 'allowed',
         'refinable', 'refined_version', 'refined_version_id',
         'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
         'refine_eff', 'refine_eff_id', 'refine_staff1', 'refine_staff1_id',
@@ -107,11 +106,12 @@ class Skill(object):
 
         #initialize skill name
         self.id = id
+        self.identity = identity
         self.name = name
         self.description = description if description else ''
         self.type = SkillType(type)
         self.weapon_type = (SkillWeaponGroup(weapon_type) if weapon_type
-        else None)
+                            else None)
         self.icon = ''
         self.w_icon = ''
         self.skill_rank = skill_rank
@@ -131,7 +131,7 @@ class Skill(object):
         self.eff_flier    = eff_flier
         self.eff_magic    = eff_magic
         self.eff_dragon   = eff_dragon
-        
+
         #stats
         self.bonus_hp  = bonus_hp
         self.bonus_atk = bonus_atk
@@ -195,6 +195,36 @@ class Skill(object):
         self.g_beast  = g_beast
         self.c_beast  = c_beast
 
+        self.allowed = (
+            infantry,
+            armor   ,
+            cavalry ,
+            flier   ,
+            r_sword ,
+            r_tome  ,
+            r_dagger,
+            r_bow   ,
+            r_breath,
+            r_beast ,
+            b_lance ,
+            b_bow   ,
+            b_dagger,
+            b_tome  ,
+            b_breath,
+            b_beast ,
+            g_axe   ,
+            g_bow   ,
+            g_dagger,
+            g_tome  ,
+            g_breath,
+            g_beast ,
+            c_bow   ,
+            c_dagger,
+            c_staff ,
+            c_breath,
+            c_beast ,
+        )
+
 
         #refines
         #self.refines = []
@@ -242,9 +272,8 @@ class Skill(object):
         if self.tier: return self.tier + 1
         if not self.prereq1:
             self.tier = 1
-        else:
-            self.tier = self.prereq1.set_tier_recursive()
-            if self.prereq2: self.prereq2.set_tier_recursive()
+        else: self.tier = self.prereq1.set_tier_recursive()
+        if self.prereq2: self.prereq2.set_tier_recursive()
         # if self.tier > 3 and self.type != SkillType.WEAPON: print(self.name)
         # if self.tier >= 3 and self.name.endswith('2'): print(self.name)
         return self.tier + 1
