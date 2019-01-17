@@ -1017,6 +1017,7 @@ class Command(object):
                                  if not value]
                 if restrict_list:
                     restrictions = f'**Cannot use:** {"".join(restrict_list)}'
+                else: restrictions = None
         else: restrictions = None
 
         sp = f'**SP:** {skill.sp}'
