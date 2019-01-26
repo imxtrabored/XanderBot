@@ -1317,13 +1317,13 @@ class Command(object):
         if skills[0] and not skills[1]:
             UnitLib.insert_skill_alias(skills[0], names[1])
             content = f'Added alias {names[1]} for {skills[0].name}.'
-            devs[0].send(
+            Command.devs[0].send(
                 f'{message.author.name}#{message.author.discriminator} '
                 f'added alias {names[1]} for {skills[0].name}.')
         elif skills[1] and not skills[0]:
             UnitLib.insert_skill_alias(skills[1], names[0])
             content = f'Added alias {names[0]} for {skills[1].name}.'
-            devs[0].send(
+            Command.devs[0].send(
                 f'{message.author.name}#{message.author.discriminator} '
                 f'added alias {names[0]} for {skills[1].name}.')
         elif skills[0] and skills[1]:
