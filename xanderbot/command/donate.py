@@ -18,6 +18,9 @@ class Donate(CmdDefault):
         ('Zidisha', 'https://www.zidisha.org/'),
         ('Doctors Without Borders (Médecins Sans Frontières)', 'https://www.msf.org/'),
         ('National Institute on Mental Illness', 'https://www.nami.org/'),
+        ('Child Rights and You', 'https://www.cry.org/'),
+        ('Compassion', 'https://www.compassion.com/about/about-us.htm'),
+        ('Human Rights Campaign', 'https://www.hrc.org/')
     )
 
 

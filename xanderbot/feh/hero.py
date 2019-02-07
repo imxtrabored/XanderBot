@@ -669,8 +669,8 @@ class Hero(object):
                  or (boon == bane))):
             self.update_ivs(boon, bane)
             update_boons = True
-            merges = self.merges
-            flowers = self.flowers
+            if merges is None: merges = self.merges
+            if flowers is None: flowers = self.flowers
         else: update_boons = False
         if rarity:
             self.update_rarity(rarity)
