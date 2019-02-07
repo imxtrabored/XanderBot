@@ -1,43 +1,111 @@
 import asyncio
-import re
 
 from collections import namedtuple
 from enum import Enum
 
 import discord
+from command.common import DiscordData
+from command.cmd_default import CmdDefault
+from command.devs import Devs
+from command.donate import Donate
+from command.help import HelpCmd
+from command.hero_info import HeroInfo
+from command.hero_alias import HeroAlias
+from command.hero_alts import HeroAlts
+from command.hero_art import HeroArt
+from command.hero_compare import HeroCompare
+from command.hero_merges import HeroMerges
+from command.hero_skills import HeroSkills
+from command.hero_sort import HeroSort
+from command.hero_stats import HeroStats
+from command.ping import Ping
+from command.skill_info import SkillInfo
+from command.skill_alias import SkillAlias
+from command.syntax import Syntax
 
-from command import Command as Cmd
 from feh.emojilib import EmojiLib as em
 from feh.unitlib import UnitLib
+try:
+    import easter_egg
+except ImportError:
+    easter_eggs = False
+else:
+    easter_eggs = True
 
 
 
 BotReply = namedtuple('BotReply', 'bot_msg user_msg user cmd_type embed data task')
-UserEditable = namedtuple('UserEditable', 'bot_msg user_msg cmd_type task')
+UserEditable = namedtuple('UserEditable', 'bot_msg user_msg task')
 
-
+"""
 class CMDType(Enum):
-    ERROR        = (Cmd.do_nothing , Cmd.do_nothing      , Cmd.do_nothing   )
-    HERO         = (Cmd.cmd_hero   , Cmd.finalize_hero   , Cmd.react_hero   )
-    HERO_STATS   = (Cmd.cmd_stats  , Cmd.finalize_stats  , Cmd.react_stats  )
-    HERO_SKILLS  = (Cmd.cmd_hskills, Cmd.finalize_hskills, Cmd.react_hskills)
-    HERO_COMPARE = (Cmd.cmd_compare, Cmd.finalize_compare, Cmd.react_compare)
-    HERO_ALTS    = (Cmd.cmd_alts   , Cmd.finalize_alts   , Cmd.react_alts   )
-    HERO_MERGES  = (Cmd.cmd_merges , Cmd.finalize_merges , Cmd.react_merges )
-    SKILL        = (Cmd.cmd_skill  , Cmd.finalize_skill  , Cmd.react_skill  )
-    SORT         = (Cmd.do_nothing , Cmd.do_nothing      , Cmd.do_nothing   )
-    ADDALIAS     = (Cmd.cmd_h_alias, Cmd.finalize_h_alias, Cmd.react_h_alias)
-    SKILLALIAS   = (Cmd.cmd_s_alias, Cmd.finalize_s_alias, Cmd.react_s_alias)
+    ERROR        = CmdDefault
+    HERO         = HeroInfo
+    HERO_STATS   = HeroStats
+    HERO_SKILLS  = HeroSkills
+    HERO_COMPARE = HeroCompare
+    HERO_ALTS    = HeroAlts
+    HERO_MERGES  = HeroMerges
+    HERO_ART     = HeroArt
+    SKILL        = SkillInfo
+    SORT         = HeroSort
+    ADDALIAS     = HeroAlias
+    SKILLALIAS   = SkillAlias
 
-    def __init__(self, cmd, finalize, react):
-        self.cmd = cmd
-        self.finalize = finalize
-        self.react = react
+    def __init__(self, module):
+        self.cmd = module.cmd
+        self.finalize = module.finalize
+        self.react = module.react
 
+COMMAND_DICT = {
+    'hero'      : CMDType.HERO        ,
+    'unit'      : CMDType.HERO        ,
+    'stat'      : CMDType.HERO_STATS  ,
+    'stats'     : CMDType.HERO_STATS  ,
+    'skills'    : CMDType.HERO_SKILLS ,
+    'compare'   : CMDType.HERO_COMPARE,
+    'alt'       : CMDType.HERO_ALTS   ,
+    'alts'      : CMDType.HERO_ALTS   ,
+    'merge'     : CMDType.HERO_MERGES ,
+    'merges'    : CMDType.HERO_MERGES ,
+    'art'       : CMDType.HERO_ART    ,
+    'skill'     : CMDType.SKILL       ,
+    'sort'      : CMDType.SORT        ,
+    'addalias'  : CMDType.ADDALIAS    ,
+    'skillalias': CMDType.SKILLALIAS  ,
+}
+"""
+
+COMMAND_DICT = {
+    'help'      : HelpCmd    ,
+    'about'     : HelpCmd    ,
+    'hero'      : HeroInfo   ,
+    'unit'      : HeroInfo   ,
+    'stat'      : HeroStats  ,
+    'stats'     : HeroStats  ,
+    'skills'    : HeroSkills ,
+    'compare'   : HeroCompare,
+    'alt'       : HeroAlts   ,
+    'alts'      : HeroAlts   ,
+    'merge'     : HeroMerges ,
+    'merges'    : HeroMerges ,
+    'art'       : HeroArt    ,
+    'skill'     : SkillInfo  ,
+    'sort'      : HeroSort   ,
+    'addalias'  : HeroAlias  ,
+    'skillalias': SkillAlias ,
+    'ping'      : Ping       ,
+    'devs'      : Devs       ,
+    'developers': Devs       ,
+    'authors'   : Devs       ,
+    'donate'    : Donate     ,
+    'donation'  : Donate     ,
+    'donations' : Donate     ,
+    'syntax'    : Syntax     ,
+}
 
 
 class XanderBotClient(discord.Client):
-
 
     def __init__(self, *, loop = None, **options):
         super().__init__(loop = loop, options = options)
@@ -58,8 +126,10 @@ class XanderBotClient(discord.Client):
         print('------')
         em.initialize(self)
         UnitLib.initialize_emojis(self)
-        Cmd.devs.append(self.get_user(151913154803269633))
-        Cmd.devs.append(self.get_user(196379129472352256))
+        DiscordData.setup_commands(self)
+        #if not Cmd.devs:
+        #    Cmd.devs.append(self.get_user(151913154803269633))
+        #    Cmd.devs.append(self.get_user(196379129472352256))
 
 
     async def forget_editable(self, user_msg):
@@ -74,10 +144,10 @@ class XanderBotClient(discord.Client):
 
 
 
-    def register_editable(self, bot_msg, user_msg, cmd_type):
+    def register_editable(self, bot_msg, user_msg):
         task = asyncio.create_task(self.forget_reactable(user_msg))
         self.editable_library[user_msg.id] = UserEditable(
-            bot_msg, user_msg, cmd_type, task)
+            bot_msg, user_msg, task)
         #print('editable registered:')
         #print(user_msg.id)
 
@@ -109,10 +179,12 @@ class XanderBotClient(discord.Client):
         # don't respond to ourselves
         if message.author == self.user:
             return
+        if easter_egg:
+            asyncio.create_task(easter_egg.process_eggs(self, message))
         test_string = message.content[:4].lower()
         if not (test_string.startswith('f?') or test_string.startswith('feh?')):
             return
-
+        asyncio.create_task(message.channel.trigger_typing())
         lower_message = message.content.lower()
 
         if lower_message.startswith('f?'):
@@ -124,43 +196,22 @@ class XanderBotClient(discord.Client):
             predicate = split_command[1]
         else: predicate = ''
         try:
-            #TODO: kind of gross line, also investigate if RE or map is faster here?
-            if   lower_message.startswith('hero') or lower_message.startswith('unit'):
-                command_type = CMDType.HERO
-            elif lower_message.startswith('stat'):
-                command_type = CMDType.HERO_STATS
-            elif lower_message.startswith('skills'):
-                command_type = CMDType.HERO_SKILLS
-            elif lower_message.startswith('compare'):
-                command_type = CMDType.HERO_COMPARE
-            elif lower_message.startswith('alt'):
-                command_type = CMDType.HERO_ALTS
-            elif lower_message.startswith('merge'):
-                command_type = CMDType.HERO_MERGES
-            elif lower_message.startswith('skill '):
-                command_type = CMDType.SKILL
-            elif lower_message.startswith('addalias'):
-                command_type = CMDType.ADDALIAS
-            elif lower_message.startswith('skillalias'):
-                command_type = CMDType.SKILLALIAS
-            else: command_type = None
-
-            if command_type:
+            if split_command[0] in COMMAND_DICT:
+                command_type = COMMAND_DICT[split_command[0]]
                 content, embed, data = await command_type.cmd(predicate)
                 bot_reply = await message.channel.send(
                     content = content, embed = embed)
-                self.register_editable(bot_reply, message, [command_type])
+                self.register_editable(bot_reply, message)
                 if data:
                     self.register_reactable(bot_reply, message, message.author,
                                             command_type, embed, data)
                     await command_type.finalize(bot_reply)
+                if command_type == HeroAlias or command_type == SkillAlias:
+                    await DiscordData.devs[0].send(
+                        content = f'{message.author} addded alias')
                 return
 
             #debug commands
-            if lower_message.startswith('ping'):
-                await message.channel.send(
-                    f'Ping: {round(self.latency * 1000, 3)} ms')
-
 
             elif (lower_message.startswith('emojis')
                 and (message.author.id == 151913154803269633
@@ -189,10 +240,21 @@ class XanderBotClient(discord.Client):
                 await message.channel.send(f"You're <{message.author.id}>!")
             else:
                 bot_reply = await message.channel.send('Command invalid!')
-                self.register_editable(bot_reply, message, [CMDType.ERROR])
+                self.register_editable(bot_reply, message)
+
+        except discord.HTTPException as e:
+            bot_reply = await message.channel.send(
+                'Discord connection or server issue. Please try again later.'
+            )
+            self.register_editable(bot_reply, message)
+            raise e
+
         except Exception as e:
-            bot_reply = await message.channel.send('An unknown error has occured.')
-            self.register_editable(bot_reply, message, [CMDType.ERROR])
+            bot_reply = await message.channel.send(
+                'An unknown error has occured. This should never happen; '
+                'please report this to a developer.'
+            )
+            self.register_editable(bot_reply, message)
             raise e
 
 
@@ -207,6 +269,7 @@ class XanderBotClient(discord.Client):
             return
         msg_bundle = self.editable_library.get(after.id)
         bot_msg = msg_bundle.bot_msg
+        manage_messages = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
 
         lower_message = after.content.lower()
 
@@ -219,52 +282,42 @@ class XanderBotClient(discord.Client):
             predicate = split_command[1]
         else: predicate = ''
         try:
-            if   lower_message.startswith('hero') or lower_message.startswith('unit'):
-                command_type = CMDType.HERO
-            elif lower_message.startswith('stat'):
-                command_type = CMDType.HERO_STATS
-            elif lower_message.startswith('skills'):
-                command_type = CMDType.HERO_SKILLS
-            elif lower_message.startswith('compare'):
-                command_type = CMDType.HERO_COMPARE
-            elif lower_message.startswith('alt'):
-                command_type = CMDType.HERO_ALTS
-            elif lower_message.startswith('merge'):
-                command_type = CMDType.HERO_MERGES
-            elif lower_message.startswith('skill '):
-                command_type = CMDType.SKILL
-            elif lower_message.startswith('addalias'):
-                command_type = CMDType.ADDALIAS
-            elif lower_message.startswith('skillalias'):
-                command_type = CMDType.SKILLALIAS
-            else:
-                command_type = None
+            command_type = COMMAND_DICT.get(split_command[0])
 
             if command_type:
                 content, embed, data = await command_type.cmd(predicate)
-                if bot_msg.id in self.reactable_library:
-                    self.reactable_library.get(bot_msg.id).task.cancel()
                 await bot_msg.edit(
                     content = content, embed = embed)
-
-                if command_type != msg_bundle.cmd_type[0]:
-                    msg_bundle.cmd_type[0] = command_type
-                    await bot_msg.clear_reactions()
-                    if data:
-                        self.register_reactable(bot_msg, after, after.author,
-                                                command_type, embed, data)
-                        await command_type.finalize(bot_msg)
+                if bot_msg.id in self.reactable_library:
+                    self.reactable_library.get(bot_msg.id).task.cancel()
+                elif data:
+                    if manage_messages: await bot_msg.clear_reactions()
+                    self.register_reactable(bot_msg, after, after.author,
+                                            command_type, embed, data)
+                    await command_type.finalize(bot_msg)
             else:
                 await bot_msg.edit(content = 'Command invalid!', embed = None)
-                if msg_bundle.cmd_type[0] != CMDType.ERROR:
-                    await bot_msg.clear_reactions()
-                    msg_bundle.cmd_type[0] = CMDType.ERROR
+                if manage_messages: await bot_msg.clear_reactions()
 
-        except:
+        except discord.HTTPException as e:
             await bot_msg.edit(
-                content = 'An unknown error has occured.', embed = None)
-            msg_bundle.cmd_type[0] = CMDType.ERROR
-            raise
+                content = (
+                    'Discord connection or server issue. Please try again '
+                    'later.'
+                ),
+                embed = None
+            )
+            raise e
+
+        except Exception as e:
+            await bot_msg.edit(
+                content = (
+                    'An unknown error has occured. This should never happen; '
+                    'please report this to a developer.'
+                ),
+                embed = None
+            )
+            raise e
 
 
 
@@ -285,6 +338,18 @@ class XanderBotClient(discord.Client):
         if embed is None and bot_msg.embed:
             content = msg_bundle.bot_msg.embed[0]
         await msg_bundle.bot_msg.edit(content = content, embed = embed)
+
+
+
+    async def on_message_delete(self, message):
+        if message.author == self.user or message.id not in self.editable_library:
+            return
+        msg_bundle = self.editable_library[message.id]
+        if msg_bundle.bot_msg in self.reactable_library:
+            self.reactable_library[bot_msg.id].task.cancel()
+        await msg_bundle.bot_msg.delete()
+        msg_bundle.task.cancel()
+
 
 
 

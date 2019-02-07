@@ -3,8 +3,9 @@
 *.pyproj
 *.db
 *.db-journal
+__pycache__
 xanderbot.pyperf
 xanderbot/.pylintrc
 xanderbot/.mypy_cache
-__pycache__
+xanderbot/easter_egg.py
 tokens.txt

@@ -2,7 +2,7 @@ from copy import copy
 from enum import Enum, unique
 
 @unique
-class Color(Enum):
+class UnitColor(Enum):
     '''Enum for each unit color'''
     NONE      = 0
     RED       = 1
@@ -105,8 +105,9 @@ class Hero(object):
 
     #optimization
     __slots__ = (
-        'id', 'identity', 'name', 'short_name', 'epithet', 'color',
+        'id', 'name', 'short_name', 'epithet', 'color',
         'weapon_type', 'move_type', 'rarity', 'level', 'merges',
+        'flowers', 'merge_boon', 'merge_bane', 'merge_order',
         'weapon', 'assist', 'special', 'passive_a', 'passive_b',
         'passive_c', 'weapon_prf',
         'equipped_weapon', 'equipped_assist', 'equipped_special',
@@ -115,6 +116,7 @@ class Hero(object):
         'base_hp', 'base_atk', 'base_spd', 'base_def', 'base_res',
         'iv_hp', 'iv_atk', 'iv_spd', 'iv_def', 'iv_res',
         'merge_hp', 'merge_atk', 'merge_spd', 'merge_def', 'merge_res',
+        'df_hp', 'df_atk', 'df_spd', 'df_def', 'df_res',
         'rmod_hp', 'rmod_atk', 'rmod_spd', 'rmod_def', 'rmod_res',
         'lv1_hp', 'lv1_atk', 'lv1_spd', 'lv1_def', 'lv1_res',
         'grow_hp', 'grow_atk', 'grow_spd', 'grow_def', 'grow_res',
@@ -127,10 +129,11 @@ class Hero(object):
         'art_portrait', 'art_attack', 'art_damaged', 'art_special',
         'artist', 'vo_en', 'vo_jp', 'alt_base_id', 'alt_base', 'alt_list',
         'is_story', 'is_seasonal', 'is_grail', 'is_veteran', 'is_trainee',
-        'is_dancer', 'is_brave', 'is_sigurd', 'generation',
+        'is_dancer', 'is_brave', 'is_sigurd', 'is_enemy', 'generation',
         'is_arena_bonus', 'is_aether_bonus', 'is_aether_bonus_next',
-        'is_tempest_bonus', 'newmerges'
+        'is_tempest_bonus'
     )
+
 
     # we could calculate this easily, but this is faster anyways
     STATS_RARITY = (
@@ -148,9 +151,8 @@ class Hero(object):
     )
 
 
-
     def __init__(
-            self, id, identity, name, short_name, epithet, color,
+            self, id, name, short_name, epithet, color,
             weapon_type, move_type,
             base_hp, base_atk, base_spd, base_def, base_res,
             grow_hp, grow_atk, grow_spd, grow_def, grow_res,
@@ -162,7 +164,7 @@ class Hero(object):
             alt_base_id = None,
             is_story = False, is_seasonal = False, is_grail = False,
             is_veteran = False, is_trainee = False, is_dancer = False,
-            is_brave = False, is_sigurd = False,
+            is_brave = False, is_sigurd = False, is_enemy = 0,
             generation = 1
     ):
         '''
@@ -172,7 +174,6 @@ class Hero(object):
 
         #initialize unit name
         self.id = id
-        self.identity = identity
         self.name = name
         self.short_name = short_name
         self.epithet = epithet
@@ -180,13 +181,14 @@ class Hero(object):
         self.bvid = bvid
 
         #initialize basic unit attributes
-        self.color = Color(color)
+        self.color = UnitColor(color)
         self.weapon_type = UnitWeaponType(weapon_type)
         self.move_type = MoveType(move_type)
         self.tome_type = TomeType(tome_type)
         self.rarity = 5
         self.level = 40
         self.merges = 0
+        self.flowers = 0
 
         #skills
         self.weapon = []
@@ -235,6 +237,12 @@ class Hero(object):
         self.merge_def = 0
         self.merge_res = 0
 
+        self.df_hp  = 0
+        self.df_atk = 0
+        self.df_spd = 0
+        self.df_def = 0
+        self.df_res = 0
+
         #rarity mod == amount to subtract from stats due to rarity
         #separate this calc so that we can minimize number of times its called
         self.rmod_hp  = 0
@@ -280,6 +288,7 @@ class Hero(object):
 
         self.boon = Stat.NONE
         self.bane = Stat.NONE
+        self.reset_merge_order()
 
         self.summoner_support_level = 0
 
@@ -299,19 +308,16 @@ class Hero(object):
         self.is_dancer = is_dancer
         self.is_brave = is_brave
         self.is_sigurd = is_sigurd
+        self.is_enemy = is_enemy
         self.generation = generation
 
         #fluff
-        self.art_portrait = ''
-        self.art_attack = ''
-        self.art_special = ''
-        self.art_damaged = ''
         self.artist = artist
         self.vo_en = vo_en
         self.vo_jp = vo_jp
 
         self.alt_base_id = alt_base_id
-        self_alt_base = None
+        self.alt_base = None
         self.alt_list = []
 
         #bonus units
@@ -319,8 +325,6 @@ class Hero(object):
         self.is_aether_bonus = False
         self.is_aether_bonus_next = False
         self.is_tempest_bonus = False
-
-        self.newmerges = False
 
 
 
@@ -366,15 +370,28 @@ class Hero(object):
 
 
 
+    def reset_merge_order(self):
+        self.merge_order = [
+            (self.iv_hp , 4, Stat.HP , 0),
+            (self.iv_atk, 3, Stat.ATK, 1),
+            (self.iv_spd, 2, Stat.SPD, 2),
+            (self.iv_def, 1, Stat.DEF, 3),
+            (self.iv_res, 0, Stat.RES, 4),
+        ]
+        self.merge_order.sort(key = lambda sl: (sl[0], sl[1]), reverse = True)
+        self.merge_boon = self.boon
+        self.merge_bane = self.bane
+
+
     def recalc_stats(self):
         '''
         updates max stats from lv1, growth, merges, and rarity
         '''
-        self.lv1_hp  = self.iv_hp  + self.merge_hp  + self.rmod_hp
-        self.lv1_atk = self.iv_atk + self.merge_atk + self.rmod_atk
-        self.lv1_spd = self.iv_spd + self.merge_spd + self.rmod_spd
-        self.lv1_def = self.iv_def + self.merge_def + self.rmod_def
-        self.lv1_res = self.iv_res + self.merge_res + self.rmod_res
+        self.lv1_hp  = self.iv_hp  + self.merge_hp  + self.rmod_hp  + self.df_hp
+        self.lv1_atk = self.iv_atk + self.merge_atk + self.rmod_atk + self.df_atk
+        self.lv1_spd = self.iv_spd + self.merge_spd + self.rmod_spd + self.df_spd
+        self.lv1_def = self.iv_def + self.merge_def + self.rmod_def + self.df_def
+        self.lv1_res = self.iv_res + self.merge_res + self.rmod_res + self.df_res
 
         self.max_hp  = (
             self.lv1_hp
@@ -424,7 +441,9 @@ class Hero(object):
         no more relative calc since base stats saved all the time
         be sure to Hero.recalc_stats() afterwards!
         '''
-        if new_rarity == self.rarity or new_rarity < 1 or new_rarity > 5: return
+        if new_rarity < 1: new_rarity = 1
+        if new_rarity > 5: new_rarity = 5
+        if new_rarity == self.rarity: return
         self.rarity = new_rarity
 
         modify = 0
@@ -527,7 +546,8 @@ class Hero(object):
         and updating ivs invalidate previous merge_stat
         be sure to Hero.recalc_stats() afterwards!
         '''
-        if new_merges < 0 or new_merges > 10: return
+        if   new_merges < 0: new_merges = 0
+        elif new_merges > 10: new_merges = 10
 
         self.merges = new_merges
         modify = 0
@@ -552,73 +572,113 @@ class Hero(object):
         self.merge_def = modify
         self.merge_res = modify
 
-        stats = [
-            (self.iv_hp , 4, Stat.HP ),
-            (self.iv_atk, 3, Stat.ATK),
-            (self.iv_spd, 2, Stat.SPD),
-            (self.iv_def, 1, Stat.DEF),
-            (self.iv_res, 0, Stat.RES),
-        ]
-        stats.sort(key = lambda sl: (sl[0], sl[1]), reverse = True)
+        if self.merge_boon != self.boon or self.merge_bane != self.bane:
+            self.reset_merge_order()
 
-        if self.newmerges:
-            if self.bane == Stat.NONE:
-                for i in range(3):
-                    self.modify_merge(stats[i][2], 1)
-            elif self.bane == Stat.HP:
-                self.modify_merge(
-                    Stat.HP,
-                    Hero.STATS_RARITY[self.rarity][(self.grow_hp + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_hp // 5]
-                    + 1
-                )
-            elif self.bane == Stat.ATK:
-                self.modify_merge(
-                    Stat.ATK,
-                    Hero.STATS_RARITY[self.rarity][(self.grow_atk + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_atk // 5]
-                    + 1
-                )
-            elif self.bane == Stat.SPD:
-                self.modify_merge(
-                    Stat.SPD,
-                    Hero.STATS_RARITY[self.rarity][(self.grow_spd + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_spd // 5]
-                    + 1
-                )
-            elif self.bane == Stat.DEF:
-                self.modify_merge(
-                    Stat.DEF,
-                    Hero.STATS_RARITY[self.rarity][(self.grow_def + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_def // 5]
-                    + 1
-                )
-            elif self.bane == Stat.RES:
-                self.modify_merge(
-                    Stat.RES,
-                    Hero.STATS_RARITY[self.rarity][(self.grow_res + 5) // 5]
-                    - Hero.STATS_RARITY[self.rarity][self.grow_res // 5]
-                    + 1
-                )
+        if self.bane == Stat.NONE:
+            for i in range(3):
+                self.modify_merge(self.merge_order[i][2], 1)
+        elif self.bane == Stat.HP:
+            self.modify_merge(
+                Stat.HP,
+                Hero.STATS_RARITY[self.rarity][(self.grow_hp + 5) // 5]
+                - Hero.STATS_RARITY[self.rarity][self.grow_hp // 5]
+                + 1
+            )
+        elif self.bane == Stat.ATK:
+            self.modify_merge(
+                Stat.ATK,
+                Hero.STATS_RARITY[self.rarity][(self.grow_atk + 5) // 5]
+                - Hero.STATS_RARITY[self.rarity][self.grow_atk // 5]
+                + 1
+            )
+        elif self.bane == Stat.SPD:
+            self.modify_merge(
+                Stat.SPD,
+                Hero.STATS_RARITY[self.rarity][(self.grow_spd + 5) // 5]
+                - Hero.STATS_RARITY[self.rarity][self.grow_spd // 5]
+                + 1
+            )
+        elif self.bane == Stat.DEF:
+            self.modify_merge(
+                Stat.DEF,
+                Hero.STATS_RARITY[self.rarity][(self.grow_def + 5) // 5]
+                - Hero.STATS_RARITY[self.rarity][self.grow_def // 5]
+                + 1
+            )
+        elif self.bane == Stat.RES:
+            self.modify_merge(
+                Stat.RES,
+                Hero.STATS_RARITY[self.rarity][(self.grow_res + 5) // 5]
+                - Hero.STATS_RARITY[self.rarity][self.grow_res // 5]
+                + 1
+            )
 
         for i in range(new_merges * 2):
-            self.modify_merge(stats[i % 5][2], 1)
+            self.modify_merge(self.merge_order[i % 5][2], 1)
+
+
+
+    def update_dragonflowers(self, new_flowers):
+        if   new_flowers < 0: new_flowers = 0
+        elif (new_flowers > 5
+              and (self.move_type != MoveType.INFANTRY or self.id > 338)):
+            new_flowers = 5
+        elif new_flowers > 10: new_flowers = 10
+
+        modify = 0
+        self.flowers = new_flowers
+        if new_flowers == 0:
+            self.df_hp  = 0
+            self.df_atk = 0
+            self.df_spd = 0
+            self.df_def = 0
+            self.df_res = 0
+            return
+        if new_flowers == 10:
+            modify = 2
+            new_flowers = 0
+        elif new_flowers >= 5:
+            modify = 1
+            new_flowers -= 5
+
+        self.df_hp  = modify
+        self.df_atk = modify
+        self.df_spd = modify
+        self.df_def = modify
+        self.df_res = modify
+
+        if self.merge_boon != self.boon or self.merge_bane != self.bane:
+            self.reset_merge_order()
+
+        for i in range(new_flowers):
+            stat_enum = self.merge_order[i % 5][2]
+            if   stat_enum == Stat.HP:  self.df_hp  += 1
+            elif stat_enum == Stat.ATK: self.df_atk += 1
+            elif stat_enum == Stat.SPD: self.df_spd += 1
+            elif stat_enum == Stat.DEF: self.df_def += 1
+            elif stat_enum == Stat.RES: self.df_res += 1
 
 
 
     def update_stat_mods(self, *, boon = None, bane = None, merges = None,
-                         rarity = None):
-        if ((boon and bane)
+                         rarity = None, flowers = None):
+        if (boon and bane
+            and (boon != self.boon or bane != self.bane)
             and ((boon != Stat.NONE and bane != Stat.NONE)
                  or (boon == bane))):
             self.update_ivs(boon, bane)
             update_boons = True
+            merges = self.merges
+            flowers = self.flowers
         else: update_boons = False
         if rarity:
             self.update_rarity(rarity)
         if merges is not None:
             self.update_merges(merges)
-        if rarity or update_boons or merges is not None:
+        if flowers is not None:
+            self.update_dragonflowers(flowers)
+        if rarity or update_boons or merges is not None or flowers is not None:
             self.recalc_stats()
 
 
@@ -628,19 +688,13 @@ class Hero(object):
         this is slow but kind of annoyingly nested so i couldnt really come up
         with the quick one liner solution, maybe optimize?
         '''
-        stats = [
-            (self.iv_hp , 4, Stat.HP , 0),
-            (self.iv_atk, 3, Stat.ATK, 1),
-            (self.iv_spd, 2, Stat.SPD, 2),
-            (self.iv_def, 1, Stat.DEF, 3),
-            (self.iv_res, 0, Stat.RES, 4),
-        ]
-        stats.sort(key = lambda sl: (sl[0], sl[1]), reverse = True)
+        if self.merge_boon != self.boon or self.merge_bane != self.bane:
+            self.reset_merge_order()
         merge_table = [[0, 0, 0, 0, 0]]
 
         if   self.bane == Stat.NONE:
             for i in range(3):
-                merge_table[0][stats[i][3]] = 1
+                merge_table[0][self.merge_order[i][3]] = 1
         elif self.bane == Stat.HP:
             merge_table[0][0] = (
                 Hero.STATS_RARITY[self.rarity][(self.grow_hp  + 5) // 5]
@@ -673,11 +727,11 @@ class Hero(object):
             )
 
         for i in range(2):
-            merge_table[0][stats[i][3]] += 1
+            merge_table[0][self.merge_order[i][3]] += 1
         for i in range(9):
             merge_row = copy(merge_table[i])
-            merge_row[stats[(2 * i + 2) % 5][3]] += 1
-            merge_row[stats[(2 * i + 3) % 5][3]] += 1
+            merge_row[self.merge_order[(2 * i + 2) % 5][3]] += 1
+            merge_row[self.merge_order[(2 * i + 3) % 5][3]] += 1
             merge_table.append(merge_row)
         return merge_table
 
@@ -696,10 +750,10 @@ class Hero(object):
         elif self.rarity == 3: stat_total = 42
         elif self.rarity == 2: stat_total = 39
         elif self.rarity == 1: stat_total = 37
-        else: print(f'{self.identity} invalid rarity: {self.rarity}')
+        else: print(f'{self.short_name} invalid rarity: {self.rarity}')
 
         if self.generation != 1 and self.generation != 2:
-            print(f'{self.identity} invalid generation: {self.generation}')
+            print(f'{self.short_name} invalid generation: {self.generation}')
 
         growth_rate = 255
 
@@ -750,37 +804,37 @@ class Hero(object):
             if self.is_sigurd:
                 growth_rate += 5
 
-        if self.base_total != stat_total:
-            print(f'{self.identity} failed stat total: '
+        if self.base_total != stat_total and self.is_enemy < 2:
+            print(f'{self.short_name} failed stat total: '
                   f'expected {stat_total} but got {self.base_total}')
-        if self.grow_total != growth_rate:
-            print(f'{self.identity} failed growth rate: '
+        if self.grow_total != growth_rate and self.is_enemy < 2:
+            print(f'{self.short_name} failed growth rate: '
                   f'expected {growth_rate} but got {self.grow_total}')
 
         max_hp  = (self.base_hp
                    + Hero.STATS_RARITY[self.rarity][self.grow_hp  // 5])
         if max_hp  != self.max_hp :
-            print(f'{self.identity} failed max hp: '
+            print(f'{self.short_name} failed max hp: '
                   f'expected {max_hp } but got {self.max_hp }')
         max_atk = (self.base_atk
                    + Hero.STATS_RARITY[self.rarity][self.grow_atk // 5])
         if max_atk != self.max_atk:
-            print(f'{self.identity} failed max atk: '
+            print(f'{self.short_name} failed max atk: '
                   f'expected {max_atk} but got {self.max_atk}')
         max_spd  = (self.base_spd
                     + Hero.STATS_RARITY[self.rarity][self.grow_spd // 5])
         if max_spd != self.max_spd:
-            print(f'{self.identity} failed max spd: '
+            print(f'{self.short_name} failed max spd: '
                   f'expected {max_spd} but got {self.max_spd}')
         max_def = (self.base_def
                    + Hero.STATS_RARITY[self.rarity][self.grow_def // 5])
         if max_def != self.max_def:
-            print(f'{self.identity} failed max def: '
+            print(f'{self.short_name} failed max def: '
                   f'expected {max_def} but got {self.max_def}')
         max_res = (self.base_res
                    + Hero.STATS_RARITY[self.rarity][self.grow_res // 5])
         if max_res != self.max_res:
-            print(f'{self.identity} failed max res: '
+            print(f'{self.short_name} failed max res: '
                   f'expected {max_res} but got {self.max_res}')
 
 

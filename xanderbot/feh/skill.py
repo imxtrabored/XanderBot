@@ -1,4 +1,5 @@
 from enum import Enum, unique
+from feh.hero import MoveType, UnitWeaponType
 
 @unique
 class SkillType(Enum):
@@ -39,24 +40,49 @@ class SpecialTrigger(Enum):
     UNIT_ASSIST       = 5
     UNIQUE_ICE_MIRROR = 6
 
+restrictable_types = (
+    MoveType.INFANTRY,
+    MoveType.ARMOR   ,
+    MoveType.CAVALRY ,
+    MoveType.FLIER   ,
+    UnitWeaponType.R_SWORD ,
+    UnitWeaponType.R_BOW   ,
+    UnitWeaponType.R_DAGGER,
+    UnitWeaponType.R_TOME  ,
+    UnitWeaponType.R_BREATH,
+    UnitWeaponType.R_BEAST ,
+    UnitWeaponType.B_LANCE ,
+    UnitWeaponType.B_BOW   ,
+    UnitWeaponType.B_DAGGER,
+    UnitWeaponType.B_TOME  ,
+    UnitWeaponType.B_BREATH,
+    UnitWeaponType.B_BEAST ,
+    UnitWeaponType.G_AXE   ,
+    UnitWeaponType.G_BOW   ,
+    UnitWeaponType.G_DAGGER,
+    UnitWeaponType.G_TOME  ,
+    UnitWeaponType.G_BREATH,
+    UnitWeaponType.G_BEAST ,
+    UnitWeaponType.C_BOW   ,
+    UnitWeaponType.C_DAGGER,
+    UnitWeaponType.C_STAFF ,
+    UnitWeaponType.C_BREATH,
+    UnitWeaponType.C_BEAST ,
+)
+
 class Skill(object):
     '''Represents a skill in FEH'''
 
     __slots__ = (
         'id', 'identity', 'name', 'description', 'type', 'weapon_type',
         'is_staff', 'is_seal', 'is_refine', 'is_refined_variant',
-        'range', 'disp_atk', 'icon', 'w_icon',
+        'range', 'might', 'icon', 'w_icon',
         'eff_infantry', 'eff_armor', 'eff_cavalry', 'eff_flier',
         'eff_magic', 'eff_dragon',
         'bonus_hp', 'bonus_atk', 'bonus_spd', 'bonus_def', 'bonus_res',
         'cd_mod', 'special_cd',
         'prereq1', 'prereq1_id', 'prereq2', 'prereq2_id', 'postreq',
-        'sp', 'exclusive', 'learnable',
-        'infantry', 'armor', 'cavalry', 'flier',
-        'r_sword', 'r_tome', 'r_breath', 'b_lance', 'b_tome', 'b_breath',
-        'g_axe', 'g_tome', 'g_breath', 'c_bow', 'c_dagger', 'c_staff',
-        'c_breath', 'r_bow', 'b_bow', 'g_bow', 'r_dagger', 'b_dagger',
-        'g_dagger', 'r_beast', 'b_beast', 'g_beast', 'c_beast', 'allowed',
+        'sp', 'exclusive', 'learnable', 'restrict_from', 'restrict_set',
         'refinable', 'refined_version', 'refined_version_id',
         'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
         'refine_eff', 'refine_eff_id', 'refine_staff1', 'refine_staff1_id',
@@ -69,14 +95,12 @@ class Skill(object):
         'seal_badge_color', 'seal_great_badges', 'seal_small_badges',
         'seal_coins',
         'skill_rank', 'tier',
-        'fn_pre_combat', 'fn_on_attack', 'fn_on_defend',
-        'fn_post_combat', 'fn_on_assist' 
     )
 
     def __init__(
             self, id, identity, name, description, type, weapon_type = 0,
             staff_exclusive = False, is_seal = False, is_refine = False,
-            is_refined_variant = False, range = 0, disp_atk = 0,
+            is_refined_variant = False, range = 0, might = 0,
             eff_infantry = False, eff_armor = False, eff_cavalry = False,
             eff_flier = False, eff_magic = False, eff_dragon = False,
             bonus_hp = 0, bonus_atk = 0, bonus_spd = 0, bonus_def = 0,
@@ -99,8 +123,6 @@ class Skill(object):
             seal_badge_color = 1, seal_great_badges = 0, seal_small_badges = 0,
             seal_coins = 0,
             skill_rank = 0, tier = 0,
-            fn_pre_combat = False, fn_on_attack = False, fn_on_defend =
-            False, fn_post_combat = False, fn_on_assist = False
     ):
         '''theres no way to make this look pretty is there haw haw haw'''
 
@@ -124,7 +146,7 @@ class Skill(object):
 
         #display
         self.range        = range
-        self.disp_atk     = disp_atk
+        self.might        = might
         self.eff_infantry = eff_infantry
         self.eff_armor    = eff_armor
         self.eff_cavalry  = eff_cavalry
@@ -133,12 +155,12 @@ class Skill(object):
         self.eff_dragon   = eff_dragon
 
         #stats
-        self.bonus_hp  = bonus_hp
-        self.bonus_atk = bonus_atk
-        self.bonus_spd = bonus_spd
-        self.bonus_def = bonus_def
-        self.bonus_res = bonus_res
-        self.cd_mod    = cd_mod
+        self.bonus_hp   = bonus_hp
+        self.bonus_atk  = bonus_atk
+        self.bonus_spd  = bonus_spd
+        self.bonus_def  = bonus_def
+        self.bonus_res  = bonus_res
+        self.cd_mod     = cd_mod
         self.special_cd = special_cd
 
         #prereq
@@ -151,59 +173,25 @@ class Skill(object):
         self.exclusive = exclusive
 
         #learnable
-        self.learnable = [
+        self.learnable = (
             None,
             [],
             [],
             [],
             [],
-            []
-        ]
+            [],
+        )
 
         #restrictions
-        '''
-        self.move_blacklist = []
-        self.weapon_blacklist = []
-        self.move_whitelist = []
-        self.weapon_whitelist = []
-        '''
-        self.infantry = infantry
-        self.armor    = armor
-        self.cavalry  = cavalry
-        self.flier    = flier
-        self.r_sword  = r_sword
-        self.r_tome   = r_tome
-        self.r_breath = r_breath
-        self.b_lance  = b_lance
-        self.b_tome   = b_tome
-        self.b_breath = b_breath
-        self.g_axe    = g_axe
-        self.g_tome   = g_tome
-        self.g_breath = g_breath
-        self.c_bow    = c_bow
-        self.c_dagger = c_dagger
-        self.c_staff  = c_staff
-        self.c_breath = c_breath
-        self.r_bow    = r_bow
-        self.b_bow    = b_bow
-        self.g_bow    = g_bow
-        self.r_dagger = r_dagger
-        self.b_dagger = b_dagger
-        self.g_dagger = g_dagger
-        self.r_beast  = r_beast
-        self.b_beast  = b_beast
-        self.g_beast  = g_beast
-        self.c_beast  = c_beast
-
-        self.allowed = (
+        allowed = (
             infantry,
             armor   ,
             cavalry ,
             flier   ,
             r_sword ,
-            r_tome  ,
-            r_dagger,
             r_bow   ,
+            r_dagger,
+            r_tome  ,
             r_breath,
             r_beast ,
             b_lance ,
@@ -225,9 +213,15 @@ class Skill(object):
             c_beast ,
         )
 
+        self.restrict_from = [
+            restrictable_types[i]
+            for i, val in enumerate(allowed)
+            if not val
+        ]
+
+        self.restrict_set = set(self.restrict_from)
 
         #refines
-        #self.refines = []
         self.refinable          = refinable
         self.refined_version_id = refined_version
         self.refined_version    = None
@@ -262,10 +256,6 @@ class Skill(object):
         self.seal_small_badges = seal_small_badges
         self.seal_coins        = seal_coins
 
-        #combat
-        #self.pre_combat = None
-        #self.post_combat = None
-
 
 
     def set_tier_recursive(self):
@@ -296,7 +286,6 @@ class Skill(object):
         if self.evolves_to_id:
             self.evolves_to = unit_lib.get_rskill_by_id(self.evolves_to_id)
             self.evolves_to.evolves_from = self
-        # if self.evolves_from_id   : self.evolves_from    = unit_lib.get_skill_by_id(self.evolves_from_id   )
         if self.refined_version_id:
             self.refined_version = unit_lib.get_rskill_by_id(self.refined_version_id)
         if self.refine_eff_id     :

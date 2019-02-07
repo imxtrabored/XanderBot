@@ -1,6 +1,8 @@
 import sqlite3
 
-from feh.hero import Color, UnitWeaponType, MoveType
+from discord import Color
+
+from feh.hero import UnitColor, UnitWeaponType, MoveType
 from feh.hero import LegendElement, LegendStat, Stat, Rarity
 from feh.skill import SkillType, SkillWeaponGroup
 
@@ -12,6 +14,37 @@ class CompoundEmoji(tuple):
 class EmojiLib(object):
     singleton = None
     restrict_emojis = ()
+    emojis = dict()
+    colors = {
+        SkillType.NONE           : Color.from_rgb(120,82,163) ,
+        SkillType.WEAPON         : Color.from_rgb(120,82,163) ,
+        SkillType.ASSIST         : Color.from_rgb(0,239,199)  ,
+        SkillType.SPECIAL        : Color.from_rgb(255,137,255),
+        SkillType.PASSIVE_A      : Color.from_rgb(255,76,106) ,
+        SkillType.PASSIVE_B      : Color.from_rgb(0,148,222)  ,
+        SkillType.PASSIVE_C      : Color.from_rgb(1,201,70)   ,
+        SkillType.PASSIVE_SEAL   : Color.from_rgb(255,238,51) ,
+        SkillType.WEAPON_REFINED : Color.from_rgb(120,82,163) ,
+        SkillType.REFINE         : Color.from_rgb(120,82,163) ,
+        SkillWeaponGroup.NONE    : Color.from_rgb(95,111,118) ,
+        SkillWeaponGroup.R_SWORD : Color.from_rgb(228,34,67)  ,
+        SkillWeaponGroup.R_TOME  : Color.from_rgb(228,34,67)  ,
+        SkillWeaponGroup.S_BREATH: Color.from_rgb(95,111,118) ,
+        SkillWeaponGroup.B_LANCE : Color.from_rgb(40,101,223) ,
+        SkillWeaponGroup.B_TOME  : Color.from_rgb(40,101,223) ,
+        SkillWeaponGroup.G_AXE   : Color.from_rgb(10,172,37)  ,
+        SkillWeaponGroup.G_TOME  : Color.from_rgb(10,172,37)  ,
+        SkillWeaponGroup.S_BOW   : Color.from_rgb(95,111,118) ,
+        SkillWeaponGroup.S_DAGGER: Color.from_rgb(95,111,118) ,
+        SkillWeaponGroup.C_STAFF : Color.from_rgb(95,111,118) ,
+        SkillWeaponGroup.S_BEAST : Color.from_rgb(95,111,118) ,
+        UnitColor.NONE           : Color.from_rgb(95,111,118) ,
+        UnitColor.RED            : Color.from_rgb(228,34,67)  ,
+        UnitColor.BLUE           : Color.from_rgb(40,101,223) ,
+        UnitColor.GREEN          : Color.from_rgb(10,172,37)  ,
+        UnitColor.COLORLESS      : Color.from_rgb(95,111,118) ,
+        None                     : Color.from_rgb(120,82,163) ,
+    }
 
     @classmethod
     def initialize(cls, client):
@@ -22,9 +55,7 @@ class EmojiLib(object):
 
         self = EmojiLib()
         cls.singleton = self
-
-
-        self.emojis = dict()
+        self.emojis.clear()
 
         cur.execute("""SELECT name, id FROM emojis;""")
         for index in cur:
@@ -120,39 +151,10 @@ class EmojiLib(object):
             self.emojis[UnitWeaponType.G_BEAST],
             self.emojis[UnitWeaponType.C_BEAST],
         ))
+        con.close()
 
-        EmojiLib.restrict_emojis = (
-            str(self.emojis[MoveType.INFANTRY      ]),
-            str(self.emojis[MoveType.ARMOR         ]),
-            str(self.emojis[MoveType.CAVALRY       ]),
-            str(self.emojis[MoveType.FLIER         ]),
-            str(self.emojis[UnitWeaponType.R_SWORD ]),
-            str(self.emojis[UnitWeaponType.R_TOME  ]),
-            str(self.emojis[UnitWeaponType.R_BOW   ]),
-            str(self.emojis[UnitWeaponType.R_DAGGER]),
-            str(self.emojis[UnitWeaponType.R_BREATH]),
-            str(self.emojis[UnitWeaponType.R_BEAST ]),
-            str(self.emojis[UnitWeaponType.B_LANCE ]),
-            str(self.emojis[UnitWeaponType.B_TOME  ]),
-            str(self.emojis[UnitWeaponType.B_BOW   ]),
-            str(self.emojis[UnitWeaponType.B_DAGGER]),
-            str(self.emojis[UnitWeaponType.B_BREATH]),
-            str(self.emojis[UnitWeaponType.B_BEAST ]),
-            str(self.emojis[UnitWeaponType.G_AXE   ]),
-            str(self.emojis[UnitWeaponType.G_TOME  ]),
-            str(self.emojis[UnitWeaponType.G_BOW   ]),
-            str(self.emojis[UnitWeaponType.G_DAGGER]),
-            str(self.emojis[UnitWeaponType.G_BREATH]),
-            str(self.emojis[UnitWeaponType.G_BEAST ]),
-            str(self.emojis[UnitWeaponType.C_BOW   ]),
-            str(self.emojis[UnitWeaponType.C_DAGGER]),
-            str(self.emojis[UnitWeaponType.C_STAFF ]),
-            str(self.emojis[UnitWeaponType.C_BREATH]),
-            str(self.emojis[UnitWeaponType.C_BEAST ]),
-        )
 
         print('done.')
-        con.close()
         return self.emojis
 
 
@@ -167,8 +169,13 @@ class EmojiLib(object):
 
 
     @classmethod
+    def get_color(cls, obj):
+        return cls.colors.get(obj)
+
+
+
+    @classmethod
     async def get_lib(cls):
         if cls.singleton is None:
             pass
         return cls.singleton.emojis
-
