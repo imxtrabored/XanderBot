@@ -285,7 +285,7 @@ class SkillInfo(CmdDefault):
         skill = UnitLib.get_skill(tokens[0])
         if not skill:
             return (
-                f'Skill not found: {tokens[0]}.'
+                f'Skill not found: {tokens[0]}.\n'
                 'Note: To display information on the skills known by a hero '
                 'by default, use the ``skills`` (with an s) command.',
                 None, [None, False]

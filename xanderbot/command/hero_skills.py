@@ -122,7 +122,7 @@ class HeroSkills(CmdDefault):
             if not hero:
                 return (
                     f'Hero not found: {tokens[0]}. '
-                    'Don\'t forget that modifiers should be delimited by commas.'
+                    'Don\'t forget that modifiers should be delimited by commas.\n'
                     'Note: To display information on a specific skill, use the '
                     '``skill`` (without the s) command.',
                     None, None
