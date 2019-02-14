@@ -392,7 +392,6 @@ class Hero(object):
         self.lv1_spd = self.iv_spd + self.merge_spd + self.rmod_spd + self.df_spd
         self.lv1_def = self.iv_def + self.merge_def + self.rmod_def + self.df_def
         self.lv1_res = self.iv_res + self.merge_res + self.rmod_res + self.df_res
-
         self.max_hp  = (
             self.lv1_hp
             + Hero.STATS_RARITY[self.rarity][self.grow_hp // 5]
@@ -413,6 +412,34 @@ class Hero(object):
             self.lv1_res
             + Hero.STATS_RARITY[self.rarity][self.grow_res// 5]
         )
+        if self.merges > 0:
+            if self.bane == Stat.NONE:
+                pass
+            elif self.bane == Stat.HP:
+                self.max_atk += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_hp + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_hp // 5]
+                )
+            elif self.bane == Stat.ATK:
+                self.max_atk += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_atk + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_atk // 5]
+                )
+            elif self.bane == Stat.SPD:
+                self.max_spd += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_spd + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_spd // 5]
+                )
+            elif self.bane == Stat.DEF:
+                self.max_def += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_def + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_def // 5]
+                )
+            elif self.bane == Stat.RES:
+                self.max_res += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_res + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_res // 5]
+                )
         self.max_total = (self.max_hp + self.max_atk + self.max_spd
                           + self.max_def + self.max_res)
 
@@ -574,46 +601,11 @@ class Hero(object):
 
         if self.merge_boon != self.boon or self.merge_bane != self.bane:
             self.reset_merge_order()
-
         if self.bane == Stat.NONE:
             for i in range(3):
                 self.modify_merge(self.merge_order[i][2], 1)
-        elif self.bane == Stat.HP:
-            self.modify_merge(
-                Stat.HP,
-                Hero.STATS_RARITY[self.rarity][(self.grow_hp + 5) // 5]
-                - Hero.STATS_RARITY[self.rarity][self.grow_hp // 5]
-                + 1
-            )
-        elif self.bane == Stat.ATK:
-            self.modify_merge(
-                Stat.ATK,
-                Hero.STATS_RARITY[self.rarity][(self.grow_atk + 5) // 5]
-                - Hero.STATS_RARITY[self.rarity][self.grow_atk // 5]
-                + 1
-            )
-        elif self.bane == Stat.SPD:
-            self.modify_merge(
-                Stat.SPD,
-                Hero.STATS_RARITY[self.rarity][(self.grow_spd + 5) // 5]
-                - Hero.STATS_RARITY[self.rarity][self.grow_spd // 5]
-                + 1
-            )
-        elif self.bane == Stat.DEF:
-            self.modify_merge(
-                Stat.DEF,
-                Hero.STATS_RARITY[self.rarity][(self.grow_def + 5) // 5]
-                - Hero.STATS_RARITY[self.rarity][self.grow_def // 5]
-                + 1
-            )
-        elif self.bane == Stat.RES:
-            self.modify_merge(
-                Stat.RES,
-                Hero.STATS_RARITY[self.rarity][(self.grow_res + 5) // 5]
-                - Hero.STATS_RARITY[self.rarity][self.grow_res // 5]
-                + 1
-            )
-
+        else:
+            self.modify_merge(self.bane, 1)
         for i in range(new_merges * 2):
             self.modify_merge(self.merge_order[i % 5][2], 1)
 
