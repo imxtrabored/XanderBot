@@ -240,11 +240,16 @@ class UnitLib(object):
         if name in UnitLib.singleton.unit_names: return False
         con = sqlite3.connect("feh/names.db")
         cur = con.cursor()
-        cur.execute('INSERT INTO heroes (name, id) VALUES (?, ?)',
-                    (name, hero.id))
+        if hero.id > 0:
+            cur.execute('INSERT INTO heroes (name, id) VALUES (?, ?)',
+                        (name, hero.id))
+            UnitLib.singleton.unit_names[name] = hero
+        else:
+            cur.execute('INSERT INTO enemy (name, id) VALUES (?, ?)',
+                        (name, hero.id))
+            UnitLib.singleton.enemy_names[name] = hero
         con.commit()
         con.close()
-        UnitLib.singleton.unit_names[name] = hero
         return True
 
 

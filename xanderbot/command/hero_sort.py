@@ -4,7 +4,7 @@ class HeroSort(CmdDefault):
 
     @staticmethod
     async def cmd(params):
-        return None, None, None
+        return 'Command not implemented yet!', None, None
 
 
     @staticmethod

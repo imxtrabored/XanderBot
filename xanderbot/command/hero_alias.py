@@ -37,7 +37,7 @@ class HeroAlias(CmdDefault):
         ]
         if len(names) < 2:
             return (
-                'Wrong number of names found. '
+                'Not enough names entered. '
                 'Please enter at least two names, separated by commas.',
                 None, None
             )
@@ -45,16 +45,20 @@ class HeroAlias(CmdDefault):
         if len(names) == 2:
             if heroes[0] and not heroes[1]:
                 UnitLib.insert_hero_alias(heroes[0], names[1])
-                content = f'Added alias {tokens[1]} for {heroes[0].short_name}.'
+                content = f'Added alias {tokens[1].strip()} for {heroes[0].short_name}.'
                 await DiscordData.devs[0].send(
                     #f'{message.author.name}#{message.author.discriminator} '
                     f'added alias {names[1]} for {heroes[0].short_name}.')
             elif heroes[1] and not heroes[0]:
                 UnitLib.insert_hero_alias(heroes[1], names[0])
-                content = f'Added alias {tokens[0]} for {heroes[1].short_name}.'
+                content = f'Added alias {tokens[0].strip()} for {heroes[1].short_name}.'
                 await DiscordData.devs[0].send(
                     #f'{message.author.name}#{message.author.discriminator} '
                     f'added alias {names[0]} for {heroes[1].short_name}.')
+            elif heroes[0] and heroes[1]:
+                content = 'All names are already hero aliases!'
+            else:
+                content = 'Cannot find a valid hero name; need at least one.'
         elif len(names) > 2:
             if not heroes[0]:
                 content = f'{tokens[0]} is not a valid hero.'
@@ -73,8 +77,4 @@ class HeroAlias(CmdDefault):
                         #f'{message.author.name}#{message.author.discriminator} '
                         f'added aliases for {heroes[0].short_name}:\n{name_list}')
                 else: content = 'All names are already aliases.'
-        elif heroes[0] and heroes[1]:
-            content = 'All names are already hero aliases!'
-        else:
-            content = 'Cannot find a valid hero name; need at least one.'
         return content, None, None

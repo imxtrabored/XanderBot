@@ -5,7 +5,7 @@ class CmdDefault(object):
 
     @staticmethod
     async def cmd(params):
-        return None, None, None
+        return 'No response.', None, None
 
 
 
