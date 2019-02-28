@@ -78,6 +78,7 @@ class LegendStat(Enum):
     SPD  = 4
     DEF  = 5
     RES  = 6
+    DUEL = 7
 
 @unique
 class Stat(Enum):

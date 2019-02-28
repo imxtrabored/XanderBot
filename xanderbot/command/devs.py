@@ -9,6 +9,7 @@ class Devs(CmdDefault):
         'XanderBot\'s visual design is by {}#{}.\n'
         'Feel free to contact my developers for questions, bug reports, or '
         'feature requests.\n'
+        'Special thanks to {}#{} for help with new units.\n'
         'Special thanks to the moderators of The Sleepy Tiki discord for '
         'advice.'
     )
@@ -26,7 +27,9 @@ class Devs(CmdDefault):
                 DiscordData.devs[0].name,
                 DiscordData.devs[0].discriminator,
                 DiscordData.devs[1].name,
-                DiscordData.devs[1].discriminator
+                DiscordData.devs[1].discriminator,
+                DiscordData.devs[2].name,
+                DiscordData.devs[2].discriminator,
             ),
             None, None
         )

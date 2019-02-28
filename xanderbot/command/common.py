@@ -20,6 +20,7 @@ class DiscordData:
         cls.devs = []
         cls.devs.append(client.get_user(151913154803269633))
         cls.devs.append(client.get_user(196379129472352256))
+        cls.devs.append(client.get_user(248284024097734658))
 
 
 def filter_name(name):
