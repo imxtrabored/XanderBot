@@ -745,7 +745,7 @@ class Hero(object):
         elif self.rarity == 1: stat_total = 37
         else: print(f'{self.short_name} invalid rarity: {self.rarity}')
 
-        if self.generation != 1 and self.generation != 2:
+        if self.generation < 1 or self.generation > 3:
             print(f'{self.short_name} invalid generation: {self.generation}')
 
         growth_rate = 255
@@ -796,6 +796,13 @@ class Hero(object):
                 stat_total -= 1
             if self.is_sigurd:
                 growth_rate += 5
+        elif self.generation == 3:
+            if self.move_type == MoveType.INFANTRY:
+                stat_total += 2
+                growth_rate += 20
+            elif self.move_type == MoveType.CAVALRY:
+                growth_rate += 5
+
 
         if self.base_total != stat_total and self.is_enemy < 2:
             print(f'{self.short_name} failed stat total: '
