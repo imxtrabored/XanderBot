@@ -184,7 +184,7 @@ class SkillInfo(CmdDefault):
 
             refine_header = (f'**Refine options:**{refine_cost}'
                              if skill.refinable else None)
-            if skill.refined_version:
+            if skill.refined_version and not skill.is_refined_variant:
                 refined_skill = skill.refined_version
                 refined_title = (f'Weapon Refinery\n{refined_skill.icon} '
                                  f'Refined {skill.name} · {type_icon}'

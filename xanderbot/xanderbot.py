@@ -35,7 +35,7 @@ else:
 
 
 BotReply = namedtuple('BotReply', 'bot_msg user_msg user cmd_type embed data task')
-UserEditable = namedtuple('UserEditable', 'bot_msg user_msg task')
+UserEditable = namedtuple('UserEditable', 'bot_msg user_msg cmd_type task')
 
 """
 class CMDType(Enum):
@@ -144,10 +144,10 @@ class XanderBotClient(discord.Client):
 
 
 
-    def register_editable(self, bot_msg, user_msg):
+    def register_editable(self, bot_msg, user_msg, cmd_type):
         task = asyncio.create_task(self.forget_reactable(user_msg))
         self.editable_library[user_msg.id] = UserEditable(
-            bot_msg, user_msg, task)
+            bot_msg, user_msg, cmd_type, task)
         #print('editable registered:')
         #print(user_msg.id)
 
@@ -170,6 +170,8 @@ class XanderBotClient(discord.Client):
         task = asyncio.create_task(self.forget_reactable(bot_msg))
         self.reactable_library[bot_msg.id] = BotReply(
             bot_msg, user_msg, user, cmd_type, embed, data, task)
+        print(self.reactable_library[bot_msg.id])
+        print(bot_msg.id)
         #print('reactable registered:')
         #print(bot_msg.id)
 
@@ -201,7 +203,7 @@ class XanderBotClient(discord.Client):
                 content, embed, data = await command_type.cmd(predicate)
                 bot_reply = await message.channel.send(
                     content = content, embed = embed)
-                self.register_editable(bot_reply, message)
+                self.register_editable(bot_reply, message, command_type)
                 if data:
                     self.register_reactable(bot_reply, message, message.author,
                                             command_type, embed, data)
@@ -240,13 +242,13 @@ class XanderBotClient(discord.Client):
                 await message.channel.send(f"You're <{message.author.id}>!")
             else:
                 bot_reply = await message.channel.send('Command invalid!')
-                self.register_editable(bot_reply, message)
+                self.register_editable(bot_reply, message, CmdDefault)
 
         except discord.HTTPException as e:
             bot_reply = await message.channel.send(
                 'Discord connection or server issue. Please try again later.'
             )
-            self.register_editable(bot_reply, message)
+            self.register_editable(bot_reply, message, CmdDefault)
             raise e
 
         except Exception as e:
@@ -254,7 +256,7 @@ class XanderBotClient(discord.Client):
                 'An unknown error has occured. This should never happen; '
                 'please report this to a developer.'
             )
-            self.register_editable(bot_reply, message)
+            self.register_editable(bot_reply, message, CmdDefault)
             raise e
 
 
@@ -267,7 +269,7 @@ class XanderBotClient(discord.Client):
             return
         if after.id not in self.editable_library:
             return
-        msg_bundle = self.editable_library.get(after.id)
+        msg_bundle = self.editable_library[after.id]
         bot_msg = msg_bundle.bot_msg
         manage_messages = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
 
@@ -282,19 +284,20 @@ class XanderBotClient(discord.Client):
             predicate = split_command[1]
         else: predicate = ''
         try:
-            command_type = COMMAND_DICT.get(split_command[0])
-
-            if command_type:
+            if split_command[0] in COMMAND_DICT:
+                command_type = COMMAND_DICT[split_command[0]]
                 content, embed, data = await command_type.cmd(predicate)
                 await bot_msg.edit(
                     content = content, embed = embed)
                 if bot_msg.id in self.reactable_library:
-                    self.reactable_library.get(bot_msg.id).task.cancel()
-                elif data:
-                    if manage_messages: await bot_msg.clear_reactions()
+                    self.reactable_library[bot_msg.id].task.cancel()
+                    await self.reactable_library[bot_msg.id].task
+                if data:
                     self.register_reactable(bot_msg, after, after.author,
                                             command_type, embed, data)
-                    await command_type.finalize(bot_msg)
+                    if msg_bundle.cmd_type != command_type:
+                        if manage_messages: await bot_msg.clear_reactions()
+                        await command_type.finalize(bot_msg)
             else:
                 await bot_msg.edit(content = 'Command invalid!', embed = None)
                 if manage_messages: await bot_msg.clear_reactions()
@@ -322,10 +325,13 @@ class XanderBotClient(discord.Client):
 
 
     async def on_reaction_add(self, reaction, user):
+        print(reaction.message.id)
+        print(reaction.message.id not in self.reactable_library)
+        print(self.reactable_library.keys())
         if (reaction.message.author != client.user
             or user == client.user
             or reaction.message.id not in self.reactable_library): return
-        msg_bundle = self.reactable_library.get(reaction.message.id)
+        msg_bundle = self.reactable_library[reaction.message.id]
         if user != msg_bundle.user: return
         bot_msg = msg_bundle.bot_msg
         content, embed, remove = await msg_bundle.cmd_type.react(
@@ -349,7 +355,6 @@ class XanderBotClient(discord.Client):
             self.reactable_library[bot_msg.id].task.cancel()
         await msg_bundle.bot_msg.delete()
         msg_bundle.task.cancel()
-
 
 
 

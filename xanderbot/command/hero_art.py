@@ -53,7 +53,7 @@ class HeroArt(CmdDefault):
             for token in tokens:
                 param = filter_name(token)
                 if param in art_names:
-                    art_index = art_names.get(param)
+                    art_index = art_names[param]
 
         embed.add_field(name = title, value = '-', inline = False)
         embed.set_image(url = ART_URLS[art_index].format(hero.id))

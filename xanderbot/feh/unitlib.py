@@ -113,8 +113,7 @@ class UnitLib(object):
             skill.link(self)
 
         cur.execute(
-            """SELECT heroid, skillid, unlockRarity, defaultRarity, type,
-            exclusive
+            """SELECT heroid, skillid, unlockRarity, defaultRarity
             FROM skillsets
             ORDER BY heroid ASC,  unlockRarity ASC,  exclusive ASC;"""
         )
@@ -159,17 +158,15 @@ class UnitLib(object):
         con = sqlite3.connect("feh/emojis.db")
         cur = con.cursor()
         cur.execute(
-            """SELECT id, typeemoteid, weapontypeemoteid 
+            """SELECT id, typeemoteid
             FROM skill_emoji WHERE id > 0 ORDER BY id ASC;"""
         )
         for index in cur:
             skill = cls.singleton.skill_list[index[0]]
             skill.icon = client.get_emoji(int(index[1]))
-            if index[2]:
-                skill.w_icon = client.get_emoji(int(index[2]))
 
         cur.execute(
-            """SELECT id, typeemoteid, weapontypeemoteid 
+            """SELECT id, typeemoteid
             FROM skill_emoji WHERE id < 0 ORDER BY id DESC;"""
         )
         empty_slots = cur.fetchall()
