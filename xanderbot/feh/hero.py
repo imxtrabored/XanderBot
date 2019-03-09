@@ -784,7 +784,7 @@ class Hero(object):
             growth_rate -= 5
         if self.is_brave:
             growth_rate += 10
-        if self.generation == 2 and not self.is_dancer:
+        if self.generation >= 2 and not self.is_dancer:
             stat_total += 1
             growth_rate += 10
             if ranged and self.move_type != MoveType.ARMOR:
@@ -796,12 +796,11 @@ class Hero(object):
                 stat_total -= 1
             if self.is_sigurd:
                 growth_rate += 5
-        elif self.generation == 3:
-            if self.move_type == MoveType.INFANTRY:
-                stat_total += 2
-                growth_rate += 20
-            elif self.move_type == MoveType.CAVALRY:
-                growth_rate += 5
+            if self.generation == 3:
+                if (self.move_type == MoveType.INFANTRY
+                        or self.move_type == MoveType.CAVALRY and ranged):
+                    stat_total += 1
+                    growth_rate += 10
 
 
         if self.base_total != stat_total and self.is_enemy < 2:

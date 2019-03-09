@@ -170,8 +170,6 @@ class XanderBotClient(discord.Client):
         task = asyncio.create_task(self.forget_reactable(bot_msg))
         self.reactable_library[bot_msg.id] = BotReply(
             bot_msg, user_msg, user, cmd_type, embed, data, task)
-        print(self.reactable_library[bot_msg.id])
-        print(bot_msg.id)
         #print('reactable registered:')
         #print(bot_msg.id)
 
@@ -325,9 +323,6 @@ class XanderBotClient(discord.Client):
 
 
     async def on_reaction_add(self, reaction, user):
-        print(reaction.message.id)
-        print(reaction.message.id not in self.reactable_library)
-        print(self.reactable_library.keys())
         if (reaction.message.author != client.user
             or user == client.user
             or reaction.message.id not in self.reactable_library): return
