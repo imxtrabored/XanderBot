@@ -8,7 +8,7 @@ class HeroSort(CmdDefault):
 
 
     @staticmethod
-    async def finalize(bot_reply):
+    async def finalize(bot_reply, data):
         return
 
 

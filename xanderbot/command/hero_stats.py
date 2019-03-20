@@ -136,7 +136,7 @@ class HeroStats(CmdDefault):
 
 
     @staticmethod
-    async def finalize(bot_reply):
+    async def finalize(bot_reply, data):
         await bot_reply.add_reaction('🔍')
         await bot_reply.add_reaction(em.get(Rarity.ONE  ))
         await bot_reply.add_reaction(em.get(Rarity.TWO  ))

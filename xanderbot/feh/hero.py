@@ -765,6 +765,17 @@ class Hero(object):
             UnitWeaponType.G_DAGGER,
         )
 
+        ranged_phys = self.weapon_type in (
+            UnitWeaponType.C_BOW   ,
+            UnitWeaponType.C_DAGGER,
+            UnitWeaponType.R_BOW   ,
+            UnitWeaponType.B_BOW   ,
+            UnitWeaponType.G_BOW   ,
+            UnitWeaponType.R_DAGGER,
+            UnitWeaponType.B_DAGGER,
+            UnitWeaponType.G_DAGGER,
+        )
+
         if self.is_trainee:
             stat_total -= 8
             growth_rate += 30
@@ -797,8 +808,7 @@ class Hero(object):
             if self.is_sigurd:
                 growth_rate += 5
             if self.generation == 3:
-                if (self.move_type == MoveType.INFANTRY
-                        or self.move_type == MoveType.CAVALRY and ranged):
+                if (self.move_type == MoveType.INFANTRY or ranged_phys):
                     stat_total += 1
                     growth_rate += 10
 

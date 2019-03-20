@@ -223,7 +223,7 @@ class SkillInfo(CmdDefault):
                     if refine
                 ])
             else:
-                generic_refines = ', '.join([
+                generic_refines = ' · '.join([
                     str(refine.icon)
                     for refine in skill_refines
                     if refine
@@ -297,7 +297,7 @@ class SkillInfo(CmdDefault):
 
 
     @staticmethod
-    async def finalize(bot_reply):
+    async def finalize(bot_reply, data):
         await bot_reply.add_reaction('🔍')
         await bot_reply.add_reaction('⬆')
         await bot_reply.add_reaction('⬇')

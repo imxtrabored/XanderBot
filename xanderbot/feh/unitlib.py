@@ -253,7 +253,7 @@ class UnitLib(object):
 
     @staticmethod
     def insert_skill_alias(skill, name):
-        if name in UnitLib.singleton.unit_names: return False
+        if name in UnitLib.singleton.skill_names: return False
         con = sqlite3.connect("feh/names.db")
         cur = con.cursor()
         cur.execute('INSERT INTO skills (name, id) VALUES (?, ?)',

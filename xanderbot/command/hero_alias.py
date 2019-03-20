@@ -5,6 +5,7 @@ from feh.unitlib import UnitLib
 
 class HeroAlias(CmdDefault):
 
+    LOGGING = True
     help_text = (
         'The ``addalias`` command adds alternate hero name aliases to my '
         'database for more convenient searching. To add aliases for skill '

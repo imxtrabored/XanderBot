@@ -205,24 +205,24 @@ class XanderBotClient(discord.Client):
                 if data:
                     self.register_reactable(bot_reply, message, message.author,
                                             command_type, embed, data)
-                    await command_type.finalize(bot_reply)
-                if command_type == HeroAlias or command_type == SkillAlias:
+                    await command_type.finalize(bot_reply, data)
+                if command_type.LOGGING:
                     await DiscordData.devs[0].send(
-                        content = f'{message.author} addded alias')
+                        content = f'{message.author}: {message.content}')
                 return
 
             #debug commands
 
             elif (lower_message.startswith('emojis')
                 and (message.author.id == 151913154803269633
-                     or message.author.id == 196379129472352256)):
+                        or message.author.id == 196379129472352256)):
                 emojilisttemp = sorted(self.emojis, key=lambda q: (q.name))
                 for e in emojilisttemp:
                     await message.channel.send(str(e) + str(e.id))
 
             elif (lower_message.startswith('reload')
-                  and (message.author.id == 151913154803269633
-                       or message.author.id == 196379129472352256)):
+                    and (message.author.id == 151913154803269633
+                        or message.author.id == 196379129472352256)):
                 reply = await message.channel.send(
                     'Rebuilding hero, skill, and emoji indices...')
                 UnitLib.initialize()
@@ -295,7 +295,7 @@ class XanderBotClient(discord.Client):
                                             command_type, embed, data)
                     if msg_bundle.cmd_type != command_type:
                         if manage_messages: await bot_msg.clear_reactions()
-                        await command_type.finalize(bot_msg)
+                        await command_type.finalize(bot_msg, data)
             else:
                 await bot_msg.edit(content = 'Command invalid!', embed = None)
                 if manage_messages: await bot_msg.clear_reactions()

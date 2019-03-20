@@ -71,9 +71,9 @@ class HeroSkills(CmdDefault):
             passive_c = next((s[0] for s in hero.passive_c[::-1]
                               if s[1] <= hero.rarity), Skill.EMPTY_PASSIVE_C)
             desc_skills = (
-                f'{em.get(SkillType.WEAPON )}{weapon .name}\n'
-                f'{em.get(SkillType.ASSIST )}{assist .name}\n'
-                f'{em.get(SkillType.SPECIAL)}{special.name}\n\n'
+                f'{weapon.icon}{weapon.name}\n'
+                f'{assist.icon}{assist .name}\n'
+                f'{special.icon}{special.name}\n\n'
                 f'{passive_a.icon}'
                 f'{passive_a.skill_rank if passive_a.skill_rank > 0 else "-"} · '
                 f'{passive_b.icon}'
@@ -141,7 +141,7 @@ class HeroSkills(CmdDefault):
 
 
     @staticmethod
-    async def finalize(bot_reply):
+    async def finalize(bot_reply, data):
         await bot_reply.add_reaction('🔍')
         await bot_reply.add_reaction(em.get(Rarity.ONE  ))
         await bot_reply.add_reaction(em.get(Rarity.TWO  ))

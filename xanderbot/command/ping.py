@@ -14,13 +14,3 @@ class Ping(CmdDefault):
             f'Pong: {round(DiscordData.client.latency * 1000, 3)} ms',
             None, None
         )
-
-
-    @staticmethod
-    async def finalize(bot_reply):
-        return
-
-
-    @staticmethod
-    async def react(reaction, bot_msg, embed, data):
-        return

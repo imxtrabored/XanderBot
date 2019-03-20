@@ -1,6 +1,7 @@
 
 class CmdDefault(object):
 
+    LOGGING = False
     help_text = 'No help is available for this command.'
 
     @staticmethod
@@ -10,7 +11,7 @@ class CmdDefault(object):
 
 
     @staticmethod
-    async def finalize(bot_reply):
+    async def finalize(bot_reply, data):
         return
 
 
