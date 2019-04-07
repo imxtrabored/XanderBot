@@ -1,9 +1,13 @@
 import asyncio
-
 from collections import namedtuple
 from enum import Enum
 
 import discord
+
+from command.barracks_delete import BarracksDelete
+from command.barracks_list import BarracksList
+from command.barracks_rename import BarracksRename
+from command.barracks_save import BarracksSave
 from command.common import DiscordData
 from command.cmd_default import CmdDefault
 from command.devs import Devs
@@ -18,11 +22,12 @@ from command.hero_merges import HeroMerges
 from command.hero_skills import HeroSkills
 from command.hero_sort import HeroSort
 from command.hero_stats import HeroStats
+from command.hero_total_sp import HeroTotalSp
 from command.ping import Ping
 from command.skill_info import SkillInfo
+from command.skill_search import SkillSearch
 from command.skill_alias import SkillAlias
 from command.syntax import Syntax
-
 from feh.emojilib import EmojiLib as em
 from feh.unitlib import UnitLib
 try:
@@ -33,9 +38,12 @@ else:
     easter_eggs = True
 
 
-
-BotReply = namedtuple('BotReply', 'bot_msg user_msg user cmd_type embed data task')
-UserEditable = namedtuple('UserEditable', 'bot_msg user_msg cmd_type task')
+Reactable = namedtuple(
+    'Reactable', 'bot_msg callback user data self_destruct task')
+Editable = namedtuple(
+    'Editable', 'bot_msg user_msg cmd_type task')
+Replyable = namedtuple(
+    'Replyable', 'bot_msg channel_id callback fallback data task')
 
 """
 class CMDType(Enum):
@@ -77,31 +85,40 @@ COMMAND_DICT = {
 """
 
 COMMAND_DICT = {
-    'help'      : HelpCmd    ,
-    'about'     : HelpCmd    ,
-    'hero'      : HeroInfo   ,
-    'unit'      : HeroInfo   ,
-    'stat'      : HeroStats  ,
-    'stats'     : HeroStats  ,
-    'skills'    : HeroSkills ,
-    'compare'   : HeroCompare,
-    'alt'       : HeroAlts   ,
-    'alts'      : HeroAlts   ,
-    'merge'     : HeroMerges ,
-    'merges'    : HeroMerges ,
-    'art'       : HeroArt    ,
-    'skill'     : SkillInfo  ,
-    'sort'      : HeroSort   ,
-    'addalias'  : HeroAlias  ,
-    'skillalias': SkillAlias ,
-    'ping'      : Ping       ,
-    'devs'      : Devs       ,
-    'developers': Devs       ,
-    'authors'   : Devs       ,
-    'donate'    : Donate     ,
-    'donation'  : Donate     ,
-    'donations' : Donate     ,
-    'syntax'    : Syntax     ,
+    'help'       : HelpCmd       ,
+    'about'      : HelpCmd       ,
+    'barracks'   : BarracksList  ,
+    'saved'      : BarracksList  ,
+    'savedheroes': BarracksList  ,
+    'save'       : BarracksSave  ,
+    'rename'     : BarracksRename,
+    'delete'     : BarracksDelete,
+    'sendhome'   : BarracksDelete,
+    'hero'       : HeroInfo      ,
+    'unit'       : HeroInfo      ,
+    'stat'       : HeroStats     ,
+    'stats'      : HeroStats     ,
+    'skills'     : HeroSkills    ,
+    'totalsp'    : HeroTotalSp   ,
+    'compare'    : HeroCompare   ,
+    'alt'        : HeroAlts      ,
+    'alts'       : HeroAlts      ,
+    'merge'      : HeroMerges    ,
+    'merges'     : HeroMerges    ,
+    'art'        : HeroArt       ,
+    'skill'      : SkillInfo     ,
+    'skillsearch': SkillSearch   ,
+    'sort'       : HeroSort      ,
+    'addalias'   : HeroAlias     ,
+    'skillalias' : SkillAlias    ,
+    'ping'       : Ping          ,
+    'devs'       : Devs          ,
+    'developers' : Devs          ,
+    'authors'    : Devs          ,
+    'donate'     : Donate        ,
+    'donation'   : Donate        ,
+    'donations'  : Donate        ,
+    'syntax'     : Syntax        ,
 }
 
 
@@ -116,8 +133,9 @@ class XanderBotClient(discord.Client):
         UnitLib.initialize()
         self.reactable_library = dict()
         self.editable_library = dict()
-
-
+        self.replyable_library = dict()
+        #optimization
+        self.reply_listen = False
 
     async def on_ready(self):
         print('Logged in as')
@@ -126,11 +144,10 @@ class XanderBotClient(discord.Client):
         print('------')
         em.initialize(self)
         UnitLib.initialize_emojis(self)
-        DiscordData.setup_commands(self)
+        await DiscordData.setup_commands(self)
         #if not Cmd.devs:
         #    Cmd.devs.append(self.get_user(151913154803269633))
         #    Cmd.devs.append(self.get_user(196379129472352256))
-
 
     async def forget_editable(self, user_msg):
         try:
@@ -140,18 +157,14 @@ class XanderBotClient(discord.Client):
         finally:
             #print('editable deleted:')
             #print(user_msg.id)
-            del self.reactable_library[user_msg.id]
-
-
+            del self.editable_library[user_msg.id]
 
     def register_editable(self, bot_msg, user_msg, cmd_type):
         task = asyncio.create_task(self.forget_reactable(user_msg))
-        self.editable_library[user_msg.id] = UserEditable(
-            bot_msg, user_msg, cmd_type, task)
+        self.editable_library[user_msg.id] = Editable(
+            bot_msg, user_msg, [cmd_type], task)
         #print('editable registered:')
         #print(user_msg.id)
-
-
 
     async def forget_reactable(self, bot_msg):
         try:
@@ -163,17 +176,46 @@ class XanderBotClient(discord.Client):
             #print(bot_msg.id)
             del self.reactable_library[bot_msg.id]
 
-
-
-    def register_reactable(self, bot_msg, user_msg, user, cmd_type,
-                           embed, data):
+    def register_reactable(self, bot_msg, callback, user, data, self_destruct):
         task = asyncio.create_task(self.forget_reactable(bot_msg))
-        self.reactable_library[bot_msg.id] = BotReply(
-            bot_msg, user_msg, user, cmd_type, embed, data, task)
+        self.reactable_library[bot_msg.id] = Reactable(
+            bot_msg, callback, user, data, self_destruct, task)
         #print('reactable registered:')
         #print(bot_msg.id)
 
+    async def forget_replyable(self, user_id):
+        try:
+            await asyncio.sleep(900)
+        except asyncio.CancelledError:
+            pass
+        else:
+            # could maybe reply here, but this is currently unused anyways
+            if self.replyable_library[user_id].fallback:
+                payload = self.replyable_library[user_id].fallback(
+                    self.replyable_library[user_id].data, user_id)
+        finally:
+            del self.replyable_library[user_id]
+            if not self.replyable_library:
+                self.reply_listen = False
 
+    async def handle_replyable(self, replyable, user, channel):
+        if replyable.content or replyable.embed:
+            bot_msg = await channel.send(
+                content = replyable.content, embed = replyable.embed)
+        else:
+            bot_msg = None
+        task = asyncio.create_task(self.forget_replyable(user.id))
+        if (user.id in self.replyable_library
+                and self.replyable_library[user.id].channel_id == channel.id):
+            if self.replyable_library[user.id].bot_msg:
+                await self.replyable_library[user.id].bot_msg.delete()
+            self.replyable_library[user.id].task.cancel()
+            await self.replyable_library[user.id].task
+        self.replyable_library[user.id] = Replyable(
+            bot_msg, channel.id, replyable.callback, replyable.fallback,
+            replyable.data, task
+        )
+        self.reply_listen = True
 
     async def on_message(self, message):
         # don't respond to ourselves
@@ -182,45 +224,92 @@ class XanderBotClient(discord.Client):
         if easter_egg:
             asyncio.create_task(easter_egg.process_eggs(self, message))
         test_string = message.content[:4].lower()
-        if not (test_string.startswith('f?') or test_string.startswith('feh?')):
-            return
-        asyncio.create_task(message.channel.trigger_typing())
-        lower_message = message.content.lower()
-
-        if lower_message.startswith('f?'):
-            lower_message = lower_message[2:]
-        elif lower_message.startswith('feh?'):
-            lower_message = lower_message[4:]
-        split_command = lower_message.split(' ', 1)
+        if not (
+                    test_string.startswith('f?')
+                    or test_string.startswith('feh?')
+                    or test_string.startswith('f!')
+                    or test_string.startswith('feh!')
+            ):
+            if (self.reply_listen
+                    and message.author.id in self.replyable_library
+                    and (message.channel.id ==
+                         self.replyable_library[message.author.id].channel_id)
+                ):
+                replyable = self.replyable_library[message.author.id]
+                payload = await replyable.callback(
+                    message.content, replyable.data, message.author.id)
+                if payload.content or payload.embed:
+                    if replyable.bot_msg:
+                        bot_msg = replyable.bot_msg
+                        await replyable.bot_msg.edit(
+                            content = payload.content, embed = payload.embed)
+                    else:
+                        bot_msg = await message.channel.send(
+                            content = payload.content, embed = payload.embed)
+                replyable.task.cancel()
+                await replyable.task
+                if payload.replyable:
+                    await self.handle_replyable(
+                        payload.replyable, message.author, message.channel)
+                if payload.reactable:
+                    self.register_reactable(
+                        bot_msg,
+                        payload.reactable.callback,
+                        message.author,
+                        payload.reactable.data,
+                        payload.reactable.self_destruct,
+                    )
+                    for emoji in payload.reactable.emojis:
+                        await bot_msg.add_reaction(emoji)
+                return
+            else:
+                return
+        # asyncio.create_task(message.channel.trigger_typing())
+        if test_string.startswith('feh'):
+            content = message.content[4:]
+        else:
+            content = message.content[2:]
+        split_command = content.split(' ', 1)
         if len(split_command) > 1:
             predicate = split_command[1]
         else: predicate = ''
         try:
-            if split_command[0] in COMMAND_DICT:
-                command_type = COMMAND_DICT[split_command[0]]
-                content, embed, data = await command_type.cmd(predicate)
-                bot_reply = await message.channel.send(
-                    content = content, embed = embed)
-                self.register_editable(bot_reply, message, command_type)
-                if data:
-                    self.register_reactable(bot_reply, message, message.author,
-                                            command_type, embed, data)
-                    await command_type.finalize(bot_reply, data)
+            command = split_command[0].lower()
+            if command in COMMAND_DICT:
+                command_type = COMMAND_DICT[command]
+                payload = await command_type.cmd(predicate, message.author.id)
+                if payload.content or payload.embed:
+                    bot_reply = await message.channel.send(
+                        content=payload.content, embed=payload.embed)
+                    self.register_editable(bot_reply, message, command_type)
+                else:
+                    bot_reply = None
+                if payload.replyable:
+                    await self.handle_replyable(
+                        payload.replyable, message.author, message.channel)
+                if payload.reactable and bot_reply is not None:
+                    self.register_reactable(
+                        bot_reply,
+                        payload.reactable.callback,
+                        message.author,
+                        payload.reactable.data,
+                        payload.reactable.self_destruct,
+                    )
+                    for emoji in payload.reactable.emojis:
+                        await bot_reply.add_reaction(emoji)
                 if command_type.LOGGING:
                     await DiscordData.devs[0].send(
                         content = f'{message.author}: {message.content}')
                 return
-
             #debug commands
-
-            elif (lower_message.startswith('emojis')
+            elif (split_command[0].lower() == 'emojis'
                 and (message.author.id == 151913154803269633
                         or message.author.id == 196379129472352256)):
                 emojilisttemp = sorted(self.emojis, key=lambda q: (q.name))
                 for e in emojilisttemp:
                     await message.channel.send(str(e) + str(e.id))
 
-            elif (lower_message.startswith('reload')
+            elif (split_command[0].lower().startswith('reload')
                     and (message.author.id == 151913154803269633
                         or message.author.id == 196379129472352256)):
                 reply = await message.channel.send(
@@ -230,13 +319,13 @@ class XanderBotClient(discord.Client):
                 em.initialize(self)
                 await reply.edit(content = 'Done rebuilding all indices.')
 
-            elif (lower_message.startswith('say')
+            elif (split_command[0].lower() == 'say'
                   and (message.author.id == 151913154803269633
                        or message.author.id == 196379129472352256)):
                 payload = message.content.split(' ', 2)[1:]
                 await self.get_channel(int(payload[0])).send(payload[1])
 
-            elif lower_message.startswith('whoami'):
+            elif split_command[0].lower() == 'whoami':
                 await message.channel.send(f"You're <{message.author.id}>!")
             else:
                 bot_reply = await message.channel.send('Command invalid!')
@@ -257,45 +346,57 @@ class XanderBotClient(discord.Client):
             self.register_editable(bot_reply, message, CmdDefault)
             raise e
 
-
-
     async def on_message_edit(self, before, after):
         if after.author == self.user:
             return
         test_string = after.content[:4].lower()
-        if not (test_string.startswith('f?') or test_string.startswith('feh?')):
+        if not (
+                test_string.startswith('f?')
+                or test_string.startswith('feh?')
+                or test_string.startswith('f!')
+                or test_string.startswith('feh!')
+            ):
             return
         if after.id not in self.editable_library:
             return
         msg_bundle = self.editable_library[after.id]
         bot_msg = msg_bundle.bot_msg
         manage_messages = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
-
-        lower_message = after.content.lower()
-
-        if lower_message.startswith('f?'):
-            lower_message = lower_message[2:]
-        elif lower_message.startswith('feh?'):
-            lower_message = lower_message[4:]
-        split_command = lower_message.split(' ', 1)
+        if test_string.startswith('feh'):
+            content = after.content[4:]
+        else:
+            content = after.content[2:]
+        split_command = content.split(' ', 1)
         if len(split_command) > 1:
             predicate = split_command[1]
         else: predicate = ''
         try:
-            if split_command[0] in COMMAND_DICT:
-                command_type = COMMAND_DICT[split_command[0]]
-                content, embed, data = await command_type.cmd(predicate)
+            command = split_command[0].lower()
+            if command in COMMAND_DICT:
+                command_type = COMMAND_DICT[command]
+                payload = await command_type.cmd(predicate, after.author.id)
                 await bot_msg.edit(
-                    content = content, embed = embed)
+                    content = payload.content, embed = payload.embed)
                 if bot_msg.id in self.reactable_library:
                     self.reactable_library[bot_msg.id].task.cancel()
                     await self.reactable_library[bot_msg.id].task
-                if data:
-                    self.register_reactable(bot_msg, after, after.author,
-                                            command_type, embed, data)
-                    if msg_bundle.cmd_type != command_type:
-                        if manage_messages: await bot_msg.clear_reactions()
-                        await command_type.finalize(bot_msg, data)
+                if payload.replyable:
+                    await self.handle_replyable(
+                        payload.replyable, after.author, after.channel)
+                if payload.reactable:
+                    self.register_reactable(
+                        bot_msg,
+                        payload.reactable.callback,
+                        after.author,
+                        payload.reactable.data,
+                        payload.reactable.self_destruct,
+                    )
+                    if msg_bundle.cmd_type[0] != command_type:
+                        msg_bundle.cmd_type[0] = command_type
+                        if manage_messages:
+                            await bot_msg.clear_reactions()
+                        for emoji in payload.reactable.emojis:
+                            await bot_msg.add_reaction(emoji)
             else:
                 await bot_msg.edit(content = 'Command invalid!', embed = None)
                 if manage_messages: await bot_msg.clear_reactions()
@@ -320,8 +421,6 @@ class XanderBotClient(discord.Client):
             )
             raise e
 
-
-
     async def on_reaction_add(self, reaction, user):
         if (reaction.message.author != client.user
             or user == client.user
@@ -329,18 +428,22 @@ class XanderBotClient(discord.Client):
         msg_bundle = self.reactable_library[reaction.message.id]
         if user != msg_bundle.user: return
         bot_msg = msg_bundle.bot_msg
-        content, embed, remove = await msg_bundle.cmd_type.react(
-            reaction, bot_msg, msg_bundle.embed, msg_bundle.data)
+        payload = await msg_bundle.callback(
+            reaction, msg_bundle.data, user.id)
         manage_msg = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
-        if manage_msg and remove:
+        if manage_msg and payload.delete:
             asyncio.create_task(bot_msg.remove_reaction(reaction, user))
-
-        if content is None: content = bot_msg.content
-        if embed is None and bot_msg.embed:
-            content = msg_bundle.bot_msg.embed[0]
-        await msg_bundle.bot_msg.edit(content = content, embed = embed)
-
-
+        if payload.replyable:
+            await self.handle_replyable(
+                payload.replyable, user, reaction.message.channel)
+        if payload.content or payload.embed:
+            content = payload.content or bot_msg.content
+            if payload.embed is None and bot_msg.embeds:
+                embed = msg_bundle.bot_msg.embeds[0]
+            else: embed = payload.embed
+            await msg_bundle.bot_msg.edit(content = content, embed = embed)
+        if payload.self_destruct:
+            payload.task.cancel()
 
     async def on_message_delete(self, message):
         if message.author == self.user or message.id not in self.editable_library:
@@ -350,7 +453,6 @@ class XanderBotClient(discord.Client):
             self.reactable_library[bot_msg.id].task.cancel()
         await msg_bundle.bot_msg.delete()
         msg_bundle.task.cancel()
-
 
 
 client = XanderBotClient()

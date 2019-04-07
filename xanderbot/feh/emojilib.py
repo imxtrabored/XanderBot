@@ -2,8 +2,12 @@ import sqlite3
 
 from discord import Color
 
-from feh.hero import UnitColor, UnitWeaponType, MoveType
-from feh.hero import LegendElement, LegendStat, Stat, Rarity
+from feh.currency import Dragonflower
+from feh.hero import (
+    UnitColor, UnitWeaponType, MoveType, LegendElement, LegendStat, Stat,
+    Rarity, SummonerSupport
+)
+from feh.interface import DragonflowerInc, RarityInc
 from feh.skill import SkillType, SkillWeaponGroup
 
 class CompoundEmoji(tuple):
@@ -49,14 +53,11 @@ class EmojiLib(object):
     @classmethod
     def initialize(cls, client):
         print('building emojilib...')
-
-        con = sqlite3.connect("feh/emojis.db", detect_types=sqlite3.PARSE_COLNAMES)
+        con = sqlite3.connect("feh/emojis.db")
         cur = con.cursor()
-
         self = EmojiLib()
         cls.singleton = self
         self.emojis.clear()
-
         cur.execute("""SELECT name, id FROM emojis;""")
         for index in cur:
             # ok look this is (probably) still better than storing python objects in db
@@ -117,9 +118,24 @@ class EmojiLib(object):
             elif index[0] == 'Rarity_3': self.emojis[Rarity.THREE] = client.get_emoji(int(index[1]))
             elif index[0] == 'Rarity_4': self.emojis[Rarity.FOUR ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Rarity_5': self.emojis[Rarity.FIVE ] = client.get_emoji(int(index[1]))
-
+            elif index[0] == 'Df_Inf': self.emojis[Dragonflower.INFANTRY] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Df_Arm': self.emojis[Dragonflower.ARMOR   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Df_Cav': self.emojis[Dragonflower.CAVALRY ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Df_Fly': self.emojis[Dragonflower.FLIER   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'SummSuppC': self.emojis[SummonerSupport.C] = client.get_emoji(int(index[1]))
+            elif index[0] == 'SummSuppB': self.emojis[SummonerSupport.B] = client.get_emoji(int(index[1]))
+            elif index[0] == 'SummSuppA': self.emojis[SummonerSupport.A] = client.get_emoji(int(index[1]))
+            elif index[0] == 'SummSuppS': self.emojis[SummonerSupport.S] = client.get_emoji(int(index[1]))
+            elif index[0] == 'RarityUp'  : self.emojis[RarityInc.UP] = client.get_emoji(int(index[1]))
+            elif index[0] == 'RarityDown': self.emojis[RarityInc.DOWN] = client.get_emoji(int(index[1]))
+            elif index[0] == 'DfUpInf': self.emojis[DragonflowerInc.INFANTRY] = client.get_emoji(int(index[1]))
+            elif index[0] == 'DfUpArm': self.emojis[DragonflowerInc.ARMOR   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'DfUpCav': self.emojis[DragonflowerInc.CAVALRY ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'DfUpFly': self.emojis[DragonflowerInc.FLIER   ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'DfDown' : self.emojis[DragonflowerInc.DOWN    ] = client.get_emoji(int(index[1]))
             else: self.emojis[index[0]] = client.get_emoji(int(index[1]))
-        
+        con.close()
+        self.emojis[SummonerSupport.NONE] = ''
         self.emojis[SkillWeaponGroup.R_SWORD] = self.emojis[UnitWeaponType.R_SWORD]
         self.emojis[SkillWeaponGroup.R_TOME ] = self.emojis[UnitWeaponType.R_TOME ]
         self.emojis[SkillWeaponGroup.B_LANCE] = self.emojis[UnitWeaponType.B_LANCE]
@@ -127,7 +143,6 @@ class EmojiLib(object):
         self.emojis[SkillWeaponGroup.G_AXE  ] = self.emojis[UnitWeaponType.G_AXE  ]
         self.emojis[SkillWeaponGroup.G_TOME ] = self.emojis[UnitWeaponType.G_TOME ]
         self.emojis[SkillWeaponGroup.C_STAFF] = self.emojis[UnitWeaponType.C_STAFF]
-
         self.emojis[SkillWeaponGroup.S_BREATH] = CompoundEmoji((
             self.emojis[UnitWeaponType.R_BREATH],
             self.emojis[UnitWeaponType.B_BREATH],
@@ -152,13 +167,8 @@ class EmojiLib(object):
             self.emojis[UnitWeaponType.G_BEAST],
             self.emojis[UnitWeaponType.C_BEAST],
         ))
-        con.close()
-
-
         print('done.')
         return self.emojis
-
-
 
     @classmethod
     def get(cls, obj, *, single=False):
@@ -167,13 +177,9 @@ class EmojiLib(object):
             if single and len(cls.singleton.emojis[obj]) > 1:
                 return cls.singleton.emojis[obj][-1]
 
-
-
     @classmethod
     def get_color(cls, obj):
         return cls.colors.get(obj)
-
-
 
     @classmethod
     async def get_lib(cls):

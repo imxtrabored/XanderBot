@@ -1,4 +1,4 @@
-from command.common import DiscordData
+from command.common import DiscordData, ReplyPayload
 from command.cmd_default import CmdDefault
 
 class Ping(CmdDefault):
@@ -9,8 +9,7 @@ class Ping(CmdDefault):
     )
 
     @staticmethod
-    async def cmd(params):
-        return (
-            f'Pong: {round(DiscordData.client.latency * 1000, 3)} ms',
-            None, None
+    async def cmd(params, user_id):
+        return ReplyPayload(
+            content=f'Pong: {round(DiscordData.client.latency * 1000, 3)} ms',
         )

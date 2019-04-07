@@ -1,4 +1,4 @@
-from command.cmd_default import CmdDefault
+from command.cmd_default import CmdDefault, ReplyPayload
 from command.common import DiscordData, filter_name
 from feh.unitlib import UnitLib
 
@@ -6,6 +6,7 @@ from feh.unitlib import UnitLib
 class HeroAlias(CmdDefault):
 
     LOGGING = True
+
     help_text = (
         'The ``addalias`` command adds alternate hero name aliases to my '
         'database for more convenient searching. To add aliases for skill '
@@ -30,29 +31,27 @@ class HeroAlias(CmdDefault):
     )
 
     @staticmethod
-    async def cmd(params):
+    async def cmd(params, user_id):
         tokens = params.split(',')
-        names = [
-            filter_name(n)
-            for n in tokens
-        ]
+        names = [filter_name(n) for n in tokens]
         if len(names) < 2:
-            return (
-                'Not enough names entered. '
-                'Please enter at least two names, separated by commas.',
-                None, None
+            return ReplyPayload(
+                content='Not enough names entered. '
+                'Please enter at least two names, separated by commas.'
             )
-        heroes = [UnitLib.get_hero(n) for n in names]
+        heroes = [UnitLib.get_hero(n, user_id) for n in names]
         if len(names) == 2:
             if heroes[0] and not heroes[1]:
-                UnitLib.insert_hero_alias(heroes[0], names[1])
-                content = f'Added alias {tokens[1].strip()} for {heroes[0].short_name}.'
+                await UnitLib.insert_hero_alias(heroes[0], names[1])
+                content = (f'Added alias {tokens[1].strip()} for '
+                           f'{heroes[0].short_name}.')
                 await DiscordData.devs[0].send(
                     #f'{message.author.name}#{message.author.discriminator} '
                     f'added alias {names[1]} for {heroes[0].short_name}.')
             elif heroes[1] and not heroes[0]:
-                UnitLib.insert_hero_alias(heroes[1], names[0])
-                content = f'Added alias {tokens[0].strip()} for {heroes[1].short_name}.'
+                await UnitLib.insert_hero_alias(heroes[1], names[0])
+                content = (f'Added alias {tokens[0].strip()} for '
+                           f'{heroes[1].short_name}.')
                 await DiscordData.devs[0].send(
                     #f'{message.author.name}#{message.author.discriminator} '
                     f'added alias {names[0]} for {heroes[1].short_name}.')
@@ -66,7 +65,7 @@ class HeroAlias(CmdDefault):
             else:
                 added_names = [
                     name for name in names[1:]
-                    if UnitLib.insert_hero_alias(heroes[0], name)
+                    if await UnitLib.insert_hero_alias(heroes[0], name)
                 ]
                 if added_names:
                     name_list = ', '.join(added_names)
@@ -75,7 +74,8 @@ class HeroAlias(CmdDefault):
                         f'{name_list}'
                     )
                     await DiscordData.devs[0].send(
-                        #f'{message.author.name}#{message.author.discriminator} '
-                        f'added aliases for {heroes[0].short_name}:\n{name_list}')
+                        f'added aliases for {heroes[0].short_name}:\n'
+                        f'{name_list}'
+                    )
                 else: content = 'All names are already aliases.'
-        return content, None, None
+        return ReplyPayload(content=content)

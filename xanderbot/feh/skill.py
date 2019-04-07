@@ -1,19 +1,8 @@
+from copy import copy
 from enum import Enum, unique
-from feh.hero import MoveType, UnitWeaponType
 
-@unique
-class SkillType(Enum):
-    '''Enum for each skill type'''
-    NONE           = 0
-    WEAPON         = 1
-    ASSIST         = 2
-    SPECIAL        = 3
-    PASSIVE_A      = 4
-    PASSIVE_B      = 5
-    PASSIVE_C      = 6
-    PASSIVE_SEAL   = 7
-    WEAPON_REFINED = 8
-    REFINE         = 9
+from feh.hero import MoveType, UnitWeaponType, SkillType
+
 
 @unique
 class SkillWeaponGroup(Enum):
@@ -39,6 +28,16 @@ class SpecialTrigger(Enum):
     UNIT_POSTCOMBAT   = 4
     UNIT_ASSIST       = 5
     UNIQUE_ICE_MIRROR = 6
+
+@unique
+class Refine(Enum):
+    EFFECT = 1
+    ATK    = 2
+    SPD    = 3
+    DEF    = 4
+    RES    = 5
+    STAFF1 = 6
+    STAFF2 = 7
 
 restrictable_types = (
     MoveType.INFANTRY,
@@ -74,7 +73,7 @@ class Skill(object):
     '''Represents a skill in FEH'''
 
     __slots__ = (
-        'id', 'identity', 'name', 'description', 'type', 'weapon_type',
+        'index', 'identity', 'name', 'description', 'skill_type', 'weapon_type',
         'is_staff', 'is_seal', 'is_refine', 'is_refined_variant',
         'range', 'might', 'icon', 'w_icon',
         'eff_infantry', 'eff_armor', 'eff_cavalry', 'eff_flier',
@@ -82,23 +81,26 @@ class Skill(object):
         'bonus_hp', 'bonus_atk', 'bonus_spd', 'bonus_def', 'bonus_res',
         'cd_mod', 'special_cd',
         'prereq1', 'prereq1_id', 'prereq2', 'prereq2_id', 'postreq',
-        'sp', 'exclusive', 'learnable', 'restrict_from', 'restrict_set',
-        'refinable', 'refined_version', 'refined_version_id',
+        'sp', 'exclusive', 'exclusive_to_id', 'learnable', 'restrict_from',
+        'restrict_set',
+        'refinable', 'refined_ver', 'refined_ver_id',
         'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
-        'refine_eff', 'refine_eff_id', 'refine_staff1', 'refine_staff1_id',
-        'refine_staff2', 'refine_staff2_id',
+        'refine_eff', 'refine_eff_id', 'refine_st1', 'refine_st1_id',
+        'refine_st2', 'refine_st2_id',
         'refine_atk', 'refine_atk_id', 'refine_spd', 'refine_spd_id',
         'refine_def', 'refine_def_id', 'refine_res', 'refine_res_id',
+        'refine_path',
         'evolves_to', 'evolves_to_id',
         'evolve_medals', 'evolve_stones', 'evolve_dew',
-        'evolves_from', 'evolves_from_id',
+        'evolves_from', 'evolve_from_id',
         'seal_badge_color', 'seal_great_badges', 'seal_small_badges',
         'seal_coins',
         'skill_rank', 'tier',
     )
 
     def __init__(
-            self, id, identity, name, description, type, weapon_type = 0,
+            self, index, identity, name, description, skill_type,
+            weapon_type = 0,
             staff_exclusive = False, is_seal = False, is_refine = False,
             is_refined_variant = False, range = 0, might = 0,
             eff_infantry = False, eff_armor = False, eff_cavalry = False,
@@ -115,11 +117,11 @@ class Skill(object):
             r_beast = True, b_beast = True, g_beast = True, c_beast = True,
             refinable = None, refined_version = None, refine_sp = None,
             refine_medals = 0, refine_stones = 0, refine_dew = 0,
-            refine_eff = None, refine_staff1 = None, refine_staff2 = None,
+            refine_eff = None, refine_st1 = None, refine_st2 = None,
             refine_atk = None, refine_spd = None, refine_def = None,
             refine_res = None,
             evolves_to = None, evolve_medals = 0, evolve_stones = 0,
-            evolve_dew = 0, evolves_from = None,
+            evolve_dew = 0, evolve_from = None,
             seal_badge_color = 1, seal_great_badges = 0, seal_small_badges = 0,
             seal_coins = 0,
             skill_rank = 0, tier = 0,
@@ -127,11 +129,11 @@ class Skill(object):
         '''theres no way to make this look pretty is there haw haw haw'''
 
         #initialize skill name
-        self.id = id
+        self.index = index
         self.identity = identity
         self.name = name
         self.description = description if description else ''
-        self.type = SkillType(type)
+        self.skill_type = SkillType(skill_type)
         self.weapon_type = (SkillWeaponGroup(weapon_type) if weapon_type
                             else None)
         self.icon = ''
@@ -171,6 +173,7 @@ class Skill(object):
         self.postreq = []
         self.sp = sp
         self.exclusive = exclusive
+        self.exclusive_to_id = set()
 
         #learnable
         self.learnable = (
@@ -222,41 +225,84 @@ class Skill(object):
         self.restrict_set = set(self.restrict_from)
 
         #refines
-        self.refinable          = refinable
-        self.refined_version_id = refined_version
-        self.refined_version    = None
-        self.refine_sp          = refine_sp
-        self.refine_medals      = refine_medals
-        self.refine_stones      = refine_stones
-        self.refine_dew         = refine_dew
-        self.evolves_to_id      = evolves_to
-        self.evolves_to         = None
-        self.evolve_medals      = evolve_medals
-        self.evolve_stones      = evolve_stones
-        self.evolve_dew         = evolve_dew
-        self.evolves_from_id    = evolves_from
-        self.evolves_from       = None
-        self.refine_eff_id      = refine_eff
-        self.refine_eff         = None
-        self.refine_staff1_id   = refine_staff1
-        self.refine_staff1      = None
-        self.refine_staff2_id   = refine_staff2
-        self.refine_staff2      = None
-        self.refine_atk_id      = refine_atk
-        self.refine_atk         = None
-        self.refine_spd_id      = refine_spd
-        self.refine_spd         = None
-        self.refine_def_id      = refine_def
-        self.refine_def         = None
-        self.refine_res_id      = refine_res
-        self.refine_res         = None
+        self.refinable      = refinable
+        self.refined_ver_id = refined_version
+        self.refined_ver    = None
+        self.refine_sp      = refine_sp
+        self.refine_medals  = refine_medals
+        self.refine_stones  = refine_stones
+        self.refine_dew     = refine_dew
+        self.evolves_to_id  = evolves_to
+        self.evolves_to     = None
+        self.evolve_medals  = evolve_medals
+        self.evolve_stones  = evolve_stones
+        self.evolve_dew     = evolve_dew
+        self.evolve_from_id = evolve_from
+        self.evolves_from   = None
+        self.refine_eff_id  = refine_eff
+        self.refine_eff     = None
+        self.refine_st1_id  = refine_st1
+        self.refine_st1     = None
+        self.refine_st2_id  = refine_st2
+        self.refine_st2     = None
+        self.refine_atk_id  = refine_atk
+        self.refine_atk     = None
+        self.refine_spd_id  = refine_spd
+        self.refine_spd     = None
+        self.refine_def_id  = refine_def
+        self.refine_def     = None
+        self.refine_res_id  = refine_res
+        self.refine_res     = None
+        self.refine_path    = None
 
         self.seal_badge_color  = seal_badge_color
         self.seal_great_badges = seal_great_badges
         self.seal_small_badges = seal_small_badges
         self.seal_coins        = seal_coins
 
+    def get_refine(self, refine):
+        if refine == Refine.EFFECT:
+            return self.refine_eff
+        elif refine == Refine.ATK:
+            return self.refine_atk
+        elif refine == Refine.SPD:
+            return self.refine_spd
+        elif refine == Refine.DEF:
+            return self.refine_def
+        elif refine == Refine.RES:
+            return self.refine_res
+        elif refine == Refine.STAFF1:
+            return self.refine_st1
+        elif refine == Refine.STAFF2:
+            return self.refine_st2
+        else:
+            return None
 
+    def get_refined(self, refine):
+        if refine is None: return
+        skill = copy(self)
+        if skill.refined_ver:
+            skill.description = skill.refined_ver.description
+            skill.might = skill.refined_ver.might
+            skill.bonus_atk = skill.refined_ver.bonus_atk
+            skill.refined_ver = None
+            skill.refined_ver_id = None
+        if (refine == skill.refine_eff or refine == skill.refine_st1
+                or refine == skill.refine_st2):
+            skill.description = (
+                f'{self.description}\n{refine.icon}: **{refine.description}**')
+        skill.bonus_hp += refine.bonus_hp
+        skill.might += refine.bonus_atk
+        skill.bonus_atk += refine.bonus_atk
+        skill.bonus_spd += refine.bonus_spd
+        skill.bonus_def += refine.bonus_def
+        skill.bonus_res += refine.bonus_res
+        temp = skill.sp
+        skill.sp = skill.refine_sp
+        skill.refine_sp = temp
+        skill.icon = refine.icon
+        skill.refine_path = refine
+        return skill
 
     def set_tier_recursive(self):
         if self.tier: return self.tier + 1
@@ -268,13 +314,16 @@ class Skill(object):
         # if self.tier >= 3 and self.name.endswith('2'): print(self.name)
         return self.tier + 1
 
-
-
     def get_cumul_sp_recursive(self):
-        if not self.prereq1: return self.sp
-        else: return self.prereq1.get_cumul_sp_recursive() + self.sp
-
-
+        if not self.prereq1:
+            if not self.refine_path:
+                return self.sp
+            return self.sp + self.refine_sp
+        else:
+            if not self.refine_path:
+                return self.prereq1.get_cumul_sp_recursive() + self.sp
+            return (self.prereq1.get_cumul_sp_recursive() + self.sp
+                    + self.refine_sp)
 
     def link(self, unit_lib):
         if self.prereq1_id:
@@ -286,51 +335,47 @@ class Skill(object):
         if self.evolves_to_id:
             self.evolves_to = unit_lib.get_rskill_by_id(self.evolves_to_id)
             self.evolves_to.evolves_from = self
-        if self.refined_version_id:
-            self.refined_version = unit_lib.get_rskill_by_id(self.refined_version_id)
-        if self.refine_eff_id     :
-            self.refine_eff      = unit_lib.get_rskill_by_id(self.refine_eff_id     )
-        if self.refine_staff1_id  :
-            self.refine_staff1   = unit_lib.get_rskill_by_id(self.refine_staff1_id  )
-        if self.refine_staff2_id  :
-            self.refine_staff2   = unit_lib.get_rskill_by_id(self.refine_staff2_id  )
-        if self.refine_atk_id     :
-            self.refine_atk      = unit_lib.get_rskill_by_id(self.refine_atk_id     )
-        if self.refine_spd_id     :
-            self.refine_spd      = unit_lib.get_rskill_by_id(self.refine_spd_id     )
-        if self.refine_def_id     :
-            self.refine_def      = unit_lib.get_rskill_by_id(self.refine_def_id     )
-        if self.refine_res_id     :
-            self.refine_res      = unit_lib.get_rskill_by_id(self.refine_res_id     )
+        if self.refined_ver_id:
+            self.refined_ver = unit_lib.get_rskill_by_id(self.refined_ver_id)
+        if self.refine_eff_id:
+            self.refine_eff = unit_lib.get_rskill_by_id(self.refine_eff_id)
+        if self.refine_st1_id:
+            self.refine_st1 = unit_lib.get_rskill_by_id(self.refine_st1_id)
+        if self.refine_st2_id:
+            self.refine_st2 = unit_lib.get_rskill_by_id(self.refine_st2_id)
+        if self.refine_atk_id:
+            self.refine_atk = unit_lib.get_rskill_by_id(self.refine_atk_id)
+        if self.refine_spd_id:
+            self.refine_spd = unit_lib.get_rskill_by_id(self.refine_spd_id)
+        if self.refine_def_id:
+            self.refine_def = unit_lib.get_rskill_by_id(self.refine_def_id)
+        if self.refine_res_id:
+            self.refine_res = unit_lib.get_rskill_by_id(self.refine_res_id)
         # note: replace this error checking line
         # if self.prereq1 == self: print(self.name+', '+str(self.prereq1_id-1))
 
-        self.set_tier_recursive()
-
-
-
-Skill.EMPTY_WEAPON    = Skill(
-    -1, 'null weapon'   , 'None', 'Empty weapon slot'     ,
+Skill.EMPTY_WEAPON = Skill(
+    -1, 'null weapon', 'None', 'Empty weapon slot',
     SkillType.WEAPON
 )
-Skill.EMPTY_ASSIST    = Skill(
-    -2, 'null assist'   , 'None', 'Empty assist slot'     ,
+Skill.EMPTY_ASSIST = Skill(
+    -2, 'null assist', 'None', 'Empty assist slot',
     SkillType.ASSIST
 )
-Skill.EMPTY_SPECIAL   = Skill(
-    -3, 'null special'  , 'None', 'Empty special slot'    ,
+Skill.EMPTY_SPECIAL = Skill(
+    -3, 'null special', 'None', 'Empty special slot',
     SkillType.SPECIAL
 )
 Skill.EMPTY_PASSIVE_A = Skill(
-    -4, 'null passive a', 'None', 'Empty A passive slot'  ,
+    -4, 'null passive a', 'None', 'Empty A passive slot',
     SkillType.PASSIVE_A
 )
 Skill.EMPTY_PASSIVE_B = Skill(
-    -5, 'null passive b', 'None', 'Empty B passive slot'  ,
+    -5, 'null passive b', 'None', 'Empty B passive slot',
     SkillType.PASSIVE_B
 )
 Skill.EMPTY_PASSIVE_C = Skill(
-    -6, 'null passive c', 'None', 'Empty C passive slot'  ,
+    -6, 'null passive c', 'None', 'Empty C passive slot',
     SkillType.PASSIVE_C
 )
 Skill.EMPTY_PASSIVE_S = Skill(

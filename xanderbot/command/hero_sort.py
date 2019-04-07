@@ -1,17 +1,10 @@
 from command.cmd_default import CmdDefault
+from command.common import ReplyPayload
+
 
 class HeroSort(CmdDefault):
 
     @staticmethod
-    async def cmd(params):
-        return 'Command not implemented yet!', None, None
+    async def cmd(params, user_id):
+        return ReplyPayload(content='Command not implemented yet!')
 
-
-    @staticmethod
-    async def finalize(bot_reply, data):
-        return
-
-
-    @staticmethod
-    async def react(reaction, bot_msg, embed, data):
-        return None, None, False

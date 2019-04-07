@@ -1,13 +1,14 @@
 from collections import Counter
 from operator import methodcaller
 
-import discord
+from discord import Embed
 
 from command.cmd_default import CmdDefault
-from command.common import process_hero
+from command.common import ReplyPayload, process_hero
 from command.hero_stats import HeroStats
+from feh.currency import Dragonflower
 from feh.emojilib import EmojiLib as em
-from feh.hero import Rarity, Stat
+from feh.hero import Rarity, Stat, SummonerSupport
 from feh.unitlib import UnitLib
 
 
@@ -32,221 +33,221 @@ class HeroCompare(CmdDefault):
         if not heroes:
             embed.description = 'No heroes found.'
             return embed
-        if   len(heroes) == 1:
-            embed.set_thumbnail(url=f'https://raw.githubusercontent.com/imxtrabored/XanderBot/master/xanderbot/feh/data/heroes/{heroes[0].id}/Face.png')
+        if len(heroes) == 1:
+            embed.set_thumbnail(
+                url='https://raw.githubusercontent.com/imxtrabored/XanderBot/'
+                f'master/xanderbot/feh/data/heroes/{heroes[0].index}/Face.png')
             return HeroStats.format_stats(heroes[0], embed, zoom_state)
         elif len(heroes) == 2:
             title = (f'Comparing {heroes[0].short_name} '
                      f'and {heroes[1].short_name}:')
         else:
             title = f'Comparing {", ".join([h.short_name for h in heroes])}:'
-        embed.add_field(
-            name = title,
-            value = '-',
-            inline = False
-        )
+        embed.add_field(name=title, value='-', inline=False)
         for hero in heroes:
             superboons = [
                 '' if x == 0 else ' (+)' if x > 0 else ' (-)'
                 for x in hero.get_boons_banes()
             ]
-            max_stats = (
+            if hero.boon is not Stat.NONE and hero.bane is not Stat.NONE:
+                if hero.merges == 0:
+                    ivs = f'\n(+{hero.boon.short}/-{hero.bane.short})'
+                else:
+                    ivs = f'\n(+{hero.boon.short}/~~-{hero.bane.short}~~)'
+            else:
+                ivs = ''
+            if any(hero.equipped):
+                equipped = (
+                    f'{"".join([str(sk.icon) for sk in hero.equipped])}'
+                    '\n'
+                )
+            else:
+                equipped = ''
+            final_stats = (
                 f'{hero.rarity}{em.get(Rarity(hero.rarity))} '
-                f'LV. {hero.level}+{hero.merges}, DF: {hero.flowers}\n'
+                f'LV. {hero.level}+{hero.merges} · '
+                f'{em.get(Dragonflower.get_move(hero.move_type))}'
+                f'+{hero.flowers}{ivs}\n{equipped}'
                 f'{em.get(Stat.HP)} HP: '
-                f'{hero.max_hp}{superboons[0]}\n'
+                f'{hero.final_hp}{superboons[0]}\n'
                 f'{em.get(Stat.ATK)} Attack: '
-                f'{hero.max_atk}{superboons[1]}\n'
+                f'{hero.final_atk}{superboons[1]}\n'
                 f'{em.get(Stat.SPD)} Speed: '
-                f'{hero.max_spd}{superboons[2]}\n'
+                f'{hero.final_spd}{superboons[2]}\n'
                 f'{em.get(Stat.DEF)} Defense: '
-                f'{hero.max_def}{superboons[3]}\n'
+                f'{hero.final_def}{superboons[3]}\n'
                 f'{em.get(Stat.RES)} Resistance: '
-                f'{hero.max_res}{superboons[4]}\n\n'
-                f'BST: {hero.max_total}'
+                f'{hero.final_res}{superboons[4]}\n\n'
+                f'Total: {hero.final_total}'
             )
-
+            support = (em.get(SummonerSupport(hero.summ_support))
+                       if hero.summ_support > 0 else '')
             embed.add_field(
                 name = (
-                    f'{hero.short_name} '
-                    f'{em.get(hero.weapon_type)} '
-                    f'{em.get(hero.move_type)} '
+                    f'{hero.short_name} {em.get(hero.weapon_type)}'
+                    f'{em.get(hero.move_type)}{support}'
                 ),
-                value = max_stats,
+                value = final_stats,
                 inline = True
             )
         if len(heroes) == 2:
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_hp,
-                               reverse = True)
-            if stat_sort[0].max_hp > stat_sort[-1].max_hp:
+            stat_sort = sorted(heroes, key=lambda h: h.final_hp, reverse=True)
+            if stat_sort[0].final_hp > stat_sort[-1].final_hp:
                 hp_str = (
                     f'{em.get(Stat.HP)} '
                     f'{stat_sort[0].short_name} has '
-                    f'{stat_sort[0].max_hp - stat_sort[1].max_hp} '
+                    f'{stat_sort[0].final_hp - stat_sort[1].final_hp} '
                     'more HP.'
                 )
-            else: hp_str = f'{em.get(Stat.HP)} Equal HP'
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_atk,
-                               reverse = True)
-            if stat_sort[0].max_atk > stat_sort[-1].max_atk:
+            else:
+                hp_str = f'{em.get(Stat.HP)} Equal HP'
+            stat_sort = sorted(heroes, key=lambda h: h.final_atk, reverse=True)
+            if stat_sort[0].final_atk > stat_sort[-1].final_atk:
                 atk_str = (
                     f'{em.get(Stat.ATK)} '
                     f'{stat_sort[0].short_name} has '
-                    f'{stat_sort[0].max_atk - stat_sort[1].max_atk} '
+                    f'{stat_sort[0].final_atk - stat_sort[1].final_atk} '
                     'more Attack.'
                 )
-            else: atk_str = f'{em.get(Stat.ATK)} Equal Attack.'
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_spd,
-                               reverse = True)
-            if stat_sort[0].max_spd > stat_sort[-1].max_spd:
+            else:
+                atk_str = f'{em.get(Stat.ATK)} Equal Attack.'
+            stat_sort = sorted(heroes, key=lambda h: h.final_spd, reverse=True)
+            if stat_sort[0].final_spd > stat_sort[-1].final_spd:
                 spd_str = (
                     f'{em.get(Stat.SPD)} '
                     f'{stat_sort[0].short_name} has '
-                    f'{stat_sort[0].max_spd - stat_sort[1].max_spd} '
+                    f'{stat_sort[0].final_spd - stat_sort[1].final_spd} '
                     'more Speed.'
                 )
-            else: spd_str = f'{em.get(Stat.SPD)} Equal Speed.'
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_def,
-                               reverse = True)
-            if stat_sort[0].max_def > stat_sort[-1].max_def:
+            else:
+                spd_str = f'{em.get(Stat.SPD)} Equal Speed.'
+            stat_sort = sorted(heroes, key=lambda h: h.final_def, reverse=True)
+            if stat_sort[0].final_def > stat_sort[-1].final_def:
                 def_str = (
                     f'{em.get(Stat.DEF)} '
                     f'{stat_sort[0].short_name} has '
-                    f'{stat_sort[0].max_def - stat_sort[1].max_def} '
+                    f'{stat_sort[0].final_def - stat_sort[1].final_def} '
                     'more Defense.'
                 )
-            else: def_str = f'{em.get(Stat.DEF)} Equal Defense.'
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_res,
-                               reverse = True)
-            if stat_sort[0].max_res > stat_sort[-1].max_res:
+            else:
+                def_str = f'{em.get(Stat.DEF)} Equal Defense.'
+            stat_sort = sorted(heroes, key=lambda h: h.final_res, reverse=True)
+            if stat_sort[0].final_res > stat_sort[-1].final_res:
                 res_str = (
                     f'{em.get(Stat.RES)} '
                     f'{stat_sort[0].short_name} has '
-                    f'{stat_sort[0].max_res - stat_sort[1].max_res} '
+                    f'{stat_sort[0].final_res - stat_sort[1].final_res} '
                     'more Resistance.'
                 )
-            else: res_str = f'{em.get(Stat.RES)} Equal Resistance.'
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_total,
-                               reverse = True)
-            if stat_sort[0].max_total > stat_sort[1].max_total:
+            else:
+                res_str = f'{em.get(Stat.RES)} Equal Resistance.'
+            stat_sort = sorted(
+                heroes, key=lambda h: h.final_total, reverse=True)
+            if stat_sort[0].final_total > stat_sort[1].final_total:
                 total_str = (
                     f'{stat_sort[0].short_name} has '
-                    f'{stat_sort[0].max_total - stat_sort[1].max_total} '
+                    f'{stat_sort[0].final_total - stat_sort[1].final_total} '
                     'more total stats.'
                 )
-            else: total_str = 'Equal stat total.'
+            else:
+                total_str = 'Equal stat total.'
         else:
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_hp,
-                               reverse = True)
-            if stat_sort[0].max_hp > stat_sort[-1].max_hp:
-                max_list = ", ".join([
+            stat_sort = sorted(heroes, key=lambda h: h.final_hp, reverse=True)
+            if stat_sort[0].final_hp > stat_sort[-1].final_hp:
+                final_list = ", ".join([
                     h.short_name for h in heroes
-                    if h.max_hp == stat_sort[0].max_hp])
+                    if h.final_hp == stat_sort[0].final_hp])
                 hp_str = (
                     f'{em.get(Stat.HP)} '
-                    f'Greatest HP: {stat_sort[0].max_hp} '
-                    f'({max_list})'
+                    f'Greatest HP: {stat_sort[0].final_hp} '
+                    f'({final_list})'
                 )
-            else: hp_str = (f'{em.get(Stat.HP)} '
-                            'All heroes have equal HP.')
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_atk,
-                               reverse = True)
-            if stat_sort[0].max_atk > stat_sort[-1].max_atk:
-                max_list = ", ".join([
+            else:
+                hp_str = f'{em.get(Stat.HP)} All heroes have equal HP.'
+            stat_sort = sorted(heroes, key=lambda h: h.final_atk, reverse=True)
+            if stat_sort[0].final_atk > stat_sort[-1].final_atk:
+                final_list = ", ".join([
                     h.short_name for h in heroes
-                    if h.max_atk == stat_sort[0].max_atk])
+                    if h.final_atk == stat_sort[0].final_atk])
                 atk_str = (
                     f'{em.get(Stat.ATK)} '
-                    f'Greatest Attack: {stat_sort[0].max_atk} '
-                    f'({max_list})'
+                    f'Greatest Attack: {stat_sort[0].final_atk} '
+                    f'({final_list})'
                 )
-            else: atk_str = (f'{em.get(Stat.ATK)} '
-                             'All heroes have equal Attack.')
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_spd,
-                               reverse = True)
-            if stat_sort[0].max_spd > stat_sort[-1].max_spd:
-                max_list = ", ".join([
+            else:
+                atk_str = f'{em.get(Stat.ATK)} All heroes have equal Attack.'
+            stat_sort = sorted(heroes, key=lambda h: h.final_spd, reverse=True)
+            if stat_sort[0].final_spd > stat_sort[-1].final_spd:
+                final_list = ", ".join([
                     h.short_name for h in heroes
-                    if h.max_spd == stat_sort[0].max_spd])
+                    if h.final_spd == stat_sort[0].final_spd])
                 spd_str = (
                     f'{em.get(Stat.SPD)} '
-                    f'Greatest Speed: {stat_sort[0].max_spd} '
-                    f'({max_list})'
+                    f'Greatest Speed: {stat_sort[0].final_spd} '
+                    f'({final_list})'
                 )
-            else: spd_str = (f'{em.get(Stat.SPD)} '
-                             'All heroes have equal Speed.')
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_def,
-                               reverse = True)
-            if stat_sort[0].max_def > stat_sort[-1].max_def:
-                max_list = ", ".join([
+            else:
+                spd_str = f'{em.get(Stat.SPD)} All heroes have equal Speed.'
+            stat_sort = sorted(heroes, key=lambda h: h.final_def, reverse=True)
+            if stat_sort[0].final_def > stat_sort[-1].final_def:
+                final_list = ", ".join([
                     h.short_name for h in heroes
-                    if h.max_def == stat_sort[0].max_def])
+                    if h.final_def == stat_sort[0].final_def])
                 def_str = (
                     f'{em.get(Stat.DEF)} '
-                    f'Greatest Defense: {stat_sort[0].max_def} '
-                    f'({max_list})'
+                    f'Greatest Defense: {stat_sort[0].final_def} '
+                    f'({final_list})'
                 )
-            else: def_str = (f'{em.get(Stat.DEF)} '
-                             'All heroes have equal Defense.')
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_res,
-                               reverse = True)
-            if stat_sort[0].max_res > stat_sort[-1].max_res:
-                max_list = ", ".join([
+            else:
+                def_str = f'{em.get(Stat.DEF)} All heroes have equal Defense.'
+            stat_sort = sorted(heroes, key=lambda h: h.final_res, reverse=True)
+            if stat_sort[0].final_res > stat_sort[-1].final_res:
+                final_list = ", ".join([
                     h.short_name for h in heroes
-                    if h.max_res == stat_sort[0].max_res])
+                    if h.final_res == stat_sort[0].final_res])
                 res_str = (
                     f'{em.get(Stat.RES)} '
-                    f'Greatest Resistance: {stat_sort[0].max_res} '
-                    f'({max_list})'
+                    f'Greatest Resistance: {stat_sort[0].final_res} '
+                    f'({final_list})'
                 )
-            else: res_str = (f'{em.get(Stat.RES)} '
-                             'All heroes have equal Resistance.')
-            stat_sort = sorted(heroes,
-                               key = lambda h: h.max_total,
-                               reverse = True)
-            if stat_sort[0].max_total > stat_sort[-1].max_total:
-                max_list = ", ".join([
+            else:
+                res_str = f'{em.get(Stat.RES)} All heroes have equal '
+                'Resistance.'
+            stat_sort = sorted(heroes, key=lambda h: h.final_total, reverse=True)
+            if stat_sort[0].final_total > stat_sort[-1].final_total:
+                final_list = ", ".join([
                     h.short_name for h in heroes
-                    if h.max_total == stat_sort[0].max_total])
+                    if h.final_total == stat_sort[0].final_total])
                 total_str = (
-                    f'Greatest stat total: {stat_sort[0].max_total} '
-                    f'({max_list})'
+                    f'Greatest stat total: {stat_sort[0].final_total} '
+                    f'({final_list})'
                 )
-            else: total_str = 'All heroes have equal stat totals.'
+            else:
+                total_str = 'All heroes have equal stat totals.'
         embed.add_field(
-            name = 'Analysis:',
-            value = (f'{hp_str}\n{atk_str}\n{spd_str}\n'
-                     f'{def_str}\n{res_str}\n\n{total_str}'),
-            inline = True
+            name='Analysis:',
+            value=(f'{hp_str}\n{atk_str}\n{spd_str}\n'
+                   f'{def_str}\n{res_str}\n\n{total_str}'),
+            inline=True
         )
         embed.color = em.get_color(None)
         return embed
 
 
     @staticmethod
-    async def cmd(params):
+    async def cmd(params, user_id):
         if not params:
-            return 'No input detected!', None, [[], False]
+            return ReplyPayload(
+                content='No input. Please enter at least two heroes.')
         zoom_state = False
-        embed = discord.Embed()
+        embed = Embed()
         bad_args = []
         if ';' not in params:
             # slow mode
             params = params.split(',')
             heroes = []
             for param in params:
-                this_hero = UnitLib.get_hero(param)
+                this_hero = UnitLib.get_hero(param, user_id)
                 if this_hero: heroes.append(this_hero)
                 else:
                     if not heroes:
@@ -254,37 +255,39 @@ class HeroCompare(CmdDefault):
                     else:
                         heroes[-1], bad_arg = process_hero(heroes[-1], [param])
                         bad_args.extend(bad_arg)
-
-            embed.set_author(
-                name = ('Please delimit compared heroes with semicolons (;) '
-                        'in the future to improve speed and clarity.')
+            embed.set_footer(
+                text=('Please delimit compared heroes with semicolons (;) '
+                      'in the future to improve speed and clarity.')
             )
         else:
             # normal mode
             hero_list = map(methodcaller('split', ','), params.split(';'))
             heroes = []
             for param in hero_list:
-                this_hero = UnitLib.get_hero(param[0])
+                this_hero = UnitLib.get_hero(param[0], user_id)
                 if this_hero:
                     this_hero, bad_arg = process_hero(this_hero, param[1:])
                     heroes.append(this_hero)
                     bad_args.extend(bad_arg)
-                else: bad_args.append(param[0])
+                else:
+                    bad_args.append(param[0])
         # modify duplicate hero names (detect dupes using id)
+        for hero in heroes:
+            if hero.custom_name:
+                hero.short_name = f'{hero.custom_name} [{hero.short_name}]'
         counts = {k:v for k, v in
-                  Counter([h.id for h in heroes]).items()
+                  Counter([h.short_name for h in heroes]).items()
                   if v > 1}
         for i in reversed(range(len(heroes))):
-            item = heroes[i].id
+            item = heroes[i].short_name
             if item in counts and counts[item]:
-                heroes[i].short_name = (f'{heroes[i].short_name} '
-                                        f'({counts[item]})')
+                heroes[i].short_name = (
+                    f'{heroes[i].short_name} ({counts[item]})')
                 counts[item] -= 1
         embed = HeroCompare.format_compare(heroes, embed, zoom_state)
-
         if bad_args:
             content = ('I did not understand the following arguments: '
                        f'{", ".join(bad_args)}')
         else:
             content = ''
-        return content, embed, [heroes, zoom_state]
+        return ReplyPayload(content=content, embed=embed)
