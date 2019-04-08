@@ -242,9 +242,9 @@ class HeroInfo(CmdDefault):
                 return ReactEditPayload(delete=True)
         elif reaction.emoji in {
                 em.get(DragonflowerInc.INFANTRY),
-                em.get(DragonflowerInc.ARMOR   ),
-                em.get(DragonflowerInc.CAVALRY ),
-                em.get(DragonflowerInc.FLIER   ),
+                em.get(DragonflowerInc.ARMOR),
+                em.get(DragonflowerInc.CAVALRY),
+                em.get(DragonflowerInc.FLIER),
             }:
             flowers = data.hero.flowers
             data.hero.update_stat_mods(flowers=flowers + 1)
