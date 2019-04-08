@@ -213,7 +213,7 @@ def process_hero(hero, args):
     elif boon is not None and bane is None:
         if boon != Stat.HP:
             bane = Stat.HP
-            if max(merges, hero.merges) > 0:
+            if max(merges or 0, hero.merges) > 0:
                 bad_args.append(
                     f'\n{hero.short_name} guessing patched flaw was HP')
             else:
@@ -221,7 +221,7 @@ def process_hero(hero, args):
                     f'\n{hero.short_name} no flaw given; guessing HP')
         else:
             bane = Stat.RES
-            if max(merges, hero.merges) > 0:
+            if max(merges or 0, hero.merges) > 0:
                 bad_args.append(
                     f'\n{hero.short_name} guessing patched flaw was Res')
             else:
