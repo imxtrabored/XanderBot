@@ -93,14 +93,14 @@ class EmojiLib(object):
             elif index[0] == 'Move_Armor'   : self.emojis[MoveType.ARMOR   ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Move_Cavalry' : self.emojis[MoveType.CAVALRY ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Move_Flier'   : self.emojis[MoveType.FLIER   ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Boost_Fire' : self.emojis[LegendElement.FIRE ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Boost_Water': self.emojis[LegendElement.WATER] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Boost_Wind' : self.emojis[LegendElement.WIND ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Boost_Earth': self.emojis[LegendElement.EARTH] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Boost_Light': self.emojis[LegendElement.LIGHT] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Boost_Dark' : self.emojis[LegendElement.DARK ] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Boost_Astra': self.emojis[LegendElement.ASTRA] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Boost_Anima': self.emojis[LegendElement.ANIMA] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Element_Fire' : self.emojis[LegendElement.FIRE ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Element_Water': self.emojis[LegendElement.WATER] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Element_Wind' : self.emojis[LegendElement.WIND ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Element_Earth': self.emojis[LegendElement.EARTH] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Element_Light': self.emojis[LegendElement.LIGHT] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Element_Dark' : self.emojis[LegendElement.DARK ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Element_Astra': self.emojis[LegendElement.ASTRA] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Element_Anima': self.emojis[LegendElement.ANIMA] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Stat_Atk': self.emojis[LegendStat.ATK] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Stat_Spd': self.emojis[LegendStat.SPD] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Stat_Def': self.emojis[LegendStat.DEF] = client.get_emoji(int(index[1]))
@@ -133,6 +133,7 @@ class EmojiLib(object):
             elif index[0] == 'DfUpCav': self.emojis[DragonflowerInc.CAVALRY ] = client.get_emoji(int(index[1]))
             elif index[0] == 'DfUpFly': self.emojis[DragonflowerInc.FLIER   ] = client.get_emoji(int(index[1]))
             elif index[0] == 'DfDown' : self.emojis[DragonflowerInc.DOWN    ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Empty' : self.emojis[None] = client.get_emoji(int(index[1]))
             else: self.emojis[index[0]] = client.get_emoji(int(index[1]))
         con.close()
         self.emojis[SummonerSupport.NONE] = ''
@@ -173,9 +174,11 @@ class EmojiLib(object):
     @classmethod
     def get(cls, obj, *, single=False):
         if obj in cls.singleton.emojis:
-            if not single: return cls.singleton.emojis.get(obj)
+            if not single:
+                return cls.singleton.emojis.get(obj)
             if single and len(cls.singleton.emojis[obj]) > 1:
                 return cls.singleton.emojis[obj][-1]
+        return cls.singleton.emojis[None]
 
     @classmethod
     def get_color(cls, obj):
