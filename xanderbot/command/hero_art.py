@@ -5,7 +5,8 @@ from discord import Embed
 from command.cmd_default import CmdDefault
 from command.common import (
     ReactMenu, ReplyPayload, ReactEditPayload,
-    format_hero_title, format_legend_eff, process_hero, process_hero_spaces,
+    filter_name, format_hero_title, format_legend_eff, process_hero,
+    process_hero_spaces,
 )
 from feh.emojilib import EmojiLib as em
 from feh.hero import Hero
