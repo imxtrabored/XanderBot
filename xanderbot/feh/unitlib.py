@@ -7,11 +7,14 @@ from feh.emojilib import EmojiLib as em
 from feh.hero import Hero, Stat, UnitColor, UnitWeaponType, MoveType
 from feh.skill import Skill, SkillType, Refine
 
+SEARCH_SPECIAL_CHARS = '"()*'
 TRANSTAB = str.maketrans('', '', punctuation + whitespace)
 TRANS_SEARCH = str.maketrans(
-    punctuation.translate(str.maketrans('', '', '"()*')),
-    ' ' * (len(punctuation) - 4)
+    punctuation.translate(str.maketrans('', '', SEARCH_SPECIAL_CHARS)),
+    ' ' * (len(punctuation) - len(SEARCH_SPECIAL_CHARS))
 )
+TRANS_SEARCH_SYNTAX = str.maketrans(
+    SEARCH_SPECIAL_CHARS,' ' * len(SEARCH_SPECIAL_CHARS))
 
 
 class UnitLib(object):
@@ -205,11 +208,22 @@ class UnitLib(object):
         hero_name = hero_name.translate(TRANS_SEARCH).lstrip('*')
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
-        cur.execute(
-            'SELECT id FROM hero_search WHERE hero_search MATCH ? '
-            'ORDER BY RANDOM() LIMIT 2',
-            (hero_name,)
-        )
+        try:
+            cur.execute(
+                'SELECT id FROM hero_search WHERE hero_search MATCH ? '
+                'ORDER BY RANDOM() LIMIT 2',
+                (hero_name,)
+            )
+        except sqlite3.OperationalError:
+            hero_name = hero_name.translate(TRANS_SEARCH_SYNTAX)
+            try:
+                cur.execute(
+                    'SELECT id FROM hero_search WHERE hero_search MATCH ? '
+                    'ORDER BY RANDOM() LIMIT 2',
+                    (hero_name,)
+                )
+            except sqlite3.OperationalError:
+                return None
         hero_id = cur.fetchone()
         if hero_id is not None:
             hero = copy(cls.singleton.unit_list[hero_id[0]])
@@ -324,7 +338,18 @@ class UnitLib(object):
                 (search_str,)
             )
         except sqlite3.OperationalError:
-            return None
+            #EAFP
+            search_str = search_str.translate(TRANS_SEARCH_SYNTAX)
+            try:
+                cur.execute(
+                    'SELECT id, identity, '
+                    'snippet(skill_search, -1, "**", "**", "…", 10)'
+                    'FROM skill_search '
+                    'WHERE skill_search MATCH ? ORDER BY rank ASC;',
+                    (search_str,)
+                )
+            except sqlite3.OperationalError:
+                return None
         skill_list = [
             (cls.singleton.skill_list[int(result[0])].icon,
              result[1], result[2])
