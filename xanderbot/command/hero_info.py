@@ -4,7 +4,7 @@ from discord import Embed
 
 from command.cmd_default import CmdDefault
 from command.common import (
-    ReactMenu, UserPrompt, ReplyPayload, ReactEditPayload,
+    ReactMenu, UserPrompt, ReplyPayload, ReactEditPayload, SPLITTER,
     format_hero_title, format_legend_eff, process_hero, process_hero_spaces,
 )
 from command.common_barracks import callback_save
@@ -165,7 +165,7 @@ class HeroInfo(CmdDefault):
                 reactable=ReactMenu(
                     emojis=react_emojis, callback=HeroInfo.react),
             )
-        tokens = params.split(',')
+        tokens = SPLITTER.split(params)
         hero = UnitLib.get_hero(tokens[0], user_id)
         embed = Embed()
         if not hero:

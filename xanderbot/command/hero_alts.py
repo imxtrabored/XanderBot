@@ -1,6 +1,7 @@
 from discord import Embed
 
 from command.cmd_default import CmdDefault, ReplyPayload
+from command.common import SPLITTER
 from feh.emojilib import EmojiLib as em
 from feh.unitlib import UnitLib
 
@@ -18,7 +19,7 @@ class HeroAlts(CmdDefault):
     async def cmd(params, user_id):
         if not params:
             return ReplyPayload(content='No input. Please enter a hero.')
-        tokens = params.split(',')
+        tokens = SPLITTER.split(params)
         hero = UnitLib.get_hero(tokens[0], user_id)
         embed = Embed()
         if not hero:

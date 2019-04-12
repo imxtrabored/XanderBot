@@ -108,7 +108,8 @@ class UnitLib(object):
         for skill in self.skill_list[1:]:
             skill.link(self)
         for skill in self.skill_list[1:]:
-            if not skill.tier: skill.set_tier_recursive()
+            if not skill.tier:
+                skill.set_tier_recursive()
         cur.execute(
             """SELECT heroid, skillid, unlockRarity, defaultRarity
             FROM skillsets
@@ -119,7 +120,8 @@ class UnitLib(object):
             skill = self.skill_list[index[1]]
             if skill.skill_type == SkillType.WEAPON:
                 hero.weapon.append((skill, index[2], index[3]))
-                if skill.exclusive: hero.weapon_prf = skill
+                if skill.exclusive:
+                    hero.weapon_prf = skill
             elif skill.skill_type == SkillType.ASSIST:
                 hero.assist.append((skill, index[2], index[3]))
             elif skill.skill_type == SkillType.SPECIAL:
@@ -131,7 +133,8 @@ class UnitLib(object):
             elif skill.skill_type == SkillType.PASSIVE_C:
                 hero.passive_c.append((skill, index[2], index[3]))
             skill.learnable[index[2]].append(hero)
-            if skill.exclusive: skill.exclusive_to_id.add(index[0])
+            if skill.exclusive:
+                skill.exclusive_to_id.add(index[0])
         con.close()
         con = sqlite3.connect("feh/names.db")
         cur = con.cursor()
@@ -257,7 +260,7 @@ class UnitLib(object):
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         cur.execute(
-            'SELECT id FROM skill_search WHERE skill_search MATCH ? '
+            'SELECT id FROM skill_fullsearch WHERE skill_fullsearch MATCH ? '
             'ORDER BY RANDOM() LIMIT 2',
             (skill_name,)
         )
@@ -378,7 +381,8 @@ class UnitLib(object):
 
     @classmethod
     def insert_skill_alias(cls, skill, name):
-        if name in cls.singleton.skill_names: return False
+        if name in cls.singleton.skill_names:
+            return False
         con = sqlite3.connect("feh/names.db")
         cur = con.cursor()
         cur.execute('INSERT INTO skills (name, id) VALUES (?, ?);',
