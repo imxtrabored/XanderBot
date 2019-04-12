@@ -2,7 +2,7 @@ from discord import Embed
 
 from command.cmd_default import CmdDefault
 from command.common import (ReplyPayload,
-    format_hero_title, process_hero, process_hero_spaces,
+    SPLITTER, format_hero_title, process_hero, process_hero_spaces,
 )
 from feh.emojilib import EmojiLib as em
 from feh.hero import Stat, Rarity
@@ -22,7 +22,7 @@ class HeroMerges(CmdDefault):
     async def cmd(params, user_id):
         if not params:
             return ReplyPayload(content='No input. Please enter a hero.')
-        tokens = params.split(',')
+        tokens = SPLITTER.split(params)
         zoom_state = False
         hero = UnitLib.get_hero(tokens[0], user_id)
         embed = Embed()

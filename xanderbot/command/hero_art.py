@@ -5,7 +5,7 @@ from discord import Embed
 from command.cmd_default import CmdDefault
 from command.common import (
     ReactMenu, ReplyPayload, ReactEditPayload,
-    filter_name, format_hero_title, format_legend_eff, process_hero,
+    SPLITTER, filter_name, format_hero_title, format_legend_eff, process_hero,
     process_hero_spaces,
 )
 from feh.emojilib import EmojiLib as em
@@ -71,7 +71,7 @@ class HeroArt(CmdDefault):
                 reactable=ReactMenu(
                     emojis=HeroArt.REACT_MENU, callback=HeroArt.react)
             )
-        tokens = params.split(',')
+        tokens = SPLITTER.split(params)
         hero = UnitLib.get_hero(tokens[0], user_id)
         embed = Embed()
         if not hero:

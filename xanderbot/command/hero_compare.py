@@ -4,7 +4,7 @@ from operator import methodcaller
 from discord import Embed
 
 from command.cmd_default import CmdDefault
-from command.common import ReplyPayload, process_hero
+from command.common import ReplyPayload, SPLITTER, process_hero
 from command.hero_stats import HeroStats
 from feh.currency import Dragonflower
 from feh.emojilib import EmojiLib as em
@@ -244,7 +244,7 @@ class HeroCompare(CmdDefault):
         bad_args = []
         if ';' not in params:
             # slow mode
-            params = params.split(',')
+            params = SPLITTER.split(params)
             heroes = []
             for param in params:
                 this_hero = UnitLib.get_hero(param, user_id)

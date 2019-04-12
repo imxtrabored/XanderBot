@@ -94,8 +94,7 @@ class SkillSearch(CmdDefault):
                 reactable=ReactMenu(
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )
-        tokens = params.split(',')
-        skill_list = UnitLib.search_skills(tokens[0])
+        skill_list = UnitLib.search_skills(params)
         if skill_list is None:
             return ReplyPayload(
                 content=('Syntax error. Ensure that your parentheses and '

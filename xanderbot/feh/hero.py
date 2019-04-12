@@ -446,19 +446,22 @@ class Hero(object):
                     and not self.equipped.passive_s
                     and skill.is_seal):
                 self.equipped.passive_s = skill
-            else: self.equipped.passive_a = skill
+            else:
+                self.equipped.passive_a = skill
         elif skill.skill_type == SkillType.PASSIVE_B:
             if (self.equipped.passive_b
                     and not self.equipped.passive_s
                     and skill.is_seal):
                 self.equipped.passive_s = skill
-            else: self.equipped.passive_b = skill
+            else:
+                self.equipped.passive_b = skill
         elif skill.skill_type == SkillType.PASSIVE_C:
             if (self.equipped.passive_c
                     and not self.equipped.passive_s
                     and skill.is_seal):
                 self.equipped.passive_s = skill
-            else: self.equipped.passive_c = skill
+            else:
+                self.equipped.passive_c = skill
         elif skill.skill_type == SkillType.PASSIVE_SEAL:
             self.equipped.passive_s = skill
         return True
@@ -515,7 +518,7 @@ class Hero(object):
             (self.iv_def, 1, Stat.DEF, 3),
             (self.iv_res, 0, Stat.RES, 4),
         ]
-        self.merge_order.sort(key = lambda sl: (sl[0], sl[1]), reverse = True)
+        self.merge_order.sort(key=lambda sl: (sl[0], sl[1]), reverse = True)
         self.merge_boon = self.boon
         self.merge_bane = self.bane
 
@@ -583,11 +586,16 @@ class Hero(object):
     def modify_rmod(self, stat_enum, amount):
         '''this is a convenience method to make update_rarity look cleaner'''
         #todo: investigate whether setattr() is faster (it probably isn't)
-        if   stat_enum == Stat.HP:  self.rmod_hp  += amount
-        elif stat_enum == Stat.ATK: self.rmod_atk += amount
-        elif stat_enum == Stat.SPD: self.rmod_spd += amount
-        elif stat_enum == Stat.DEF: self.rmod_def += amount
-        elif stat_enum == Stat.RES: self.rmod_res += amount
+        if stat_enum == Stat.HP:
+            self.rmod_hp  += amount
+        elif stat_enum == Stat.ATK:
+            self.rmod_atk += amount
+        elif stat_enum == Stat.SPD:
+            self.rmod_spd += amount
+        elif stat_enum == Stat.DEF:
+            self.rmod_def += amount
+        elif stat_enum == Stat.RES:
+            self.rmod_res += amount
 
     def update_level(self, new_level):
         '''recalculates current stats based on level'''
@@ -599,20 +607,26 @@ class Hero(object):
         no more relative calc since base stats saved all the time
         be sure to Hero.recalc_stats() afterwards!
         '''
-        if new_rarity < 1: new_rarity = 1
-        if new_rarity > 5: new_rarity = 5
-        if new_rarity == self.rarity: return
+        if new_rarity < 1:
+            new_rarity = 1
+        if new_rarity > 5:
+            new_rarity = 5
+        if new_rarity == self.rarity:
+            return
         self.rarity = new_rarity
         modify = 0
         if (new_rarity < 4):
-            if new_rarity == 1: modify = -2
-            else: modify = -1
+            if new_rarity == 1:
+                modify = -2
+            else:
+                modify = -1
         self.rmod_hp  = modify
         self.rmod_atk = modify
         self.rmod_spd = modify
         self.rmod_def = modify
         self.rmod_res = modify
-        if new_rarity % 2 == 1: return
+        if new_rarity % 2 == 1:
+            return
         stats = [
             (self.base_atk, 4, Stat.ATK),
             (self.base_spd, 3, Stat.SPD),
@@ -627,7 +641,8 @@ class Hero(object):
 
     def modify_iv(self, iv, increase):
         '''another convenience method'''
-        if iv is None: return
+        if iv is None:
+            return
         if increase:
             if iv == Stat.HP:
                 self.iv_hp  += 1
@@ -666,7 +681,8 @@ class Hero(object):
         recalculates lv1 stats and growths from ivs
         note that this invalidates merge_stat
         '''
-        if boon == bane and boon != Stat.NONE: return
+        if boon == bane and boon != Stat.NONE:
+            return
         if self.boon != boon:
             self.modify_iv(self.boon, False)
             self.modify_iv(boon, True)
@@ -679,11 +695,16 @@ class Hero(object):
     def modify_merge(self, stat_enum, amount):
         '''this is a convenience method to make update_merges look cleaner'''
         #todo: investigate whether setattr() is faster (it probably isn't)
-        if   stat_enum == Stat.HP:  self.merge_hp  += amount
-        elif stat_enum == Stat.ATK: self.merge_atk += amount
-        elif stat_enum == Stat.SPD: self.merge_spd += amount
-        elif stat_enum == Stat.DEF: self.merge_def += amount
-        elif stat_enum == Stat.RES: self.merge_res += amount
+        if stat_enum == Stat.HP:
+            self.merge_hp  += amount
+        elif stat_enum == Stat.ATK:
+            self.merge_atk += amount
+        elif stat_enum == Stat.SPD:
+            self.merge_spd += amount
+        elif stat_enum == Stat.DEF:
+            self.merge_def += amount
+        elif stat_enum == Stat.RES:
+            self.merge_res += amount
 
     def update_merges(self, new_merges):
         '''
@@ -759,11 +780,16 @@ class Hero(object):
             self.reset_merge_order()
         for i in range(new_flowers):
             stat_enum = self.merge_order[i % 5][2]
-            if   stat_enum == Stat.HP:  self.df_hp  += 1
-            elif stat_enum == Stat.ATK: self.df_atk += 1
-            elif stat_enum == Stat.SPD: self.df_spd += 1
-            elif stat_enum == Stat.DEF: self.df_def += 1
-            elif stat_enum == Stat.RES: self.df_res += 1
+            if stat_enum == Stat.HP:
+                self.df_hp  += 1
+            elif stat_enum == Stat.ATK:
+                self.df_atk += 1
+            elif stat_enum == Stat.SPD:
+                self.df_spd += 1
+            elif stat_enum == Stat.DEF:
+                self.df_def += 1
+            elif stat_enum == Stat.RES:
+                self.df_res += 1
 
     def update_stat_mods(self, *, boon=None, bane=None, merges=None,
                          rarity=None, flowers=None, summ_support=None):
@@ -773,9 +799,12 @@ class Hero(object):
                  or (boon == bane))):
             self.update_ivs(boon, bane)
             update_boons = True
-            if merges is None: merges = self.merges
-            if flowers is None: flowers = self.flowers
-        else: update_boons = False
+            if merges is None:
+                merges = self.merges
+            if flowers is None:
+                flowers = self.flowers
+        else:
+            update_boons = False
         if rarity:
             self.update_rarity(rarity)
         if merges is not None:
@@ -844,16 +873,21 @@ class Hero(object):
             self.alt_base.alt_list.append(self)
 
     def sanity_check(self):
-        if   self.rarity == 5: stat_total = 47
-        elif self.rarity == 4: stat_total = 44
-        elif self.rarity == 3: stat_total = 42
-        elif self.rarity == 2: stat_total = 39
-        elif self.rarity == 1: stat_total = 37
+        if   self.rarity == 5:
+            stat_total = 47
+        elif self.rarity == 4:
+            stat_total = 44
+        elif self.rarity == 3:
+            stat_total = 42
+        elif self.rarity == 2:
+            stat_total = 39
+        elif self.rarity == 1:
+            stat_total = 37
         else: print(f'{self.short_name} invalid rarity: {self.rarity}')
         if self.generation < 1 or self.generation > 3:
             print(f'{self.short_name} invalid generation: {self.generation}')
         growth_rate = 255
-        ranged = self.weapon_type in (
+        ranged = self.weapon_type in {
             UnitWeaponType.R_TOME,
             UnitWeaponType.B_TOME,
             UnitWeaponType.G_TOME,
@@ -866,8 +900,8 @@ class Hero(object):
             UnitWeaponType.R_DAGGER,
             UnitWeaponType.B_DAGGER,
             UnitWeaponType.G_DAGGER,
-        )
-        ranged_phys = self.weapon_type in (
+        }
+        ranged_phys = self.weapon_type in {
             UnitWeaponType.C_BOW,
             UnitWeaponType.C_DAGGER,
             UnitWeaponType.R_BOW,
@@ -876,7 +910,7 @@ class Hero(object):
             UnitWeaponType.R_DAGGER,
             UnitWeaponType.B_DAGGER,
             UnitWeaponType.G_DAGGER,
-        )
+        }
         if self.is_trainee:
             stat_total -= 8
             growth_rate += 30

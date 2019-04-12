@@ -1,6 +1,6 @@
 from command.cmd_default import CmdDefault
 from command.common import (
-    UserPrompt, ReplyPayload, process_hero, process_hero_spaces)
+    UserPrompt, ReplyPayload, SPLITTER, process_hero, process_hero_spaces)
 from command.common_barracks import callback_save
 from feh.unitlib import UnitLib
 
@@ -36,7 +36,7 @@ class BarracksSave(CmdDefault):
                 content=('No input. Please enter a new name followed by '
                          'a hero expression, separated by comma (,).')
             )
-        tokens = params.split(',')
+        tokens = SPLITTER.split(params)
         if len(tokens) < 2:
             #did not use commas
             tokens = params.split(' ')

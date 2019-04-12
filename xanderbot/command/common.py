@@ -12,6 +12,7 @@ from feh.unitlib import UnitLib
 
 TRANSTAB = str.maketrans('', '', punctuation + whitespace)
 NON_DECIMAL = re.compile(r'[^\d]+')
+SPLITTER = re.compile(r',(?![^()]*\))')
 
 
 class DiscordData:
@@ -65,7 +66,8 @@ def format_hero_title(hero):
             f'{em.get(hero.legend_element)}'
             f'{em.get(hero.legend_boost)}'
         )
-    else: legend_info = ''
+    else:
+        legend_info = ''
     if hero.custom_name:
         name = f'{hero.custom_name} [{hero.short_name}]'
     else:
@@ -233,7 +235,7 @@ def process_hero(hero, args):
 
 
 def process_hero_spaces(params, user_id):
-    tokens = [filter_name(token) for token in params.split()]
+    tokens = [filter_name(token) for token in SPLITTER.split(params)]
     is_hero = 0
     for i in range(1, len(tokens)):
         if UnitLib.check_name(''.join(tokens[:i])):
