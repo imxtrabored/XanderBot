@@ -471,9 +471,12 @@ class UnitLib(object):
             return None
         if hero_data[0] >= 0:
             hero = copy(cls.singleton.unit_list[hero_data[0]])
+            hero.equipped = copy(
+                cls.singleton.unit_list[hero_data[0]].equipped)
         else:
             hero = copy(cls.singleton.enemy_list[abs(hero_data[0])])
-        hero.equipped = copy(cls.singleton.unit_list[hero_data[0]].equipped)
+            hero.equipped = copy(
+                cls.singleton.enemy_list[hero_data[0]].equipped)
         hero.custom_name = hero_data[1]
         hero.update_stat_mods(
             boon=Stat(hero_data[2]),
