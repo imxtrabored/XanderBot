@@ -49,16 +49,16 @@ class UnitLib(object):
         new_hero = Hero(
             0, 'null', 'Null', 'Null Hero',
             UnitColor.RED, UnitWeaponType.R_SWORD, MoveType.INFANTRY,
-            16, 7, 14, 5, 5,
+            15, 8, 8, 8, 8,
             55, 50, 50, 50, 50,
-            40, 29, 36, 27, 27,
+            39, 30, 30, 30, 30,
         )
         self.unit_list.append(new_hero)
         for hero in cur:
             new_hero = Hero(*hero)
             self.unit_list.append(new_hero)
         self.unit_names = dict()
-        self.unit_names['null'] = 0
+        self.unit_names['null'] = self.unit_list[0]
         cur.execute(
             """SELECT id, name, short_name, epithet, color,
             weapon_type, move_type, base_hp, base_atk, base_spd, base_def,
@@ -76,7 +76,7 @@ class UnitLib(object):
             new_hero = Hero(*hero)
             self.enemy_list.append(new_hero)
         self.enemy_names = dict()
-        self.enemy_names['null'] = 0
+        self.enemy_names['null'] = self.enemy_list[0]
         for hero in self.unit_list:
             hero.link(self)
             hero.sanity_check()
@@ -235,7 +235,10 @@ class UnitLib(object):
             hero.equipped = copy(cls.singleton.unit_list[hero_id[0]].equipped)
             if cur.fetchone() is None:
                 asyncio.create_task(
-                    cls.insert_hero_alias(hero, cls.filter_name(hero_name)))
+                    cls.insert_hero_alias(
+                        cls.singleton.unit_list[hero_id[0]],
+                        cls.filter_name(hero_name))
+                    )
             return hero
         return None
 
@@ -372,11 +375,13 @@ class UnitLib(object):
         if hero.index > 0:
             cur.execute('INSERT INTO heroes (name, id) VALUES (?, ?);',
                         (name, hero.index))
-            cls.singleton.unit_names[name] = hero
+            cls.singleton.unit_names[name] = (
+                cls.singleton.unit_list[hero.index])
         else:
             cur.execute('INSERT INTO enemy (name, id) VALUES (?, ?);',
                         (name, hero.index))
-            cls.singleton.enemy_names[name] = hero
+            cls.singleton.enemy_names[name] = (
+                cls.singleton.enemy_list[abs(hero.index)])
         con.commit()
         con.close()
         return True
@@ -391,7 +396,7 @@ class UnitLib(object):
                     (name, skill.index))
         con.commit()
         con.close()
-        cls.singleton.skill_names[name] = skill
+        cls.singleton.skill_names[name] = cls.singleton.skill_list[skill.index]
         return True
 
     @classmethod
@@ -477,9 +482,12 @@ class UnitLib(object):
             return None
         if hero_data[0] >= 0:
             hero = copy(cls.singleton.unit_list[hero_data[0]])
+            hero.equipped = copy(
+                cls.singleton.unit_list[hero_data[0]].equipped)
         else:
             hero = copy(cls.singleton.enemy_list[abs(hero_data[0])])
-        hero.equipped = copy(cls.singleton.unit_list[hero_data[0]].equipped)
+            hero.equipped = copy(
+                cls.singleton.enemy_list[hero_data[0]].equipped)
         hero.custom_name = hero_data[1]
         hero.update_stat_mods(
             boon=Stat(hero_data[2]),
