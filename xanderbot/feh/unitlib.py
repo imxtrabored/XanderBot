@@ -120,6 +120,8 @@ class UnitLib(object):
             skill = self.skill_list[index[1]]
             if skill.skill_type == SkillType.WEAPON:
                 hero.weapon.append((skill, index[2], index[3]))
+                if skill.evolves_to is not None:
+                    hero.weapon.append((skill.evolves_to, 11, None))
                 if skill.exclusive:
                     hero.weapon_prf = skill
             elif skill.skill_type == SkillType.ASSIST:

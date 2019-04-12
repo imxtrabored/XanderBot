@@ -118,6 +118,7 @@ class EmojiLib(object):
             elif index[0] == 'Rarity_3': self.emojis[Rarity.THREE] = client.get_emoji(int(index[1]))
             elif index[0] == 'Rarity_4': self.emojis[Rarity.FOUR ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Rarity_5': self.emojis[Rarity.FIVE ] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Currency_Divine_Dew': self.emojis[Rarity.DEW ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Df_Inf': self.emojis[Dragonflower.INFANTRY] = client.get_emoji(int(index[1]))
             elif index[0] == 'Df_Arm': self.emojis[Dragonflower.ARMOR   ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Df_Cav': self.emojis[Dragonflower.CAVALRY ] = client.get_emoji(int(index[1]))

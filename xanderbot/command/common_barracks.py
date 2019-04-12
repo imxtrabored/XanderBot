@@ -58,4 +58,3 @@ async def callback_delete(response, hero_names, user_id):
                      'already been sent home.')
         )
     return ReplyPayload(content='Canceled. No heroes were deleted.')
-

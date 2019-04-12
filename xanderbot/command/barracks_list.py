@@ -68,7 +68,6 @@ class BarracksList(CmdDefault):
             icon_url=('https://gamepedia.cursecdn.com/feheroes_gamepedia_en/5/'
                       '59/Structure_Fortress.png')
         )
-
         return embed
 
     @staticmethod

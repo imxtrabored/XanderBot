@@ -39,7 +39,7 @@ class SkillSearch(CmdDefault):
         'a prefix token. For instance, ``sword*`` will match any word that '
         'begins with "sword", such as "swordbreaker".\n'
         'If your search contains a syntax error, the search will be attempted '
-        'again with these special operators stripped out.'
+        'with all special operators stripped out instead.'
     )
 
     REACT_MENU = (
@@ -94,6 +94,7 @@ class SkillSearch(CmdDefault):
                 reactable=ReactMenu(
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )
+        tokens = params.split(',')
         skill_list = UnitLib.search_skills(params)
         if skill_list is None:
             return ReplyPayload(
@@ -102,6 +103,7 @@ class SkillSearch(CmdDefault):
                 reactable=ReactMenu(
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )
+
         embed = Embed()
         SkillSearch.format_search(skill_list, embed, False, tokens[0], 0)
         embed.color = em.get_color(None)

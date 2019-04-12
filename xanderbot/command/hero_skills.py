@@ -208,7 +208,7 @@ class HeroSkills(CmdDefault):
             data.hero.update_stat_mods(rarity=rarity - 1)
             if data.hero.rarity == rarity:
                 return ReactEditPayload(delete=True)
-        elif reaction.emoji == '⬆':
+        elif reaction.emoji == em.get(RarityInc.UP):
             rarity = data.hero.rarity
             data.hero.update_stat_mods(rarity=rarity + 1)
             if data.hero.rarity == rarity:
