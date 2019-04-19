@@ -4,7 +4,7 @@ from operator import methodcaller
 from discord import Embed
 
 from command.cmd_default import CmdDefault
-from command.common import ReplyPayload, SPLITTER, process_hero
+from command.common import ReplyPayload, SPLITTER, process_hero_args
 from command.hero_stats import HeroStats
 from feh.currency import Dragonflower
 from feh.emojilib import EmojiLib as em
@@ -253,7 +253,7 @@ class HeroCompare(CmdDefault):
                     if not heroes:
                         bad_args.append(param)
                     else:
-                        heroes[-1], bad_arg = process_hero(heroes[-1], [param])
+                        heroes[-1], bad_arg = process_hero_args(heroes[-1], [param])
                         bad_args.extend(bad_arg)
             embed.set_footer(
                 text=('Please delimit compared heroes with semicolons (;) '
@@ -266,7 +266,7 @@ class HeroCompare(CmdDefault):
             for param in hero_list:
                 this_hero = UnitLib.get_hero(param[0], user_id)
                 if this_hero:
-                    this_hero, bad_arg = process_hero(this_hero, param[1:])
+                    this_hero, bad_arg = process_hero_args(this_hero, param[1:])
                     heroes.append(this_hero)
                     bad_args.extend(bad_arg)
                 else:

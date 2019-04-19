@@ -6,11 +6,9 @@ from command.cmd_default import CmdDefault
 from command.common import (
     ReactMenu, ReplyPayload, ReactEditPayload,
     SPLITTER, filter_name, format_hero_title, format_legend_eff, process_hero,
-    process_hero_spaces,
 )
 from feh.emojilib import EmojiLib as em
 from feh.hero import Hero
-from feh.unitlib import UnitLib
 
 
 art_names = {
@@ -72,23 +70,18 @@ class HeroArt(CmdDefault):
                     emojis=HeroArt.REACT_MENU, callback=HeroArt.react)
             )
         tokens = SPLITTER.split(params)
-        hero = UnitLib.get_hero(tokens[0], user_id)
-        embed = Embed()
+        hero, bad_args, no_commas = process_hero(
+            tokens[0], tokens[1:], params, user_id)
         if not hero:
-            if ',' not in params:
-                hero, bad_args = process_hero_spaces(params, user_id)
-            if not hero:
-                return ReplyPayload(
-                    content=f'Hero not found: {tokens[0]}.',
-                    reactable=ReactMenu(
-                        emojis=HeroArt.REACT_MENU,callback=HeroArt.react)
-                )
-            embed.set_footer(
-                text=('Please delimit modifiers with commas (,) '
-                      'in the future to improve command processing.')
+            return ReplyPayload(
+                content=(
+                    f'Hero not found: {tokens[0]}. Don\'t forget that '
+                    'modifiers should be delimited by commas.'
+                ),
+                reactable=ReactMenu(
+                    react_emojis, None, HeroArt.react),
             )
-        else:
-            hero, bad_args = process_hero(hero, tokens[1:])
+        embed = Embed()
         title = format_hero_title(hero)
         description = f'🖋 {hero.artist}'
         art_index = 0

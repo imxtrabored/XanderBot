@@ -1,9 +1,8 @@
 from discord import Embed
 
 from command.cmd_default import CmdDefault, ReplyPayload
-from command.common import SPLITTER
+from command.common import SPLITTER, process_hero
 from feh.emojilib import EmojiLib as em
-from feh.unitlib import UnitLib
 
 
 class HeroAlts(CmdDefault):
@@ -20,13 +19,17 @@ class HeroAlts(CmdDefault):
         if not params:
             return ReplyPayload(content='No input. Please enter a hero.')
         tokens = SPLITTER.split(params)
-        hero = UnitLib.get_hero(tokens[0], user_id)
-        embed = Embed()
+        hero, bad_args, no_commas = process_hero(
+            tokens[0], tokens[1:], params, user_id)
         if not hero:
-            if ',' not in params:
-                hero, bad_args = process_hero_spaces(params, user_id)
-            if not hero:
-                return ReplyPayload(content=f'Hero not found: {tokens[0]}.')
+            return ReplyPayload(
+                content=(
+                    f'Hero not found: {tokens[0]}. Don\'t forget that '
+                    'modifiers should be delimited by commas.'
+                )
+            )
+        embed = Embed()
+        if no_commas:
             embed.set_footer(
                 text=('Please delimit modifiers with commas (,) '
                       'in the future to improve command processing.')

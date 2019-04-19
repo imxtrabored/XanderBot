@@ -13,7 +13,56 @@ from feh.unitlib import UnitLib
 TRANSTAB = str.maketrans('', '', punctuation + whitespace)
 NON_DECIMAL = re.compile(r'[^\d]+')
 SPLITTER = re.compile(r',(?![^()]*\))')
+PLUS_MINUS = re.compile(r'plus|minus')
+STARS_RARITY = re.compile(r'\*|stars|star|rarity')
+PLUSPLUS_FLOWER = re.compile(r'plusplus|flower')
+BOON_ASSET = re.compile(r'boon|asset')
+MINUS_BANE_FLAW = re.compile(r'minus|bane|flaw')
 
+LEGEND_TYPES = {
+    LegendElement.FIRE : 'Legendary Effect: Fire',
+    LegendElement.WATER: 'Legendary Effect: Water',
+    LegendElement.WIND : 'Legendary Effect: Wind',
+    LegendElement.EARTH: 'Legendary Effect: Earth',
+}
+MYTHIC_TYPES = {
+    LegendElement.LIGHT: 'Mythic Effect: Light',
+    LegendElement.DARK : 'Mythic Effect: Dark',
+    LegendElement.ASTRA: 'Mythic Effect: Astra',
+    LegendElement.ANIMA: 'Mythic Effect: Anima',
+}
+LEGEND_BOOSTS = {
+    LegendStat.ATK: 'Ally Boost: HP+3, Atk+2',
+    LegendStat.SPD: 'Ally Boost: HP+3, Spd+3',
+    LegendStat.DEF: 'Ally Boost: HP+3, Def+4',
+    LegendStat.RES: 'Ally Boost: HP+3, Res+4',
+    LegendStat.DUEL: (
+        'Ally Boost: +3 HP\n\n'
+        'Standard Effect 1: Duel\n'
+        'If unit is 5★ and level 40 and unit\'s stats total less than 175, '
+        'treats unit\'s stats as 175 in modes like Arena. (Higher-scoring '
+        'opponents will appear. Stat total calculation excludes any values '
+        'added by merges and skills.)\n'
+        'Standard Effect 2: Pair Up\n'
+        'An ability that can only be used under certain circumstances. Pair '
+        'Up can be accessed from the Interact with Allies menu, and allows '
+        'this unit to join battle in a group with another ally.'
+    ),
+}
+MYTHIC_BOOSTS = {
+    LegendStat.ATK: 'Boost: HP+5, Atk+3',
+    LegendStat.SPD: 'Boost: HP+5, Spd+4',
+    LegendStat.DEF: 'Boost: HP+5, Def+5',
+    LegendStat.RES: 'Boost: HP+5, Res+5',
+    LegendStat.DUEL: 'Invalid boost',
+}
+
+SUPPORT_RANKS = {
+    'c': 1,
+    'b': 2,
+    'a': 3,
+    's': 4,
+}
 
 class DiscordData:
 
@@ -84,44 +133,12 @@ def format_hero_title(hero):
 
 
 def format_legend_eff(hero):
-    legend_types = {
-        LegendElement.FIRE : 'Legendary Effect: Fire',
-        LegendElement.WATER: 'Legendary Effect: Water',
-        LegendElement.WIND : 'Legendary Effect: Wind',
-        LegendElement.EARTH: 'Legendary Effect: Earth',
-    }
-    mythic_types = {
-        LegendElement.LIGHT: 'Mythic Effect: Light',
-        LegendElement.DARK : 'Mythic Effect: Dark',
-        LegendElement.ASTRA: 'Mythic Effect: Astra',
-        LegendElement.ANIMA: 'Mythic Effect: Anima',
-    }
-    legend_boosts = {
-        LegendStat.ATK: 'Ally Boost: HP+3, Atk+2',
-        LegendStat.SPD: 'Ally Boost: HP+3, Spd+3',
-        LegendStat.DEF: 'Ally Boost: HP+3, Def+4',
-        LegendStat.RES: 'Ally Boost: HP+3, Res+4',
-        LegendStat.DUEL: (
-            'Ally Boost: +3 HP\nIf unit is 5★ and level 40 and unit\'s stats '
-            'total less than 175, treats unit\'s stats as 175 in modes like '
-            'Arena. (Higher-scoring opponents will appear. Stat total '
-            'calculation excludes any values added by merges and skills.) '
-            'Enables pair-up in certain modes.'
-        ),
-    }
-    mythic_boosts = {
-        LegendStat.ATK: 'Boost: HP+5, Atk+3',
-        LegendStat.SPD: 'Boost: HP+5, Spd+4',
-        LegendStat.DEF: 'Boost: HP+5, Def+5',
-        LegendStat.RES: 'Boost: HP+5, Res+5',
-        LegendStat.DUEL: 'Invalid boost',
-    }
     if hero.is_legend:
-        if hero.legend_element in legend_types:
-            return (f'{legend_types[hero.legend_element]}\n'
-                    f'{legend_boosts[hero.legend_boost]}')
-        return (f'{mythic_types[hero.legend_element]}\n'
-                f'{mythic_boosts[hero.legend_boost]}')
+        if hero.legend_element in LEGEND_TYPES:
+            return (f'{LEGEND_TYPES[hero.legend_element]}\n'
+                    f'{LEGEND_BOOSTS[hero.legend_boost]}')
+        return (f'{MYTHIC_TYPES[hero.legend_element]}\n'
+                f'{MYTHIC_BOOSTS[hero.legend_boost]}')
     return ''
 
 
@@ -130,7 +147,7 @@ def try_equip(hero, skill_name):
     return skill and hero.equip(skill)
 
 
-def process_hero(hero, args):
+def process_hero_args(hero, args):
     bad_args = []
     rarity = None
     merges = None
@@ -140,26 +157,24 @@ def process_hero(hero, args):
     flowers = None
     support = None
     for token in args:
-        param = filter_name(token[:40])
+        filtered = filter_name(token[:40])
         # rarity, merges, iv, level, "summoned"
-        # regex might be faster or slower here idk
-        rarity_test = (param.replace('*', '').replace('stars', '')
-                       .replace('star', '').replace('rarity', ''))
+        rarity_test = STARS_RARITY.sub('', filtered)
         if rarity_test.isdecimal():
             rarity = int(rarity_test)
-        elif 'merge' in param:
-            merges = int(NON_DECIMAL.sub('', param))
-        elif ('plusplus' in param or 'flower' in param
-              or param.startswith('df') or param.endswith('df')):
-            plus_test = NON_DECIMAL.sub('', param)
+        elif 'merge' in filtered:
+            merges = int(NON_DECIMAL.sub('', filtered))
+        elif (PLUSPLUS_FLOWER.search(filtered) is not None
+              or filtered.startswith('df') or filtered.endswith('df')):
+            plus_test = NON_DECIMAL.sub('', filtered)
             if plus_test.isdecimal():
                 flowers = int(plus_test)
             else:
-                if not try_equip(hero, param):
+                if not try_equip(hero, filtered):
                     bad_args.append(token.strip())
-        elif 'plus' in param:
+        elif 'plus' in filtered:
             # this might be merges, iv, or a skill
-            plus_test = param.replace('plus', '')
+            plus_test = filtered.replace('plus', '')
             if plus_test.isdecimal():
                 merges = int(plus_test)
             else:
@@ -167,46 +182,72 @@ def process_hero(hero, args):
                 if stat is not None:
                     boon = stat
                 else:
-                    if not try_equip(hero, param):
-                        bad_args.append(token.strip())
-        elif 'boon' in param or 'asset' in param:
-            asset_test = param.replace('boon', '').replace('asset', '')
+                    if 'minus' in filtered:
+                        iv_order = PLUS_MINUS.findall(filtered)
+                        iv_tokens = [
+                            token for token in PLUS_MINUS.split(filtered)
+                            if token
+                        ]
+                        if len(iv_order) == 2:
+                            if len(iv_tokens) == 2:
+                                if iv_order[0] == 'plus':
+                                    boon = Stat.get_by_name(iv_tokens[0])
+                                    bane = Stat.get_by_name(iv_tokens[1])
+                                else:
+                                    boon = Stat.get_by_name(iv_tokens[1])
+                                    bane = Stat.get_by_name(iv_tokens[0])
+                            elif len(iv_tokens) == 1:
+                                stat2 = None
+                                for i in range(3, len(iv_tokens[0])):
+                                    stat1 = Stat.get_by_name(iv_tokens[0][:i])
+                                    if stat1 is not None:
+                                        stat2 = Stat.get_by_name(iv_tokens[0][i:])
+                                        break
+                                if stat1 is not None and stat2 is not None:
+                                    if iv_order[0] == 'plus':
+                                        boon = stat1
+                                        bane = stat2
+                                    else:
+                                        boon = stat2
+                                        bane = stat1
+                                else:
+                                    bad_args.append(token.strip())
+                            else:
+                                bad_args.append(token.strip())
+                        else:
+                            bad_args.append(token.strip())
+                    else:
+                        # "minus" does not appear in any skill names
+                        if not try_equip(hero, filtered):
+                            bad_args.append(token.strip())
+        elif BOON_ASSET.search(filtered) is not None:
+            asset_test = BOON_ASSET.sub('', filtered)
             stat = Stat.get_by_name(asset_test)
             if stat is not None:
                 boon = stat
-        elif 'minus' in param or 'bane' in param or 'flaw' in param:
-            flaw_test = (param.replace('minus', '').replace('bane', '')
-                         .replace('flaw', ''))
+        elif MINUS_BANE_FLAW.search(filtered) is not None:
+            flaw_test = MINUS_BANE_FLAW.sub('', filtered)
             stat = Stat.get_by_name(flaw_test)
             if stat is not None:
                 bane = stat
-        elif 'support' in param:
-            supp_test = param.replace('support', '')
+        elif 'support' in filtered:
+            supp_test = filtered.replace('support', '')
             if supp_test.isdecimal():
                 support = int(supp_test)
-            elif supp_test == 'c':
-                support = 1
-            elif supp_test == 'b':
-                support = 2
-            elif supp_test == 'a':
-                support = 3
-            elif supp_test == 's':
-                support = 4
+            elif supp_test in SUPPORT_RANKS:
+                support = SUPPORT_RANKS[supp_test]
             else:
                 bad_args.append(token.strip())
-        elif 'summoned' in param:
-            if rarity:
-                max_rarity = rarity
-            else:
-                max_rarity = hero.rarity
-            hero.equip(next((s[0] for s in hero.weapon [::-1]
+        elif 'summoned' in filtered:
+            max_rarity = rarity or hero.rarity
+            hero.equip(next((s[0] for s in hero.weapon[::-1]
                              if s[2] and s[2] <= max_rarity), None))
-            hero.equip(next((s[0] for s in hero.assist [::-1]
+            hero.equip(next((s[0] for s in hero.assist[::-1]
                              if s[2] and s[2] <= max_rarity), None))
             hero.equip(next((s[0] for s in hero.special[::-1]
                              if s[2] and s[2] <= max_rarity), None))
         else:
-            if not try_equip(hero, param):
+            if not try_equip(hero, filtered):
                 bad_args.append(token)
     if boon is None and bane is not None:
         bane = None
@@ -242,5 +283,19 @@ def process_hero_spaces(params, user_id):
             is_hero = i
     if is_hero:
         hero = UnitLib.get_hero(''.join(tokens[:is_hero]), user_id)
-        return process_hero(hero, tokens[is_hero:])
+        return process_hero_args(hero, tokens[is_hero:])
     return None, None
+
+
+def process_hero(hero_name, tokens, params, user_id):
+    hero = UnitLib.get_hero(hero_name, user_id)
+    if not hero:
+        if ',' not in params:
+            no_commas = True
+            hero, bad_args = process_hero_spaces(params, user_id)
+        else:
+            hero, bad_args, no_commas = None, None, False
+    else:
+        no_commas = False
+        hero, bad_args = process_hero_args(hero, tokens)
+    return hero, bad_args, no_commas

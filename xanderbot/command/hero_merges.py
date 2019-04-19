@@ -2,11 +2,10 @@ from discord import Embed
 
 from command.cmd_default import CmdDefault
 from command.common import (ReplyPayload,
-    SPLITTER, format_hero_title, process_hero, process_hero_spaces,
+    SPLITTER, format_hero_title, process_hero,
 )
 from feh.emojilib import EmojiLib as em
 from feh.hero import Stat, Rarity
-from feh.unitlib import UnitLib
 
 
 class HeroMerges(CmdDefault):
@@ -23,23 +22,21 @@ class HeroMerges(CmdDefault):
         if not params:
             return ReplyPayload(content='No input. Please enter a hero.')
         tokens = SPLITTER.split(params)
-        zoom_state = False
-        hero = UnitLib.get_hero(tokens[0], user_id)
-        embed = Embed()
+        hero, bad_args, no_commas = process_hero(
+            tokens[0], tokens[1:], params, user_id)
         if not hero:
-            if ',' not in params:
-                hero, bad_args = process_hero_spaces(params, user_id)
-            if not hero:
-                return ReplyPayload(
-                    content=(f'Hero not found: {tokens[0]}. Don\'t forget '
-                             'that modifiers should be delimited by commas.'),
+            return ReplyPayload(
+                content=(
+                    f'Hero not found: {tokens[0]}. Don\'t forget that '
+                    'modifiers should be delimited by commas.'
                 )
+            )
+        embed = Embed()
+        if no_commas:
             embed.set_footer(
                 text=('Please delimit modifiers with commas (,) '
                       'in the future to improve command processing.')
             )
-        else:
-            hero, bad_args = process_hero(hero, tokens[1:])
         title = format_hero_title(hero)
         bonuses = '\n'.join([
             f'{f"+{merges}".rjust(3)}:'

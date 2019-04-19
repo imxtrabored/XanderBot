@@ -1,6 +1,6 @@
 from command.cmd_default import CmdDefault
 from command.common import (
-    UserPrompt, ReplyPayload, SPLITTER, process_hero, process_hero_spaces)
+    UserPrompt, ReplyPayload, SPLITTER, process_hero_args, process_hero_spaces)
 from command.common_barracks import callback_save
 from feh.unitlib import UnitLib
 
@@ -47,7 +47,7 @@ class BarracksSave(CmdDefault):
                         replyable=UserPrompt(
                             callback=callback_save,
                             content=(
-                                'Enter a new name for this hero:'
+                                f'Enter a new name for custom {hero.name}:'
                             ),
                             data=hero
                         )
@@ -60,7 +60,7 @@ class BarracksSave(CmdDefault):
         if not hero:
             hero = UnitLib.get_base_hero(tokens[0], user_id)
             if hero:
-                hero, bad_args = process_hero(hero, tokens[1:])
+                hero, bad_args = process_hero_args(hero, tokens[1:])
                 if bad_args:
                     prepend = (
                         'I did not understand the following, so they '
@@ -88,6 +88,6 @@ class BarracksSave(CmdDefault):
                     ),
                 )
         else:
-            hero, bad_args = process_hero(hero, tokens[2:])
+            hero, bad_args = process_hero_args(hero, tokens[2:])
             new_name = tokens[0]
         return await callback_save(new_name, hero, user_id)

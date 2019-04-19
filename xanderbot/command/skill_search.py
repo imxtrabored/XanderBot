@@ -103,7 +103,6 @@ class SkillSearch(CmdDefault):
                 reactable=ReactMenu(
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )
-
         embed = Embed()
         SkillSearch.format_search(skill_list, embed, False, tokens[0], 0)
         embed.color = em.get_color(None)

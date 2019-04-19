@@ -5,7 +5,7 @@ from discord import Embed
 from command.cmd_default import CmdDefault
 from command.common import (
     ReactMenu, UserPrompt, ReplyPayload, ReactEditPayload, SPLITTER,
-    format_hero_title, format_legend_eff, process_hero, process_hero_spaces,
+    format_hero_title, format_legend_eff, process_hero,
 )
 from command.common_barracks import callback_save
 from feh.currency import Dragonflower
@@ -158,26 +158,23 @@ class HeroStats(CmdDefault):
                     emojis=react_emojis, callback=HeroStats.react)
             )
         tokens = SPLITTER.split(params)
-        hero = UnitLib.get_hero(tokens[0], user_id)
-        embed = Embed()
+        hero, bad_args, no_commas = process_hero(
+            tokens[0], tokens[1:], params, user_id)
         if not hero:
-            if ',' not in params:
-                hero, bad_args = process_hero_spaces(params, user_id)
-            if not hero:
-                return ReplyPayload(
-                    content=(
-                        f'Hero not found: {tokens[0]}. Don\'t forget that '
-                        'modifiers should be delimited by commas.'
-                    ),
-                    reactable=ReactMenu(
-                        react_emojis, None, HeroStats.react),
-                )
+            return ReplyPayload(
+                content=(
+                    f'Hero not found: {tokens[0]}. Don\'t forget that '
+                    'modifiers should be delimited by commas.'
+                ),
+                reactable=ReactMenu(
+                    react_emojis, None, HeroStats.react),
+            )
+        embed = Embed()
+        if no_commas:
             embed.set_footer(
                 text=('Please delimit modifiers with commas (,) '
                       'in the future to improve command processing.')
             )
-        else:
-            hero, bad_args = process_hero(hero, tokens[1:])
         embed = HeroStats.format_stats(hero, embed, False)
         embed.set_thumbnail(
             url=('https://raw.githubusercontent.com/imxtrabored/XanderBot/'
@@ -263,7 +260,8 @@ class HeroStats(CmdDefault):
                     delete=True,
                     replyable=UserPrompt(
                         callback=callback_save,
-                        content='Enter a new name:',
+                        content=(
+                            f'Enter a new name for custom {data.hero.name}:'),
                         data=data.hero
                     )
                 )
