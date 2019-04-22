@@ -1,4 +1,5 @@
 import asyncio
+import re
 import sqlite3
 from copy import copy
 from string import punctuation, whitespace
@@ -8,6 +9,7 @@ from feh.hero import Hero, Stat, UnitColor, UnitWeaponType, MoveType
 from feh.skill import Skill, SkillType, Refine
 
 SEARCH_SPECIAL_CHARS = '"()*'
+SEARCH_STRIP = re.compile('^[&|*\-\s]+|[&|\-\s]+$')
 TRANSTAB = str.maketrans('', '', punctuation + whitespace)
 TRANS_SEARCH = str.maketrans(
     punctuation.translate(str.maketrans('', '', SEARCH_SPECIAL_CHARS)),
@@ -333,10 +335,10 @@ class UnitLib(object):
     def search_skills(cls, search_str):
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
-        #search_str = f'"{search_str}"'
-        search_str = (search_str.replace('&', ' AND ').replace('|', ' OR ')
-                      .replace('-', ' NOT '))
-        search_str = search_str.translate(TRANS_SEARCH).lstrip('*')
+        # use a regex here to catch weird whitespace
+        search_str = (SEARCH_STRIP.sub('', search_str).replace('&', ' AND ')
+                      .replace('|', ' OR ').replace('-', ' NOT '))
+        search_str = search_str.translate(TRANS_SEARCH)
         try:
             cur.execute(
                 'SELECT id, identity, '

@@ -443,24 +443,42 @@ class Hero(object):
         elif skill.skill_type == SkillType.SPECIAL:
             self.equipped.special = skill
         elif skill.skill_type == SkillType.PASSIVE_A:
-            if (self.equipped.passive_a
-                    and not self.equipped.passive_s
-                    and skill.is_seal):
-                self.equipped.passive_s = skill
+            if not self.equipped.passive_a:
+                self.equipped.passive_a = skill
+            elif not self.equipped.passive_s:
+                if skill.is_seal:
+                    self.equipped.passive_s = skill
+                elif self.equipped.passive_a.is_seal:
+                    self.equipped.passive_s = self.equipped.passive_a
+                    self.equipped.passive_a = skill
+                else:
+                    self.equipped.passive_a = skill
             else:
                 self.equipped.passive_a = skill
         elif skill.skill_type == SkillType.PASSIVE_B:
-            if (self.equipped.passive_b
-                    and not self.equipped.passive_s
-                    and skill.is_seal):
-                self.equipped.passive_s = skill
+            if not self.equipped.passive_b:
+                self.equipped.passive_b = skill
+            elif not self.equipped.passive_s:
+                if skill.is_seal:
+                    self.equipped.passive_s = skill
+                elif self.equipped.passive_b.is_seal:
+                    self.equipped.passive_s = self.equipped.passive_b
+                    self.equipped.passive_b = skill
+                else:
+                    self.equipped.passive_b = skill
             else:
                 self.equipped.passive_b = skill
         elif skill.skill_type == SkillType.PASSIVE_C:
-            if (self.equipped.passive_c
-                    and not self.equipped.passive_s
-                    and skill.is_seal):
-                self.equipped.passive_s = skill
+            if not self.equipped.passive_c:
+                self.equipped.passive_c = skill
+            elif not self.equipped.passive_s:
+                if skill.is_seal:
+                    self.equipped.passive_s = skill
+                elif self.equipped.passive_c.is_seal:
+                    self.equipped.passive_s = self.equipped.passive_c
+                    self.equipped.passive_c = skill
+                else:
+                    skill.equipped.passive_c = skill
             else:
                 self.equipped.passive_c = skill
         elif skill.skill_type == SkillType.PASSIVE_SEAL:

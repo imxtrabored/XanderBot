@@ -384,7 +384,6 @@ Skill.EMPTY_PASSIVE_S = Skill(
 )
 
 
-
 class SpecialSkill(Skill):
 
     pass

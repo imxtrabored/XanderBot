@@ -28,6 +28,7 @@ class SkillSearch(CmdDefault):
         'represented by the symbols ``&``, ``|``, and ``-``, respectively. '
         '``&`` is somewhat redundant as it is implicit between terms, but it '
         'is needed for logical groupings.\n'
+        'The searched terms cannot start with a term negated with ``NOT``.\n'
         'Parentheses ``()`` can be used to logically group terms for logical '
         'operators. The implicit ``AND`` operator is NOT inserted before or '
         'after parenthetical statements.\n'
@@ -98,8 +99,8 @@ class SkillSearch(CmdDefault):
         skill_list = UnitLib.search_skills(params)
         if skill_list is None:
             return ReplyPayload(
-                content=('Syntax error. Ensure that your parentheses and '
-                         'quotation marks match up, then try again.'),
+                content=('Syntax error. Use ``f?help skillsearch`` for help '
+                         'with the syntax for this command.'),
                 reactable=ReactMenu(
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )

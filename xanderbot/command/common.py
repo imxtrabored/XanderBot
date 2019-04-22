@@ -15,7 +15,7 @@ NON_DECIMAL = re.compile(r'[^\d]+')
 SPLITTER = re.compile(r',(?![^()]*\))')
 PLUS_MINUS = re.compile(r'plus|minus')
 STARS_RARITY = re.compile(r'\*|stars|star|rarity')
-PLUSPLUS_FLOWER = re.compile(r'plusplus|flower')
+PLUSPLUS_FLOWER_DF = re.compile(r'plusplus|flower|^df|df$')
 BOON_ASSET = re.compile(r'boon|asset')
 MINUS_BANE_FLAW = re.compile(r'minus|bane|flaw')
 
@@ -163,9 +163,12 @@ def process_hero_args(hero, args):
         if rarity_test.isdecimal():
             rarity = int(rarity_test)
         elif 'merge' in filtered:
-            merges = int(NON_DECIMAL.sub('', filtered))
-        elif (PLUSPLUS_FLOWER.search(filtered) is not None
-              or filtered.startswith('df') or filtered.endswith('df')):
+            merge_test = NON_DECIMAL.sub('', filtered)
+            if merge_test.isdecimal():
+                merges = int(merge_test)
+            else:
+                bad_args.append(token.strip())
+        elif PLUSPLUS_FLOWER_DF.search(filtered) is not None:
             plus_test = NON_DECIMAL.sub('', filtered)
             if plus_test.isdecimal():
                 flowers = int(plus_test)
