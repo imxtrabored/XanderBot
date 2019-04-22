@@ -1,5 +1,4 @@
 from collections import Counter
-from operator import methodcaller
 
 from discord import Embed
 
@@ -261,7 +260,7 @@ class HeroCompare(CmdDefault):
             )
         else:
             # normal mode
-            hero_list = map(methodcaller('split', ','), params.split(';'))
+            hero_list = (SPLITTER.split(param) for param in params.split(';'))
             heroes = []
             for param in hero_list:
                 this_hero = UnitLib.get_hero(param[0], user_id)

@@ -4,7 +4,7 @@ from discord import Embed
 
 from command.cmd_default import CmdDefault
 from command.common import (
-    ReactMenu, UserPrompt, ReplyPayload, ReactEditPayload, SPLITTER,
+    ReactMenu, UserPrompt, ReplyPayload, ReactEditPayload,
     format_hero_title, format_legend_eff, process_hero,
 )
 from feh.emojilib import EmojiLib as em
@@ -163,13 +163,11 @@ class HeroSkills(CmdDefault):
                 reactable=ReactMenu(
                     emojis=react_emojis, callback=HeroSkills.react),
             )
-        tokens = SPLITTER.split(params)
-        hero, bad_args, no_commas = process_hero(
-            tokens[0], tokens[1:], params, user_id)
+        hero, bad_args, no_commas = process_hero(params, user_id)
         if not hero:
             return ReplyPayload(
                 content=(
-                    f'Hero not found: {tokens[0]}. Don\'t forget that '
+                    f'Hero not found: {bad_args}. Don\'t forget that '
                     'modifiers should be delimited by commas.'
                 ),
                 reactable=ReactMenu(

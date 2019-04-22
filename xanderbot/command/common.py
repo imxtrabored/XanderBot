@@ -249,6 +249,8 @@ def process_hero_args(hero, args):
                              if s[2] and s[2] <= max_rarity), None))
             hero.equip(next((s[0] for s in hero.special[::-1]
                              if s[2] and s[2] <= max_rarity), None))
+        elif 'prf' in filtered and hero.weapon_prf is not None:
+            hero.equip(hero.weapon_prf)
         else:
             if not try_equip(hero, filtered):
                 bad_args.append(token)
@@ -287,18 +289,21 @@ def process_hero_spaces(params, user_id):
     if is_hero:
         hero = UnitLib.get_hero(''.join(tokens[:is_hero]), user_id)
         return process_hero_args(hero, tokens[is_hero:])
-    return None, None
+    return None, params
 
 
-def process_hero(hero_name, tokens, params, user_id):
-    hero = UnitLib.get_hero(hero_name, user_id)
+def process_hero(params, user_id):
+    if not params:
+        return None, '', False
+    tokens = SPLITTER.split(params)
+    hero = UnitLib.get_hero(tokens[0], user_id)
     if not hero:
         if ',' not in params:
             no_commas = True
             hero, bad_args = process_hero_spaces(params, user_id)
         else:
-            hero, bad_args, no_commas = None, None, False
+            hero, bad_args, no_commas = None, tokens[0], False
     else:
         no_commas = False
-        hero, bad_args = process_hero_args(hero, tokens)
+        hero, bad_args = process_hero_args(hero, tokens[1:])
     return hero, bad_args, no_commas

@@ -342,7 +342,7 @@ class UnitLib(object):
         try:
             cur.execute(
                 'SELECT id, identity, '
-                'snippet(skill_search, -1, "**", "**", "…", 10)'
+                'snippet(skill_search, -1, "**", "**", "…", 10) '
                 'FROM skill_search '
                 'WHERE skill_search MATCH ? ORDER BY rank ASC;',
                 (search_str,)
@@ -353,7 +353,7 @@ class UnitLib(object):
             try:
                 cur.execute(
                     'SELECT id, identity, '
-                    'snippet(skill_search, -1, "**", "**", "…", 10)'
+                    'snippet(skill_search, -1, "**", "**", "…", 10) '
                     'FROM skill_search '
                     'WHERE skill_search MATCH ? ORDER BY rank ASC;',
                     (search_str,)
