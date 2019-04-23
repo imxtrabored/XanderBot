@@ -11,13 +11,19 @@ from feh.unitlib import UnitLib
 
 
 TRANSTAB = str.maketrans('', '', punctuation + whitespace)
-NON_DECIMAL = re.compile(r'[^\d]+')
-SPLITTER = re.compile(r',(?![^()]*\))')
-PLUS_MINUS = re.compile(r'plus|minus')
-STARS_RARITY = re.compile(r'\*|stars|star|rarity')
-PLUSPLUS_FLOWER_DF = re.compile(r'plusplus|flower|^df|df$')
 BOON_ASSET = re.compile(r'boon|asset')
+BOTTOM_SYNONYMS = re.compile(r'bottom|lowest|least|worst|fewest')
+FROM_SYNONYMS = re.compile(r'\s+(?:in|from|within)\s+')
+MERGE_TEST = re.compile(r'merges?')
 MINUS_BANE_FLAW = re.compile(r'minus|bane|flaw')
+NON_DECIMAL = re.compile(r'[^\d]+')
+PLUS_MINUS = re.compile(r'plus|minus')
+PLUSPLUS_FLOWER_DF = re.compile(r'plusplus|flower|^df|df$')
+SPLITTER = re.compile(r',(?![^()]*\))')
+STARS_RARITY = re.compile(r'\*|stars|star|rarity')
+TOP_SYNONYMS = re.compile(r'top|highest|most|best|greatest')
+WITH_SYNONYMS = re.compile(
+    r'\s+(?:with|having|has|using|equip|equipping|equipped)\s+')
 
 LEGEND_TYPES = {
     LegendElement.FIRE : 'Legendary Effect: Fire',
@@ -163,7 +169,7 @@ def process_hero_args(hero, args):
         if rarity_test.isdecimal():
             rarity = int(rarity_test)
         elif 'merge' in filtered:
-            merge_test = NON_DECIMAL.sub('', filtered)
+            merge_test = MERGE_TEST.sub('', filtered, 1)
             if merge_test.isdecimal():
                 merges = int(merge_test)
             else:
@@ -281,7 +287,7 @@ def process_hero_args(hero, args):
 
 
 def process_hero_spaces(params, user_id):
-    tokens = [filter_name(token) for token in SPLITTER.split(params)]
+    tokens = [filter_name(token) for token in params.split()]
     is_hero = 0
     for i in range(1, len(tokens)):
         if UnitLib.check_name(''.join(tokens[:i])):
@@ -295,7 +301,13 @@ def process_hero_spaces(params, user_id):
 def process_hero(params, user_id):
     if not params:
         return None, '', False
-    tokens = SPLITTER.split(params)
+    tokens = WITH_SYNONYMS.split(params, maxsplit=1)
+    if len(tokens) < 2 and ',' in params:
+        tokens = params.split(',', 1)
+    if len(tokens) > 1:
+        hero_args = SPLITTER.split(tokens[1])
+    else:
+        hero_args = ()
     hero = UnitLib.get_hero(tokens[0], user_id)
     if not hero:
         if ',' not in params:
@@ -305,5 +317,8 @@ def process_hero(params, user_id):
             hero, bad_args, no_commas = None, tokens[0], False
     else:
         no_commas = False
-        hero, bad_args = process_hero_args(hero, tokens[1:])
+        hero, bad_args = process_hero_args(hero, hero_args)
+        if bad_args and len(hero_args) == 1:
+            hero, bad_args = process_hero_args(hero, hero_args[0].split())
+            no_commas = True
     return hero, bad_args, no_commas
