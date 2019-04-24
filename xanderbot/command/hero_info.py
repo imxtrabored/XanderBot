@@ -165,7 +165,7 @@ class HeroInfo(CmdDefault):
                 reactable=ReactMenu(
                     emojis=react_emojis, callback=HeroInfo.react),
             )
-        hero, bad_args, no_commas = process_hero(params, user_id)
+        hero, bad_args, not_allowed, no_commas = process_hero(params, user_id)
         if not hero:
             return ReplyPayload(
                 content=(
@@ -186,11 +186,14 @@ class HeroInfo(CmdDefault):
             url=('https://raw.githubusercontent.com/imxtrabored/XanderBot/'
                  f'master/xanderbot/feh/data/heroes/{hero.index}/Face.png')
         )
-        if bad_args:
-            content = ('I did not understand the following arguments: '
-                       f'{", ".join(bad_args)}')
-        else:
-            content = None
+        err_text = []
+        if any(bad_args):
+            err_text.append('I did not understand the following: '
+                            f'{", ".join(bad_args)}')
+        if any(not_allowed):
+            err_text.append('The following are unavailable for this hero:'
+                            f'{", ".join(not_allowed)}')
+        content = '\n'.join(err_text)
         react_emojis[7] = em.get(DragonflowerInc.get_type(hero.move_type))
         react_menu = ReactMenu(
             emojis=react_emojis,

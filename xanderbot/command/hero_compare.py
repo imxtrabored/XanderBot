@@ -241,6 +241,7 @@ class HeroCompare(CmdDefault):
         zoom_state = False
         embed = Embed()
         bad_args = []
+        not_allowed = []
         if ';' not in params:
             # slow mode
             params = SPLITTER.split(params)
@@ -252,8 +253,10 @@ class HeroCompare(CmdDefault):
                     if not heroes:
                         bad_args.append(param)
                     else:
-                        heroes[-1], bad_arg = process_hero_args(heroes[-1], [param])
+                        heroes[-1], bad_arg, n_allow = (
+                            process_hero_args(heroes[-1], [param]))
                         bad_args.extend(bad_arg)
+                        not_allowed.extend(n_allow)
             embed.set_footer(
                 text=('Please delimit compared heroes with semicolons (;) '
                       'in the future to improve speed and clarity.')
@@ -265,9 +268,11 @@ class HeroCompare(CmdDefault):
             for param in hero_list:
                 this_hero = UnitLib.get_hero(param[0], user_id)
                 if this_hero:
-                    this_hero, bad_arg = process_hero_args(this_hero, param[1:])
+                    this_hero, bad_arg, n_allow = (
+                        process_hero_args(this_hero, param[1:]))
                     heroes.append(this_hero)
                     bad_args.extend(bad_arg)
+                    not_allowed.extend(n_allow)
                 else:
                     bad_args.append(param[0])
         # modify duplicate hero names (detect dupes using id)

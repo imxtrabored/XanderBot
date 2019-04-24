@@ -60,14 +60,18 @@ class BarracksSave(CmdDefault):
         if not hero:
             hero = UnitLib.get_base_hero(tokens[0], user_id)
             if hero:
-                hero, bad_args = process_hero_args(hero, tokens[1:])
-                if bad_args:
-                    prepend = (
+                hero, bad_args, not_allowed = process_hero_args(hero, tokens[1:])
+                prepend = []
+                if any(bad_args):
+                    prepend.append(
                         'I did not understand the following, so they '
                         f'will not be applied: {", ".join(bad_args)}.\n\n'
                     )
-                else:
-                    prepend = ''
+                if any(not_allowed):
+                    prepend.append(
+                        'The following are unavailable for this hero: '
+                        f'{", ".join(not_allowed)}'
+                    )
                 return ReplyPayload(
                     replyable=UserPrompt(
                         callback=callback_save,
@@ -88,6 +92,6 @@ class BarracksSave(CmdDefault):
                     ),
                 )
         else:
-            hero, bad_args = process_hero_args(hero, tokens[2:])
+            hero, bad_args, not_allowed = process_hero_args(hero, tokens[2:])
             new_name = tokens[0]
         return await callback_save(new_name, hero, user_id)

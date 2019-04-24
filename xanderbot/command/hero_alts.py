@@ -18,7 +18,7 @@ class HeroAlts(CmdDefault):
     async def cmd(params, user_id):
         if not params:
             return ReplyPayload(content='No input. Please enter a hero.')
-        hero, bad_args, no_commas = process_hero(params, user_id)
+        hero, bad_args, not_allowed, no_commas = process_hero(params, user_id)
         if not hero:
             return ReplyPayload(
                 content=(

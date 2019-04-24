@@ -21,7 +21,7 @@ class HeroTotalSp(CmdDefault):
     async def cmd(params, user_id):
         if not params:
             return ReplyPayload(content='No input. Please enter a hero.')
-        hero, bad_args, no_commas = process_hero(params, user_id)
+        hero, bad_args, not_allowed, no_commas = process_hero(params, user_id)
         if not hero:
             return ReplyPayload(
                 content=(
@@ -91,9 +91,12 @@ class HeroTotalSp(CmdDefault):
             url=('https://raw.githubusercontent.com/imxtrabored/XanderBot/'
                  f'master/xanderbot/feh/data/heroes/{hero.index}/Face.png')
         )
-        if bad_args:
-            content = ('I did not understand the following arguments: '
-                       f'{", ".join(bad_args)}')
-        else:
-            content = ''
+        err_text = []
+        if any(bad_args):
+            err_text.append('I did not understand the following: '
+                            f'{", ".join(bad_args)}')
+        if any(not_allowed):
+            err_text.append('The following are unavailable for this hero:'
+                            f'{", ".join(not_allowed)}')
+        content = '\n'.join(err_text)
         return ReplyPayload(content=content, embed=embed)

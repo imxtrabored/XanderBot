@@ -69,7 +69,7 @@ class HeroArt(CmdDefault):
                 reactable=ReactMenu(
                     emojis=HeroArt.REACT_MENU, callback=HeroArt.react)
             )
-        hero, bad_args, no_commas = process_hero(params, user_id)
+        hero, bad_args, not_allowed, no_commas = process_hero(params, user_id)
         if not hero:
             return ReplyPayload(
                 content=(

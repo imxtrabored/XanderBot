@@ -152,6 +152,7 @@ def try_equip(hero, skill_name):
 
 def process_hero_args(hero, args):
     bad_args = []
+    not_allowed = []
     rarity = None
     merges = None
     boon = None
@@ -177,7 +178,7 @@ def process_hero_args(hero, args):
                 flowers = int(plus_test)
             else:
                 if not try_equip(hero, filtered):
-                    bad_args.append(token.strip())
+                    not_allowed.append(token.strip())
         elif 'plus' in filtered:
             # this might be merges, iv, or a skill
             plus_test = filtered.replace('plus', '')
@@ -225,7 +226,7 @@ def process_hero_args(hero, args):
                     else:
                         # "minus" does not appear in any skill names
                         if not try_equip(hero, filtered):
-                            bad_args.append(token.strip())
+                            not_allowed.append(token.strip())
         elif BOON_ASSET.search(filtered) is not None:
             asset_test = BOON_ASSET.sub('', filtered)
             stat = Stat.get_by_name(asset_test)
@@ -256,7 +257,7 @@ def process_hero_args(hero, args):
             hero.equip(hero.weapon_prf)
         else:
             if not try_equip(hero, filtered):
-                bad_args.append(token)
+                not_allowed.append(token)
     if boon is None and bane is not None:
         bane = None
         bad_args.append(
@@ -280,7 +281,7 @@ def process_hero_args(hero, args):
                     f'\n{hero.short_name} no flaw given; guessing Res')
     hero.update_stat_mods(boon=boon, bane=bane, merges=merges, rarity=rarity,
                           flowers=flowers, summ_support=support)
-    return hero, bad_args
+    return hero, bad_args, not_allowed
 
 
 def process_hero_spaces(params, user_id):
@@ -292,7 +293,7 @@ def process_hero_spaces(params, user_id):
     if is_hero:
         hero = UnitLib.get_hero(''.join(tokens[:is_hero]), user_id)
         return process_hero_args(hero, tokens[is_hero:])
-    return None, params
+    return None, params, ()
 
 
 def process_hero(params, user_id):
@@ -309,13 +310,14 @@ def process_hero(params, user_id):
     if not hero:
         if ',' not in params:
             no_commas = True
-            hero, bad_args = process_hero_spaces(params, user_id)
+            hero, bad_args, not_allowed = process_hero_spaces(params, user_id)
         else:
             hero, bad_args, no_commas = None, tokens[0], False
     else:
         no_commas = False
-        hero, bad_args = process_hero_args(hero, hero_args)
+        hero, bad_args, not_allowed = process_hero_args(hero, hero_args)
         if bad_args and len(hero_args) == 1:
-            hero, bad_args = process_hero_args(hero, hero_args[0].split())
+            hero, bad_args, not_allowed = (
+                process_hero_args(hero, hero_args[0].split()))
             no_commas = True
-    return hero, bad_args, no_commas
+    return hero, bad_args, not_allowed, no_commas

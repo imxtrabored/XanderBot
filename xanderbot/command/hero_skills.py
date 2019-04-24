@@ -163,12 +163,14 @@ class HeroSkills(CmdDefault):
                 reactable=ReactMenu(
                     emojis=react_emojis, callback=HeroSkills.react),
             )
-        hero, bad_args, no_commas = process_hero(params, user_id)
+        hero, bad_args, not_allowed, no_commas = process_hero(params, user_id)
         if not hero:
             return ReplyPayload(
                 content=(
                     f'Hero not found: {bad_args}. Don\'t forget that '
-                    'modifiers should be delimited by commas.'
+                    'modifiers should be delimited by commas.\n'
+                    '(For information about a particular skill, use the '
+                    '``skill`` (without an \'s\') command..)'
                 ),
                 reactable=ReactMenu(
                     react_emojis, None, HeroSkills.react),
@@ -180,6 +182,14 @@ class HeroSkills(CmdDefault):
                       'in the future to improve command processing.')
             )
         embed = HeroSkills.format_hero_skills(hero, embed, False)
+        err_text = []
+        if any(bad_args):
+            err_text.append('I did not understand the following: '
+                            f'{", ".join(bad_args)}')
+        if any(not_allowed):
+            err_text.append('The following are unavailable for this hero:'
+                            f'{", ".join(not_allowed)}')
+        content = '\n'.join(err_text)
         embed.set_thumbnail(
             url=('https://raw.githubusercontent.com/imxtrabored/XanderBot/'
                  f'master/xanderbot/feh/data/heroes/{hero.index}/Face.png')
@@ -189,7 +199,7 @@ class HeroSkills(CmdDefault):
             data=HeroSkills.Data(embed, hero, False),
             callback=HeroSkills.react,
         )
-        return ReplyPayload(embed=embed, reactable=react_menu)
+        return ReplyPayload(content=content, embed=embed, reactable=react_menu)
 
     @staticmethod
     async def react(reaction, data, user_id):
