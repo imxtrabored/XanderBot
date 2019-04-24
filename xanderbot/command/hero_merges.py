@@ -55,11 +55,11 @@ class HeroMerges(CmdDefault):
             f'{str(hero.max_res).rjust(3)}\n'
             f'{bonuses}```\n'
             f'Dragonflower bonus order:\n'
-            f'{hero.merge_order[0][2].name}, '
-            f'{hero.merge_order[1][2].name}, '
-            f'{hero.merge_order[2][2].name}, '
-            f'{hero.merge_order[3][2].name}, '
-            f'{hero.merge_order[4][2].name}'
+            f'{hero.merge_order[0][2].short}, '
+            f'{hero.merge_order[1][2].short}, '
+            f'{hero.merge_order[2][2].short}, '
+            f'{hero.merge_order[3][2].short}, '
+            f'{hero.merge_order[4][2].short}'
         )
         embed.add_field(name=title, value=description, inline=True)
         if bad_args:
