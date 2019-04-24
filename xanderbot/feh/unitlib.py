@@ -8,16 +8,29 @@ from feh.emojilib import EmojiLib as em
 from feh.hero import Hero, Stat, UnitColor, UnitWeaponType, MoveType
 from feh.skill import Skill, SkillType, Refine
 
-SEARCH_SPECIAL_CHARS = '"()*'
-SEARCH_STRIP = re.compile('^[&|*\-\s]+|[&|\-\s]+$')
-TRANSTAB = str.maketrans('', '', punctuation + whitespace)
+ALPHA_CHARS = re.compile(r'[a-z]')
+ENEMY_NAME = re.compile(r'^enemy|enemy$')
+SEARCH_STRIP = re.compile(r'^[&|*\s]+|[&|\-\s]+$')
+SORT_ALLOWED = re.compile(
+    r'[+\-](?=\w)|(?<=\w)[*/](?=\w)|[()]|hp|atk|spd|def|res|[0-9]')
+STAT_NAMES = re.compile(r'hp|atk|spd|def|res')
+SEARCH_SPECIAL_CHARS = r'"()*'
+NON_ALPHANUM = str.maketrans('', '', punctuation + whitespace)
 TRANS_SEARCH = str.maketrans(
     punctuation.translate(str.maketrans('', '', SEARCH_SPECIAL_CHARS)),
     ' ' * (len(punctuation) - len(SEARCH_SPECIAL_CHARS))
 )
 TRANS_SEARCH_SYNTAX = str.maketrans(
-    SEARCH_SPECIAL_CHARS,' ' * len(SEARCH_SPECIAL_CHARS))
+    SEARCH_SPECIAL_CHARS, ' ' * len(SEARCH_SPECIAL_CHARS))
+TRANS_WHITESPACE = str.maketrans('', '', whitespace)
 
+STAT_TO_COL = {
+    'hp' : 'hero.max_hp',
+    'atk' : 'hero.max_atk',
+    'spd' : 'hero.max_spd',
+    'def' : 'hero.max_def',
+    'res' : 'hero.max_res',
+}
 
 class UnitLib(object):
     '''Library of units, loaded into memory'''
@@ -113,9 +126,12 @@ class UnitLib(object):
             if not skill.tier:
                 skill.set_tier_recursive()
         cur.execute(
-            """SELECT heroid, skillid, unlockRarity, defaultRarity
+            """SELECT skillsets.heroid, skillsets.skillid,
+            skillsets.unlockRarity, skillsets.defaultRarity
             FROM skillsets
-            ORDER BY heroid ASC,  unlockRarity ASC,  exclusive ASC;"""
+            JOIN skills ON skillsets.skillid = skills.id
+            ORDER BY skillsets.heroid ASC,  skillsets.unlockRarity ASC,
+            skills.exclusive ASC;"""
         )
         for index in cur:
             hero = self.unit_list[index[0]]
@@ -123,7 +139,10 @@ class UnitLib(object):
             if skill.skill_type == SkillType.WEAPON:
                 hero.weapon.append((skill, index[2], index[3]))
                 if skill.evolves_to is not None:
-                    hero.weapon.append((skill.evolves_to, 11, None))
+                    if skill.exclusive:
+                        hero.weapon.append((skill.evolves_to, 12, None))
+                    else:
+                        hero.weapon.append((skill.evolves_to, 11, None))
                 if skill.exclusive:
                     hero.weapon_prf = skill
             elif skill.skill_type == SkillType.ASSIST:
@@ -167,7 +186,6 @@ class UnitLib(object):
         for index in cur:
             skill = cls.singleton.skill_list[index[0]]
             skill.icon = client.get_emoji(int(index[1]))
-
         cur.execute(
             """SELECT id, typeemoteid
             FROM skill_emoji WHERE id < 0 ORDER BY id DESC;"""
@@ -184,7 +202,7 @@ class UnitLib(object):
 
     @staticmethod
     def filter_name(name):
-        return name.lower().replace('+', 'plus').translate(TRANSTAB)
+        return name.lower().replace('+', 'plus').translate(NON_ALPHANUM)
 
     @classmethod
     def check_name(cls, hero_name):
@@ -193,15 +211,12 @@ class UnitLib(object):
     @classmethod
     def get_base_hero(cls, hero_name, user_id):
         hero_name = cls.filter_name(hero_name)
-        if hero_name.startswith('enemy') or hero_name.endswith('enemy'):
-            if hero_name.startswith('enemy'):
-                hero_name = hero_name[5:]
-            if hero_name.endswith('enemy'):
-                hero_name = hero_name[:-5]
-            if hero_name in cls.singleton.enemy_names:
-                hero = copy(cls.singleton.enemy_names[hero_name])
+        enemy_name = ENEMY_NAME.subn('', hero_name, 1)
+        if enemy_name[1] > 0:
+            if enemy_name[0] in cls.singleton.enemy_names:
+                hero = copy(cls.singleton.enemy_names[enemy_name[0]])
                 hero.equipped = (
-                    copy(cls.singleton.enemy_names[hero_name].equipped))
+                    copy(cls.singleton.enemy_names[enemy_name[0]].equipped))
                 return hero
             return None
         if hero_name in cls.singleton.unit_names:
@@ -212,7 +227,12 @@ class UnitLib(object):
 
     @classmethod
     def search_hero(cls, hero_name, user_id):
-        hero_name = hero_name.translate(TRANS_SEARCH).lstrip('*')
+        hero_name = (
+            SEARCH_STRIP.sub('', hero_name).replace('&', ' AND ')
+            .replace('|', ' OR ').replace('-', ' NOT ').translate(TRANS_SEARCH)
+        )
+        if hero_name.startswith(' NOT '):
+            hero_name = 'any' + hero_name
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         try:
@@ -259,6 +279,64 @@ class UnitLib(object):
         if hero_id < 0:
             return cls.singleton.enemy_list[abs(hero_id)]
         return cls.singleton.unit_list[hero_id]
+
+    @classmethod
+    def sort_heroes(cls, sort_terms, search_terms):
+        filtered_terms = ['hero.id, hero.short_name']
+        filtered_order = []
+        filtered_short = []
+        if any(sort_terms):
+            for term in sort_terms:
+                pre_filtered = ''.join(SORT_ALLOWED.findall(
+                        term[0].lower().translate(TRANS_WHITESPACE)))
+                filtered_terms.append(STAT_NAMES.sub(
+                    lambda match: STAT_TO_COL[match.group()], pre_filtered)
+                    .replace('/', '*1.0/')
+                )
+                filtered_short.append(STAT_NAMES.sub(
+                    lambda match: match.group()[0], pre_filtered)
+                    .replace('*', '\*')
+                )
+                if ALPHA_CHARS.search(filtered_terms[-1]):
+                    filtered_order.append(
+                        f'{filtered_terms[-1]} {"DESC" if term[1] else "ASC"}')
+        filtered_order.append('hero.id ASC')
+        if search_terms:
+            match = 'WHERE hero_search MATCH ? '
+            parameterized = (
+                SEARCH_STRIP.sub('', search_terms).replace('&', ' AND ')
+                .replace('|', ' OR ').replace('-', ' NOT ')
+                .translate(TRANS_SEARCH),
+            )
+            if parameterized[0].startswith(' NOT '):
+                parameterized = ('any' + parameterized[0],)
+        else:
+            match = ''
+            parameterized = ()
+        con = sqlite3.connect("feh/fehdata.db")
+        cur = con.cursor()
+        try:
+            cur.execute(
+                f'SELECT {", ".join(filtered_terms)} '
+                'FROM hero_search JOIN hero ON hero_search.id = hero.id '
+                f'{match}'
+                f'ORDER BY {", ".join(filtered_order)}',
+                parameterized
+            )
+        except sqlite3.OperationalError as e:
+            return None
+        hero_list = [''.join([
+                '``',
+                ' '.join([f'({filtered_short[cou]}: {row[cou + 2]:0.1f})'
+                          for cou, val in enumerate(sort_terms)]),
+                f'`` {em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
+                f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
+                f'{row[1]}'
+            ])
+            for row in cur
+        ]
+        con.close()
+        return hero_list
 
     #todo: THIS DOESNT WORK!!!
     @classmethod
@@ -335,10 +413,13 @@ class UnitLib(object):
     def search_skills(cls, search_str):
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
-        # use a regex here to catch weird whitespace
-        search_str = (SEARCH_STRIP.sub('', search_str).replace('&', ' AND ')
-                      .replace('|', ' OR ').replace('-', ' NOT '))
-        search_str = search_str.translate(TRANS_SEARCH)
+        # use a regex here to catch weird whitespace and strip double sided
+        search_str = (
+            SEARCH_STRIP.sub('', search_str).replace('&', ' AND ')
+            .replace('|', ' OR ').replace('-', ' NOT ').translate(TRANS_SEARCH)
+        )
+        if search_str.startswith(' NOT '):
+            search_str = 'tags' + search_str
         try:
             cur.execute(
                 'SELECT id, identity, '

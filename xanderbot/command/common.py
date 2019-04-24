@@ -12,8 +12,6 @@ from feh.unitlib import UnitLib
 
 TRANSTAB = str.maketrans('', '', punctuation + whitespace)
 BOON_ASSET = re.compile(r'boon|asset')
-BOTTOM_SYNONYMS = re.compile(r'bottom|lowest|least|worst|fewest')
-FROM_SYNONYMS = re.compile(r'\s+(?:in|from|within)\s+')
 MERGE_TEST = re.compile(r'merges?')
 MINUS_BANE_FLAW = re.compile(r'minus|bane|flaw')
 NON_DECIMAL = re.compile(r'[^\d]+')
@@ -21,7 +19,6 @@ PLUS_MINUS = re.compile(r'plus|minus')
 PLUSPLUS_FLOWER_DF = re.compile(r'plusplus|flower|^df|df$')
 SPLITTER = re.compile(r',(?![^()]*\))')
 STARS_RARITY = re.compile(r'\*|stars|star|rarity')
-TOP_SYNONYMS = re.compile(r'top|highest|most|best|greatest')
 WITH_SYNONYMS = re.compile(
     r'\s+(?:with|having|has|using|equip|equipping|equipped)\s+')
 
