@@ -59,6 +59,7 @@ class SkillInfo(CmdDefault):
 
     @staticmethod
     def format_skill(skill, embed, zoom_state):
+        embed.clear_fields()
         type_icon = (em.get(skill.weapon_type)
                      if skill.weapon_type else em.get(skill.skill_type))
         seal_icon = (
@@ -109,37 +110,10 @@ class SkillInfo(CmdDefault):
                 else: restrictions = None
         else:
             restrictions = None
-        sp = f'**SP:** {skill.sp}'
-        if skill.skill_type == SkillType.PASSIVE_SEAL:
-            learnable = ''
+        if zoom_state and not skill.exclusive:
+            sp = f'**SP:** {skill.sp} ({skill.sp * 3 // 2})'
         else:
-            learnable_count = (
-                len(skill.learnable[1]) + len(skill.learnable[2])
-                + len(skill.learnable[3]) + len(skill.learnable[4])
-                + len(skill.learnable[5])
-            )
-            if (skill.skill_type == SkillType.WEAPON and not skill.exclusive
-                    and ((skill.tier <= 2 and not skill.is_staff)
-                         or skill.tier <= 1)):
-                learnable = 'Basic weapon available to most eligible heroes.'
-            elif (skill.skill_type == SkillType.ASSIST and skill.is_staff
-                  and skill.tier <= 1):
-                learnable = 'Basic assist available to all staff users.'
-            # elif reduce(lambda x, y: x + len(y), skill.learnable[1:], 0) > 20:
-            elif learnable_count > 20:
-                learnable = f'{learnable_count} different heroes know this skill.'
-            elif learnable_count == 0:
-                learnable = 'None'
-            else:
-                learnable = '\n'.join([
-                    f'{count}{em.get(Rarity(count))}: '
-                    f'{", ".join([hero.short_name for hero in hero_list])} '
-                    f'[{len(hero_list)}]'
-                    for count, hero_list in enumerate(skill.learnable[1:], 1)
-                    if hero_list
-                ])
-            learnable = f'**Available from:**\n{learnable}'
-        embed.clear_fields()
+            sp = f'**SP:** {skill.sp}'
         if zoom_state:
             if skill.postreq:
                 prf_postreq_count = len(
@@ -163,26 +137,60 @@ class SkillInfo(CmdDefault):
                 postreq_list = 'None'
                 prf_postreqs = ''
             postreqs = f'**Required for:** {postreq_list}{prf_postreqs}'
-            cumul_sp = f'**Cumulative SP:** {skill.get_cumul_sp_recursive()}'
+            cumul_sp = skill.get_cumul_sp_recursive()
+            skill_cumul_sp = (
+                f'**Cumulative SP:** {cumul_sp}'
+                f'{f" ({cumul_sp * 3 // 2})" if not skill.exclusive else ""}'
+            )
             if skill.evolves_from:
                 evolve_src = (
                     f'**Evolves from:** '
                     f'{skill.evolves_from.icon} {skill.evolves_from.name}')
             else: evolve_src = None
         else:
-            postreqs, cumul_sp, evolve_src = None, None, None
+            postreqs, skill_cumul_sp, evolve_src = None, None, None
         description = '\n'.join(filter(None, [
             weapon_desc,
             skill.description,
             prereq,
             restrictions,
             sp,
-            cumul_sp,
-            learnable,
+            skill_cumul_sp,
             evolve_src,
             postreqs,
         ]))
+        print(len(description))
         embed.add_field(name=title, value=description, inline=False)
+        if skill.skill_type == SkillType.PASSIVE_SEAL:
+            learnable = ''
+        else:
+            learnable_count = (
+                len(skill.learnable[1]) + len(skill.learnable[2])
+                + len(skill.learnable[3]) + len(skill.learnable[4])
+                + len(skill.learnable[5])
+            )
+            if (skill.skill_type == SkillType.WEAPON and not skill.exclusive
+                    and ((skill.tier <= 2 and not skill.is_staff)
+                         or skill.tier <= 1)):
+                learnable = 'Basic weapon available to most eligible heroes.'
+            elif (skill.skill_type == SkillType.ASSIST and skill.is_staff
+                  and skill.tier <= 1):
+                learnable = 'Basic assist available to all staff users.'
+            #elif reduce(lambda x, y: x + len(y), skill.learnable[1:], 0) > 20:
+            elif learnable_count > 20:
+                learnable = (
+                    f'{learnable_count} different heroes know this skill.')
+            elif learnable_count == 0:
+                learnable = 'None'
+            else:
+                learnable = '\n'.join([
+                    f'{count}{em.get(Rarity(count))}: '
+                    f'{", ".join([hero.short_name for hero in hero_list])} '
+                    f'[{len(hero_list)}]'
+                    for count, hero_list in enumerate(skill.learnable[1:], 1)
+                    if hero_list
+                ])
+        embed.add_field(name='Available from:', value=learnable, inline=False)
         if skill.refinable or skill.evolves_to:
             if zoom_state:
                 refine_secondary = (
@@ -275,7 +283,8 @@ class SkillInfo(CmdDefault):
                 generic_refines,
                 evolution
             ]))
-            embed.add_field(name=refined_title,value=refine_desc,inline=False)
+            embed.add_field(
+                name=refined_title, value=refine_desc, inline=False)
         if (skill.skill_type == SkillType.WEAPON
                 or skill.skill_type == SkillType.WEAPON_REFINED
                 or (skill.skill_type == SkillType.ASSIST and skill.is_staff)
@@ -307,8 +316,8 @@ class SkillInfo(CmdDefault):
             return ReplyPayload(
                 content=(
                     f'Skill not found: {tokens[0]}.\n'
-                    'Note: To display information on the skills known by a '
-                    'hero by default, use the ``skills`` (with an s) command.'
+                    '(For information on the skills known by a hero by '
+                    'default, use the ``skills`` (with an \'s\') command.)'
                 ),
                 reactable=ReactMenu(
                     emojis=SkillInfo.REACT_MENU, callback=SkillInfo.react),
