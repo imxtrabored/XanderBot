@@ -442,8 +442,11 @@ class UnitLib(object):
             except sqlite3.OperationalError:
                 return None
         skill_list = [
-            (cls.singleton.skill_list[int(result[0])].icon,
-             result[1], result[2])
+            (
+                f'{cls.singleton.skill_list[int(result[0])].icon} '
+                f'__{result[1]}__\n{result[2]}',
+                f'{cls.singleton.skill_list[int(result[0])].icon} {result[1]}'
+            )
             for result in cur
         ]
         con.close()

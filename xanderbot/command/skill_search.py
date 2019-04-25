@@ -28,7 +28,6 @@ class SkillSearch(CmdDefault):
         'represented by the symbols ``&``, ``|``, and ``-``, respectively. '
         '``&`` is somewhat redundant as it is implicit between terms, but it '
         'is needed for logical groupings.\n'
-        'The searched terms cannot start with a term negated with ``NOT``.\n'
         'Parentheses ``()`` can be used to logically group terms for logical '
         'operators. The implicit ``AND`` operator is NOT inserted before or '
         'after parenthetical statements.\n'
@@ -48,6 +47,7 @@ class SkillSearch(CmdDefault):
         '⬆',
         '⬇',
     )
+
     @dataclass
     class Data(object):
 
@@ -73,15 +73,10 @@ class SkillSearch(CmdDefault):
                 result = 'No results!'
         elif zoom_state:
             end = min(start + ZOOM_LIMIT, len(results))
-            result = '\n'.join(
-                [''.join((str(row[0]), '__', row[1], '__\n', row[2]))
-                 for row in results[start:end]]
-            )
+            result = '\n'.join([row[0] for row in results[start:end]])
         else:
             end = min(start + PAGE_LIMIT, len(results))
-            result = '\n'.join(
-                [''.join((str(row[0]), row[1]))
-                 for row in results[start:end]])
+            result = '\n'.join([row[1] for row in results[start:end]])
         embed.title = (f'Skills matching "{param}" '
                        f'({start + 1} - {end} of {len(results)}):')
         embed.description = result
