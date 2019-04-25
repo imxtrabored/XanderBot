@@ -209,7 +209,8 @@ def process_hero_args(hero, args):
                                     stat1 = Stat.get_by_name(iv_tokens[0][:i])
                                     if stat1 is not None:
                                         stat2 = Stat.get_by_name(iv_tokens[0][i:])
-                                        break
+                                        if stat2 is not None:
+                                            break
                                 if stat1 is not None and stat2 is not None:
                                     if iv_order[0] == 'plus':
                                         boon = stat1

@@ -84,25 +84,32 @@ class LegendStat(Enum):
 @unique
 class Stat(Enum):
     '''Enum for each unit stat'''
-    NONE = (1, 'None', 'None', {'None',})
-    HP   = (2, 'HP', 'Hit Points', {'hp', 'hitpoint', 'hitpoints',})
-    ATK  = (3, 'Atk', 'Attack', {'atk', 'attack',})
-    SPD  = (4, 'Spd', 'Speed', {'spd', 'speed',})
-    DEF  = (5, 'Def', 'Defense', {'def', 'defense', 'defence',})
-    RES  = (6, 'Res', 'Resistance', {'res', 'resistance',})
+    NONE = (1, 'None', 'None', '', set())
+    HP   = (2, 'HP', 'Hit Points', 'hero.max_hp',
+            {'hp', 'hitpoint', 'hitpoints', 'h',})
+    ATK  = (3, 'Atk', 'Attack', 'hero.max_atk',
+            {'atk', 'attack', 'a',})
+    SPD  = (4, 'Spd', 'Speed', 'hero.max_spd',
+            {'spd', 'speed', 's',})
+    DEF  = (5, 'Def', 'Defense', 'hero.max_def',
+            {'def', 'defense', 'defence', 'd',})
+    RES  = (6, 'Res', 'Resistance', 'hero.max_res',
+            {'res', 'resistance', 'r',})
 
     def __new__(cls, *args, **kwds):
         obj = object.__new__(cls)
         obj._value_ = args[0]
         return obj
 
-    def __init__(self, _, short, long, aliases):
+    def __init__(self, _, short, long, db_col, aliases):
         self.short = short
         self.long = long
+        self.db_col = db_col
         self.aliases = aliases
 
     @classmethod
     def get_by_name(cls, name):
+        print(name)
         for stat in cls:
             if name in stat.aliases:
                 return stat

@@ -54,7 +54,6 @@ class HeroSort(CmdDefault):
             f'Heroes{matching} sorted by ({sort_param}) '
             f'({start + 1} - {end} of {len(results)}):')
         embed.description = result
-        print(len(result))
         return embed
 
     @staticmethod
@@ -66,7 +65,6 @@ class HeroSort(CmdDefault):
                     emojis=HeroSort.REACT_MENU, callback=HeroSort.react),
             )
         tokens = FROM_SYNONYMS.split(params, maxsplit=1)
-        print(tokens)
         sort_exprs = SORT_SPLIT.split(tokens[0])
         sort_terms = []
         for expr in sort_exprs:

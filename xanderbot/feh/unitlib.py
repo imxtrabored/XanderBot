@@ -1,5 +1,6 @@
 import asyncio
 import re
+import math
 import sqlite3
 from copy import copy
 from string import punctuation, whitespace
@@ -9,28 +10,48 @@ from feh.hero import Hero, Stat, UnitColor, UnitWeaponType, MoveType
 from feh.skill import Skill, SkillType, Refine
 
 ALPHA_CHARS = re.compile(r'[a-z]')
+SORT_FLOAT = re.compile(r'[/\.](?=[0-9])')
 ENEMY_NAME = re.compile(r'^enemy|enemy$')
 SEARCH_STRIP = re.compile(r'^[&|*\s]+|[&|\-\s]+$')
+STAT_NAMES_R = (
+    r'\bh(?:p|(?:itpoints?))?\b'
+    r'|\ba(?:t(?:k|tack))?\b'
+    r'|\bs(?:p(?:d|eed))?\b'
+    r'|\bd(?:ef(?:en[cs]e)?)?\b'
+    r'|\br(?:es(?:istance)?)?\b'
+)
 SORT_ALLOWED = re.compile(
-    r'[+\-](?=\w)|(?<=\w)[*/](?=\w)|[()]|hp|atk|spd|def|res|[0-9]')
-STAT_NAMES = re.compile(r'hp|atk|spd|def|res')
+    r'[+\-](?=\w)|(?<=\w)[*/](?=\w)|[()]|[0-9]|\.(?=[0-9])|' + STAT_NAMES_R)
+STAT_NAMES = re.compile(STAT_NAMES_R)
 SEARCH_SPECIAL_CHARS = r'"()*'
 NON_ALPHANUM = str.maketrans('', '', punctuation + whitespace)
-TRANS_SEARCH = str.maketrans(
-    punctuation.translate(str.maketrans('', '', SEARCH_SPECIAL_CHARS)),
-    ' ' * (len(punctuation) - len(SEARCH_SPECIAL_CHARS))
-)
-TRANS_SEARCH_SYNTAX = str.maketrans(
-    SEARCH_SPECIAL_CHARS, ' ' * len(SEARCH_SPECIAL_CHARS))
+TRANS_PUNCTUATION = str.maketrans('', '', punctuation)
 TRANS_WHITESPACE = str.maketrans('', '', whitespace)
 
-STAT_TO_COL = {
-    'hp' : 'hero.max_hp',
-    'atk' : 'hero.max_atk',
-    'spd' : 'hero.max_spd',
-    'def' : 'hero.max_def',
-    'res' : 'hero.max_res',
-}
+PROCESS_SEARCH = re.compile(
+    r'^[&|*\s]+|[&|\-\s]+$|(&)|(\|)|(^\s*-)|(-)|[/W_]+')
+
+def PROCESS_SEARCH_HERO(match):
+    if match.group(1):
+        return ' AND '
+    if match.group(2):
+        return ' OR '
+    if match.group(3):
+        return 'any NOT '
+    if match.group(4):
+        return ' NOT '
+    return ''
+
+def PROCESS_SEARCH_SKILL(match):
+    if match.group(1):
+        return ' AND '
+    if match.group(2):
+        return ' OR '
+    if match.group(3):
+        return 'tags NOT '
+    if match.group(4):
+        return ' NOT '
+    return ''
 
 class UnitLib(object):
     '''Library of units, loaded into memory'''
@@ -227,12 +248,7 @@ class UnitLib(object):
 
     @classmethod
     def search_hero(cls, hero_name, user_id):
-        hero_name = (
-            SEARCH_STRIP.sub('', hero_name).replace('&', ' AND ')
-            .replace('|', ' OR ').replace('-', ' NOT ').translate(TRANS_SEARCH)
-        )
-        if hero_name.startswith(' NOT '):
-            hero_name = 'any' + hero_name
+        hero_name = PROCESS_SEARCH.sub(PROCESS_SEARCH_HERO, hero_name)
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         try:
@@ -242,7 +258,6 @@ class UnitLib(object):
                 (hero_name,)
             )
         except sqlite3.OperationalError:
-            hero_name = hero_name.translate(TRANS_SEARCH_SYNTAX)
             try:
                 cur.execute(
                     'SELECT id FROM hero_search WHERE hero_search MATCH ? '
@@ -282,42 +297,65 @@ class UnitLib(object):
 
     @classmethod
     def sort_heroes(cls, sort_terms, search_terms):
+        if search_terms:
+            match = 'WHERE hero_search MATCH ? '
+            parameterized = (
+                PROCESS_SEARCH(PROCESS_SEARCH_HERO, search_terms),
+            )
+        else:
+            match = ''
+            parameterized = ()
         filtered_terms = ['hero.id, hero.short_name']
         filtered_order = []
         filtered_short = []
+        prec = []
+        padding = []
+        con = sqlite3.connect("feh/fehdata.db")
+        cur = con.cursor()
         if any(sort_terms):
             for term in sort_terms:
                 pre_filtered = ''.join(SORT_ALLOWED.findall(
                         term[0].lower().translate(TRANS_WHITESPACE)))
-                filtered_terms.append(STAT_NAMES.sub(
-                    lambda match: STAT_TO_COL[match.group()], pre_filtered)
+                filtered_term = (
+                    STAT_NAMES.sub(
+                        lambda match: Stat.get_by_name(match.group()).db_col,
+                        pre_filtered
+                    )
                     .replace('/', '*1.0/')
                 )
-                filtered_short.append(STAT_NAMES.sub(
-                    lambda match: match.group()[0], pre_filtered)
-                    .replace('*', '\*')
-                )
-                if ALPHA_CHARS.search(filtered_terms[-1]):
-                    filtered_order.append(
-                        f'{filtered_terms[-1]} {"DESC" if term[1] else "ASC"}')
+                if filtered_term:
+                    filtered_terms.append(filtered_term)
+                    filtered_short.append(STAT_NAMES.sub(
+                        lambda match: match.group()[0], pre_filtered)
+                    )
+                    if SORT_FLOAT.search(filtered_term):
+                        prec.append(1)
+                    else:
+                        prec.append(0)
+
+                    if ALPHA_CHARS.search(filtered_term):
+                        try:
+                            cur.execute(
+                                f'SELECT {filtered_term} '
+                                'FROM hero_search '
+                                'JOIN hero ON hero_search.id = hero.id '
+                                f'{match}'
+                                f'ORDER BY {filtered_term} DESC LIMIT 1',
+                                parameterized
+                            )
+                        except sqlite3.OperationalError as e:
+                            return None
+                        padding.append(int(math.log10(cur.fetchone()[0]))
+                                       + 1 + 2 *prec[-1])
+                        filtered_order.append(
+                            f'{filtered_term} {"DESC" if term[1] else "ASC"}')
+                    else:
+                        padding.append(0)
         filtered_order.append('hero.id ASC')
-        if search_terms:
-            match = 'WHERE hero_search MATCH ? '
-            parameterized = (
-                SEARCH_STRIP.sub('', search_terms).replace('&', ' AND ')
-                .replace('|', ' OR ').replace('-', ' NOT ')
-                .translate(TRANS_SEARCH),
-            )
-            if parameterized[0].startswith(' NOT '):
-                parameterized = ('any' + parameterized[0],)
-        else:
-            match = ''
-            parameterized = ()
-        con = sqlite3.connect("feh/fehdata.db")
-        cur = con.cursor()
+        select_terms = ', '.join(filtered_terms)
         try:
             cur.execute(
-                f'SELECT {", ".join(filtered_terms)} '
+                f'SELECT {select_terms} '
                 'FROM hero_search JOIN hero ON hero_search.id = hero.id '
                 f'{match}'
                 f'ORDER BY {", ".join(filtered_order)}',
@@ -325,23 +363,45 @@ class UnitLib(object):
             )
         except sqlite3.OperationalError as e:
             return None
-        hero_list = [''.join([
-                '``',
-                ' '.join([f'({filtered_short[cou]}: {row[cou + 2]:0.1f})'
-                          for cou, val in enumerate(sort_terms)]),
-                f'`` {em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
-                f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
-                f'{row[1]}'
-            ])
-            for row in cur
-        ]
+        if len(filtered_short) == 0:
+            hero_list = [''.join((
+                    f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
+                    f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
+                    f'{row[1]}'
+                ))
+                for row in cur
+            ]
+        elif len(filtered_short) == 1:
+            hero_list = [''.join((
+                    '``',
+                    f'({row[2]:·>{padding[0]}.{prec[0]}f})'
+                    f'`` {em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
+                    f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
+                    f'{row[1]}'
+                ))
+                for row in cur
+            ]
+        else:
+            hero_list = [''.join((
+                    '``',
+                    ' | '.join([
+                        f'{filtered_short[cou]}='
+                        f'{row[cou + 2]:·>{padding[cou]}.{prec[cou]}f}'
+                        for cou in range(len(filtered_short))
+                    ]),
+                    f'`` {em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
+                    f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
+                    f'{row[1]}'
+                ))
+                for row in cur
+            ]
         con.close()
         return hero_list
 
     #todo: THIS DOESNT WORK!!!
     @classmethod
     def get_skill_by_search(cls, skill_name):
-        skill_name = skill_name.translate(TRANS_SEARCH).lstrip('*')
+        skill_name = PROCESS_SEARCH.sub(PROCESS_SEARCH_SKILL, skill_name)
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         cur.execute(
@@ -413,13 +473,8 @@ class UnitLib(object):
     def search_skills(cls, search_str):
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
-        # use a regex here to catch weird whitespace and strip double sided
-        search_str = (
-            SEARCH_STRIP.sub('', search_str).replace('&', ' AND ')
-            .replace('|', ' OR ').replace('-', ' NOT ').translate(TRANS_SEARCH)
-        )
-        if search_str.startswith(' NOT '):
-            search_str = 'tags' + search_str
+        # use a regex here so string is only parsed once
+        search_str = PROCESS_SEARCH.sub(PROCESS_SEARCH_SKILL, search_str)
         try:
             cur.execute(
                 'SELECT id, identity, '
@@ -430,7 +485,7 @@ class UnitLib(object):
             )
         except sqlite3.OperationalError:
             #EAFP
-            search_str = search_str.translate(TRANS_SEARCH_SYNTAX)
+            search_str = search_str.translate(TRANS_PUNCTUATION)
             try:
                 cur.execute(
                     'SELECT id, identity, '
