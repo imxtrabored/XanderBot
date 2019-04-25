@@ -115,7 +115,8 @@ class Rarity(Enum):
     THREE = 3
     FOUR  = 4
     FIVE  = 5
-    DEW   = 11
+    STONE = 11
+    DEW   = 12
 
 @unique
 class SummonerSupport(Enum):
