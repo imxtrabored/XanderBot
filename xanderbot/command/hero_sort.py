@@ -8,11 +8,11 @@ from command.common import ReactMenu, ReplyPayload, ReactEditPayload
 from feh.emojilib import EmojiLib as em
 from feh.unitlib import UnitLib
 
-BOTTOM_SYNONYMS = re.compile(r'bottom|lowest|low|least|worst|fewest|big')
+BOTTOM_SYNONYMS = re.compile(
+    r'bottom|lowest|worst|least|fewest|asc|up|low|small|little')
 FROM_SYNONYMS = re.compile(r'(?:\s+|^)(?:in|from|within|among|amongst)\s+')
-SORT_SPLIT = re.compile(r',|(?:(?<=atk|spd|def|res)|(?<=hp)|(?<=[0-9)]))\s+'
-                        r'(?=hp|atk|spd|def|res|[0-9(])')
-TOP_SYNONYMS = re.compile(r'top|highest|high|most|best|greatest|small|little')
+SORT_SPLIT = re.compile(r',|\b\s+\b')
+TOP_SYNONYMS = re.compile(r'top|highest|best|most|greatest|high|big')
 
 PAGE_LIMIT = 20
 
@@ -28,24 +28,24 @@ class HeroSort(CmdDefault):
     class Data(object):
 
         __slots__ = (
-            'embed', 'results', 'page_start', 'search_param', 'sort_param'
+            'embed', 'results', 'search_param', 'sort_param', 'page_start'
         )
 
         embed: Embed
         results: list
-        page_start: int
         search_param: str
         sort_param: str
+        page_start: int
 
     @staticmethod
-    def format_sort(results, embed, search_param, sort_param, start=0):
+    def format_sort(embed, results, search_param, sort_param, start=0):
         if not results:
             start = -1
             end = 0
             result = 'No results!'
         else:
             end = min(start + PAGE_LIMIT, len(results))
-            result = '\n'.join([row for row in results[start:end]])
+            result = '\n'.join(results[start:end])
         if search_param:
             matching = f' matching "{search_param}"'
         else:

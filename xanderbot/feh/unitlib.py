@@ -14,15 +14,23 @@ SORT_FLOAT = re.compile(r'[/\.](?=[0-9])')
 ENEMY_NAME = re.compile(r'^enemy|enemy$')
 SEARCH_STRIP = re.compile(r'^[&|*\s]+|[&|\-\s]+$')
 STAT_NAMES_R = (
-    r'\bh(?:p|(?:itpoints?))?\b'
+    r'\bh(?:p|it(?:points)?)?\b'
     r'|\ba(?:t(?:k|tack))?\b'
     r'|\bs(?:p(?:d|eed))?\b'
     r'|\bd(?:ef(?:en[cs]e)?)?\b'
     r'|\br(?:es(?:istance)?)?\b'
 )
-SORT_ALLOWED = re.compile(
-    r'[+\-](?=\w)|(?<=\w)[*/](?=\w)|[()]|[0-9]|\.(?=[0-9])|' + STAT_NAMES_R)
+COLOR_R = r'\bc(?:olou?r)?\b'
+WEAPON_R = r'\bw(?:e(?:p|apon))?(?:type)?\b'
+MOVE_R = r'\bm(?:ove(?:ment)?)?(?:type)?\b'
+SORT_ALLOWED = re.compile('|'.join((
+    STAT_NAMES_R, COLOR_R, WEAPON_R, MOVE_R,
+    r'[+\-](?=\w)|(?<=\w)[*/](?=\w)|[0-9()]|\.(?=[0-9])',
+)))
 STAT_NAMES = re.compile(STAT_NAMES_R)
+COLOR_LIT = re.compile(COLOR_R)
+WEAPON_LIT = re.compile(WEAPON_R)
+MOVE_LIT = re.compile(MOVE_R)
 SEARCH_SPECIAL_CHARS = r'"()*'
 NON_ALPHANUM = str.maketrans('', '', punctuation + whitespace)
 TRANS_PUNCTUATION = str.maketrans('', '', punctuation)
@@ -300,13 +308,14 @@ class UnitLib(object):
         if search_terms:
             match = 'WHERE hero_search MATCH ? '
             parameterized = (
-                PROCESS_SEARCH(PROCESS_SEARCH_HERO, search_terms),
+                PROCESS_SEARCH.sub(PROCESS_SEARCH_HERO, search_terms),
             )
         else:
             match = ''
             parameterized = ()
         filtered_terms = ['hero.id, hero.short_name']
         filtered_order = []
+        filtered_disp = []
         filtered_short = []
         prec = []
         padding = []
@@ -316,6 +325,22 @@ class UnitLib(object):
             for term in sort_terms:
                 pre_filtered = ''.join(SORT_ALLOWED.findall(
                         term[0].lower().translate(TRANS_WHITESPACE)))
+                # doing these three separately is faster than regex
+                if COLOR_LIT.search(pre_filtered):
+                    filtered_order.append(
+                        f'hero.color {"ASC" if term[1] else "DESC"}')
+                    filtered_disp.append('color')
+                    continue
+                if WEAPON_LIT.search(pre_filtered):
+                    filtered_order.append(
+                        f'hero.weapon_type {"ASC" if term[1] else "DESC"}')
+                    filtered_disp.append('weapon')
+                    continue
+                if MOVE_LIT.search(pre_filtered):
+                    filtered_order.append(
+                        f'hero.move_type {"ASC" if term[1] else "DESC"}')
+                    filtered_disp.append('move')
+                    continue
                 filtered_term = (
                     STAT_NAMES.sub(
                         lambda match: Stat.get_by_name(match.group()).db_col,
@@ -325,6 +350,12 @@ class UnitLib(object):
                 )
                 if filtered_term:
                     filtered_terms.append(filtered_term)
+                    filtered_disp.append(STAT_NAMES.sub(
+                            lambda match:
+                                Stat.get_by_name(match.group()).short,
+                            pre_filtered
+                        ).replace('*', '\*')
+                    )
                     filtered_short.append(STAT_NAMES.sub(
                         lambda match: match.group()[0], pre_filtered)
                     )
@@ -332,7 +363,6 @@ class UnitLib(object):
                         prec.append(1)
                     else:
                         prec.append(0)
-
                     if ALPHA_CHARS.search(filtered_term):
                         try:
                             cur.execute(
@@ -344,7 +374,7 @@ class UnitLib(object):
                                 parameterized
                             )
                         except sqlite3.OperationalError as e:
-                            return None
+                            return None, ''
                         padding.append(int(math.log10(cur.fetchone()[0]))
                                        + 1 + 2 *prec[-1])
                         filtered_order.append(
@@ -362,7 +392,7 @@ class UnitLib(object):
                 parameterized
             )
         except sqlite3.OperationalError as e:
-            return None
+            return None, ''
         if len(filtered_short) == 0:
             hero_list = [(
                     f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
