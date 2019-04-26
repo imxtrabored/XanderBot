@@ -72,11 +72,11 @@ class SkillAlias(CmdDefault):
                 if added_names:
                     name_list = ', '.join(added_names)
                     content = (
-                        f'Added aliases for {skills[0].short_name}:\n'
+                        f'Added aliases for {skills[0].identity}:\n'
                         f'{name_list}'
                     )
                     await DiscordData.devs[0].send(
-                        f'added aliases for {skills[0].short_name}:\n'
+                        f'added aliases for {skills[0].identity}:\n'
                         f'{name_list}')
                 else: content = 'All names are already aliases.'
         return ReplyPayload(content=content)
