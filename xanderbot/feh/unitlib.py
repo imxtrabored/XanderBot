@@ -448,7 +448,8 @@ class UnitLib(object):
         base_name = base_name.replace('plusplus', 'plus')
         if base_name in cls.singleton.skill_names:
             skill = cls.singleton.skill_names[base_name]
-        elif base_name[:-4] in cls.singleton.skill_names:
+        elif (base_name.endswith('plus')
+                and base_name[:-4] in cls.singleton.skill_names):
             skill = cls.singleton.skill_names[base_name[:-4]]
         elif search_name in cls.singleton.skill_names:
             skill = cls.singleton.skill_names[search_name]
