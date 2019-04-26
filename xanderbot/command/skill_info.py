@@ -58,7 +58,7 @@ class SkillInfo(CmdDefault):
         return effective
 
     @staticmethod
-    def format_skill(skill, embed, zoom_state):
+    def format_skill(embed, skill, zoom_state):
         embed.clear_fields()
         type_icon = (em.get(skill.weapon_type)
                      if skill.weapon_type else em.get(skill.skill_type))
@@ -73,12 +73,12 @@ class SkillInfo(CmdDefault):
            ):
             effective = SkillInfo.format_eff(skill)
             if skill.refine_path:
-                refine_stats = ''.join((
-                    f' HP+{skill.bonus_hp}' if skill.bonus_hp else '',
-                    f' Spd+{skill.bonus_spd}' if skill.bonus_spd else '',
-                    f' Def+{skill.bonus_def}' if skill.bonus_def else '',
-                    f' Res+{skill.bonus_res}' if skill.bonus_res else '',
-                 ))
+                refine_stats = (
+                    f'{" HP+{skill.bonus_hp}" if skill.bonus_hp else ""}',
+                    f'{" Spd+{skill.bonus_spd}" if skill.bonus_spd else ""}',
+                    f'{" Def+{skill.bonus_def}" if skill.bonus_def else ""}',
+                    f'{" Res+{skill.bonus_res}" if skill.bonus_res else ""}',
+                 )
             else:
                 refine_stats = ''
             weapon_desc = (f'Mt: {skill.might} '
@@ -239,7 +239,7 @@ class SkillInfo(CmdDefault):
                 skill.refine_atk,
                 skill.refine_spd,
                 skill.refine_def,
-                skill.refine_res
+                skill.refine_res,
             )
             if zoom_state:
                 generic_refines = '\n'.join([
@@ -281,7 +281,7 @@ class SkillInfo(CmdDefault):
                 refine_header,
                 refine_eff,
                 generic_refines,
-                evolution
+                evolution,
             ]))
             embed.add_field(
                 name=refined_title, value=refine_desc, inline=False)
@@ -323,7 +323,7 @@ class SkillInfo(CmdDefault):
                     emojis=SkillInfo.REACT_MENU, callback=SkillInfo.react),
             )
         embed = Embed()
-        SkillInfo.format_skill(skill, embed, False)
+        SkillInfo.format_skill(embed, skill, False)
         react_menu = ReactMenu(
             emojis=SkillInfo.REACT_MENU,
             data=SkillInfo.Data(embed, skill, False),
@@ -353,5 +353,5 @@ class SkillInfo(CmdDefault):
         else:
             return ReactEditPayload()
         data.embed = SkillInfo.format_skill(
-            data.skill, data.embed, data.zoom_state)
+            data.embed, data.skill, data.zoom_state)
         return ReactEditPayload(embed=data.embed, delete=True)

@@ -27,7 +27,7 @@ class HeroCompare(CmdDefault):
     )
 
     @staticmethod
-    def format_compare(heroes, embed, zoom_state):
+    def format_compare(embed, heroes, zoom_state):
         embed.clear_fields()
         if not heroes:
             embed.description = 'No heroes found.'
@@ -36,7 +36,7 @@ class HeroCompare(CmdDefault):
             embed.set_thumbnail(
                 url='https://raw.githubusercontent.com/imxtrabored/XanderBot/'
                 f'master/xanderbot/feh/data/heroes/{heroes[0].index}/Face.png')
-            return HeroStats.format_stats(heroes[0], embed, zoom_state)
+            return HeroStats.format_stats(embed, heroes[0], zoom_state)
         elif len(heroes) == 2:
             title = (f'Comparing {heroes[0].short_name} '
                      f'and {heroes[1].short_name}:')
@@ -288,7 +288,7 @@ class HeroCompare(CmdDefault):
                 heroes[i].short_name = (
                     f'{heroes[i].short_name} ({counts[item]})')
                 counts[item] -= 1
-        embed = HeroCompare.format_compare(heroes, embed, zoom_state)
+        embed = HeroCompare.format_compare(embed, heroes, zoom_state)
         if bad_args:
             content = ('I did not understand the following arguments: '
                        f'{", ".join(bad_args)}')

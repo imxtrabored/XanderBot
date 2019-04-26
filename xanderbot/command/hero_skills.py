@@ -33,7 +33,7 @@ class HeroSkills(CmdDefault):
         zoom_state: bool
 
     @staticmethod
-    def format_hero_skills(hero, embed, zoom_state):
+    def format_hero_skills(embed, hero, zoom_state):
         title = format_hero_title(hero)
         desc_rarity = (str(em.get(Rarity(hero.rarity))) * hero.rarity
                        if not zoom_state else '-')
@@ -127,7 +127,7 @@ class HeroSkills(CmdDefault):
             )
         embed.clear_fields()
         description = f'{desc_rarity}\n\n{desc_skills}'
-        embed.add_field(name = title, value = description, inline=False)
+        embed.add_field(name=title, value=description, inline=False)
         if zoom_state:
             embed.add_field(name=f'{em.get(SkillType.WEAPON)} Weapon' ,
                             value='\n'.join(weapon), inline=True )
@@ -181,7 +181,7 @@ class HeroSkills(CmdDefault):
                 text=('Please delimit modifiers with commas (,) '
                       'in the future to improve command processing.')
             )
-        embed = HeroSkills.format_hero_skills(hero, embed, False)
+        embed = HeroSkills.format_hero_skills(embed, hero, False)
         err_text = []
         if any(bad_args):
             err_text.append('I did not understand the following: '
@@ -222,5 +222,5 @@ class HeroSkills(CmdDefault):
         else:
             return ReactEditPayload()
         data.embed = HeroSkills.format_hero_skills(
-            data.hero, data.embed, data.zoom_state)
+            data.embed, data.hero, data.zoom_state)
         return ReactEditPayload(embed=data.embed, delete=True)

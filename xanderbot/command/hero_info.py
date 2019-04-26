@@ -37,7 +37,7 @@ class HeroInfo(CmdDefault):
         zoom_state: bool
 
     @staticmethod
-    def format_hero(hero, embed, zoom_state):
+    def format_hero(embed, hero, zoom_state):
         title = format_hero_title(hero)
         desc_rarity = str(em.get(Rarity(hero.rarity))) * hero.rarity
         if hero.boon is not Stat.NONE and hero.bane is not Stat.NONE:
@@ -181,7 +181,7 @@ class HeroInfo(CmdDefault):
                 text=('Please delimit modifiers with commas (,) '
                       'in the future to improve command processing.')
             )
-        embed = HeroInfo.format_hero(hero, embed, False)
+        embed = HeroInfo.format_hero(embed, hero, False)
         embed.set_thumbnail(
             url=('https://raw.githubusercontent.com/imxtrabored/XanderBot/'
                  f'master/xanderbot/feh/data/heroes/{hero.index}/Face.png')
@@ -284,5 +284,5 @@ class HeroInfo(CmdDefault):
         else:
             return ReactEditPayload()
         data.embed = HeroInfo.format_hero(
-            data.hero, data.embed, data.zoom_state)
+            data.embed, data.hero, data.zoom_state)
         return ReactEditPayload(embed=data.embed, delete=True)

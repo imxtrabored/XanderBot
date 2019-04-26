@@ -364,39 +364,37 @@ class UnitLib(object):
         except sqlite3.OperationalError as e:
             return None
         if len(filtered_short) == 0:
-            hero_list = [''.join((
+            hero_list = [(
                     f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
                     f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
                     f'{row[1]}'
-                ))
+                )
                 for row in cur
             ]
         elif len(filtered_short) == 1:
-            hero_list = [''.join((
-                    '``',
-                    f'({row[2]:·>{padding[0]}.{prec[0]}f})'
-                    f'`` {em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
+            hero_list = [(
+                    f'``({row[2]:·>{padding[0]}.{prec[0]}f})`` '
+                    f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
                     f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
                     f'{row[1]}'
-                ))
+                )
                 for row in cur
             ]
         else:
-            hero_list = [''.join((
-                    '``',
-                    ' | '.join([
-                        f'{filtered_short[cou]}='
-                        f'{row[cou + 2]:·>{padding[cou]}.{prec[cou]}f}'
+            hero_list = [(
+                    f'''``{" | ".join([
+                        f"{filtered_short[cou]}="
+                        f"{row[cou + 2]:·>{padding[cou]}.{prec[cou]}f}"
                         for cou in range(len(filtered_short))
-                    ]),
-                    f'`` {em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
+                    ])}`` '''
+                    f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
                     f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
                     f'{row[1]}'
-                ))
+                )
                 for row in cur
             ]
         con.close()
-        return hero_list
+        return hero_list, ', '.join(filtered_disp)
 
     #todo: THIS DOESNT WORK!!!
     @classmethod
@@ -497,16 +495,15 @@ class UnitLib(object):
                 )
             except sqlite3.OperationalError:
                 return None
-        skill_list = [
-            (
+        results = tuple(zip(*[(
+                f'{cls.singleton.skill_list[int(result[0])].icon} {result[1]}',
                 f'{cls.singleton.skill_list[int(result[0])].icon} '
                 f'__{result[1]}__\n{result[2]}',
-                f'{cls.singleton.skill_list[int(result[0])].icon} {result[1]}'
             )
             for result in cur
-        ]
+        ]))
         con.close()
-        return skill_list
+        return results
 
     @classmethod
     async def insert_hero_alias(cls, hero, name):

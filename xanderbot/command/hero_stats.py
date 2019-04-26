@@ -34,7 +34,7 @@ class HeroStats(CmdDefault):
 
 
     @staticmethod
-    def format_stats(hero, embed, zoom_state):
+    def format_stats(embed, hero, zoom_state):
         title = format_hero_title(hero)
         desc_rarity = str(em.get(Rarity(hero.rarity))) * hero.rarity
         if hero.boon is not Stat.NONE and hero.bane is not Stat.NONE:
@@ -106,24 +106,24 @@ class HeroStats(CmdDefault):
                 f'{em.get(Stat.RES)} · '
                 f'BST: {hero.max_total}'
             )
-            lvl1_stats = ' |'.join([
+            lvl1_stats = (
                 f'{start_stats[0]:2} |'
                 f'{start_stats[1]:2} |'
                 f'{start_stats[2]:2} |'
                 f'{start_stats[3]:2} |'
                 f'{start_stats[4]:2}'
-            ])
+            )
             superboons = [
                 ' ' if x == 0 else '+' if x > 0 else '-'
                 for x in hero.get_boons_banes()
             ]
-            max_stats = ''.join([
+            max_stats = (
                 f'{final_stats[0]:2}{superboons[0]}|'
                 f'{final_stats[1]:2}{superboons[1]}|'
                 f'{final_stats[2]:2}{superboons[2]}|'
                 f'{final_stats[3]:2}{superboons[3]}|'
                 f'{final_stats[4]:2}{superboons[4]}'
-            ])
+            )
             desc_stat = (
                 f'{stat_emojis}\n```\n{lvl1_stats}\n{max_stats}\n```{equipped}'
             )
@@ -173,7 +173,7 @@ class HeroStats(CmdDefault):
                 text=('Please delimit modifiers with commas (,) '
                       'in the future to improve command processing.')
             )
-        embed = HeroStats.format_stats(hero, embed, False)
+        embed = HeroStats.format_stats(embed, hero, False)
         embed.set_thumbnail(
             url=('https://raw.githubusercontent.com/imxtrabored/XanderBot/'
                  f'master/xanderbot/feh/data/heroes/{hero.index}/Face.png')
@@ -271,6 +271,6 @@ class HeroStats(CmdDefault):
         else:
             return ReactEditPayload()
         data.embed = HeroStats.format_stats(
-            data.hero, data.embed, data.zoom_state)
+            data.embed, data.hero, data.zoom_state)
         return ReactEditPayload(embed=data.embed, delete=True)
 

@@ -214,6 +214,7 @@ class Hero(object):
     )
 
     # we could calculate this easily, but this is faster anyways
+    # first element of row 2 is 50%
     STATS_RARITY = (
         (),
         (0, 1, 3, 4, 6, 8, 9, 11, 13, 14,
@@ -970,7 +971,10 @@ class Hero(object):
             if self.is_sigurd:
                 growth_rate += 5
             if self.generation == 3:
-                if (self.move_type == MoveType.INFANTRY or ranged_phys):
+                if self.move_type == MoveType.INFANTRY:
+                    stat_total += 1
+                    growth_rate += 10
+                if ranged_phys:
                     stat_total += 1
                     growth_rate += 10
         if self.base_total != stat_total and self.is_enemy < 2:

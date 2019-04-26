@@ -52,17 +52,17 @@ class SkillSearch(CmdDefault):
     class Data(object):
 
         __slots__ = (
-            'embed', 'results', 'page_start', 'search_param', 'zoom_state'
+            'embed', 'results', 'search_param', 'zoom_state', 'page_start'
         )
 
         embed: Embed
         results: list
-        page_start: int
         search_param: str
         zoom_state: bool
+        page_start: int
 
     @staticmethod
-    def format_search(results, embed, zoom_state, param, start=0):
+    def format_search(embed, results, param, zoom_state, start=0):
         if not results:
             start = -1
             if 'fish' in param:
@@ -72,13 +72,13 @@ class SkillSearch(CmdDefault):
                 end = 0
                 result = 'No results!'
         elif zoom_state:
-            end = min(start + ZOOM_LIMIT, len(results))
-            result = '\n'.join([row[0] for row in results[start:end]])
+            end = min(start + ZOOM_LIMIT, len(results[1]))
+            result = '\n'.join(results[1][start:end])
         else:
-            end = min(start + PAGE_LIMIT, len(results))
-            result = '\n'.join([row[1] for row in results[start:end]])
+            end = min(start + PAGE_LIMIT, len(results[0]))
+            result = '\n'.join(results[0][start:end])
         embed.title = (f'Skills matching "{param}" '
-                       f'({start + 1} - {end} of {len(results)}):')
+                       f'({start + 1} - {end} of {len(results[0])}):')
         embed.description = result
         return embed
 
@@ -91,8 +91,8 @@ class SkillSearch(CmdDefault):
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )
         tokens = params.split(',')
-        skill_list = UnitLib.search_skills(params)
-        if skill_list is None:
+        results = UnitLib.search_skills(params)
+        if results is None:
             return ReplyPayload(
                 content=('Syntax error. Use ``f?help skillsearch`` for help '
                          'with the syntax for this command.'),
@@ -100,11 +100,11 @@ class SkillSearch(CmdDefault):
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )
         embed = Embed()
-        SkillSearch.format_search(skill_list, embed, False, tokens[0], 0)
+        SkillSearch.format_search(embed, results, tokens[0], False, 0)
         embed.color = em.get_color(None)
         react_menu = ReactMenu(
             emojis=SkillSearch.REACT_MENU,
-            data=SkillSearch.Data(embed, skill_list, 0, tokens[0], False),
+            data=SkillSearch.Data(embed, results, tokens[0], False, 0),
             callback=SkillSearch.react,
         )
         return ReplyPayload(embed=embed, reactable=react_menu)
@@ -130,12 +130,12 @@ class SkillSearch(CmdDefault):
             else:
                 page_size = PAGE_LIMIT
             new_start = data.page_start + page_size
-            if new_start < len(data.results):
+            if new_start < len(data.results[0]):
                 data.page_start = new_start
             else:
                 return ReactEditPayload(delete=True)
         else:
             return ReactEditPayload()
-        SkillSearch.format_search(data.results, data.embed, data.zoom_state,
-                                  data.search_param, data.page_start)
+        SkillSearch.format_search(data.embed, data.results, data.search_param,
+                                  data.zoom_state, data.page_start)
         return ReactEditPayload(embed=data.embed, delete=True)

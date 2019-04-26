@@ -83,7 +83,8 @@ class HeroSort(CmdDefault):
             search_terms = tokens[1]
         else:
             search_terms = None
-        sorted_list = UnitLib.sort_heroes(sort_terms, search_terms)
+        sorted_list, sort_terms = UnitLib.sort_heroes(
+            sort_terms, search_terms)
         if sorted_list is None:
             return ReplyPayload(
                 content=('Syntax error. Use ``f?help sort`` for help '
@@ -93,12 +94,12 @@ class HeroSort(CmdDefault):
             )
         embed = Embed()
         HeroSort.format_sort(
-            sorted_list, embed, search_terms, tokens[0].strip(), 0)
+            embed, sorted_list, search_terms, sort_terms, 0)
         embed.color = em.get_color(None)
         react_menu = ReactMenu(
             emojis=HeroSort.REACT_MENU,
             data=HeroSort.Data(
-                embed, sorted_list, 0, search_terms, tokens[0].strip()),
+                embed, sorted_list, search_terms, sort_terms, 0),
             callback=HeroSort.react,
         )
         return ReplyPayload(embed=embed, reactable=react_menu)
@@ -122,6 +123,6 @@ class HeroSort(CmdDefault):
                 return ReactEditPayload(delete=True)
         else:
             return ReactEditPayload()
-        HeroSort.format_sort(data.results, data.embed, data.search_param,
+        HeroSort.format_sort(data.embed, data.results, data.search_param,
                              data.sort_param, data.page_start)
         return ReactEditPayload(embed=data.embed, delete=True)

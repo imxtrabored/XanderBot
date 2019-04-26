@@ -52,7 +52,7 @@ class BarracksList(CmdDefault):
         page_start: int
 
     @staticmethod
-    def format_barracks(results, embed, user_name, start=0):
+    def format_barracks(embed, results, user_name, start=0):
         if not results:
             start = -1
             end = 0
@@ -75,7 +75,7 @@ class BarracksList(CmdDefault):
         hero_list = UnitLib.list_custom_heroes(user_id)
         user_name = DiscordData.client.get_user(user_id).name
         embed = Embed()
-        BarracksList.format_barracks(hero_list, embed, user_name, 0)
+        BarracksList.format_barracks(embed, hero_list, user_name, 0)
         embed.color = em.get_color(None)
         react_menu = ReactMenu(
             emojis=BarracksList.REACT_MENU,
@@ -102,5 +102,5 @@ class BarracksList(CmdDefault):
         else:
             return ReactEditPayload()
         BarracksList.format_barracks(
-            data.results, data.embed, data.user_name, data.page_start)
+            data.embed, data.results, data.user_name, data.page_start)
         return ReactEditPayload(embed=data.embed, delete=True)

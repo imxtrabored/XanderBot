@@ -6,9 +6,9 @@ class Devs(CmdDefault):
     """description of class"""
 
     DEV_TEXT = (
-        'XanderBot is written in Python by {}#{}.\n'
-        'XanderBot\'s visual design is by {}#{}.\n'
-        'Special thanks to {}#{} for massive contributions to XanderBot '
+        'XanderBot is written in Python by {}\n'
+        'XanderBot\'s visual design is by {}.\n'
+        'Special thanks to {} for massive contributions to XanderBot '
         'data.\n'
         'Feel free to contact my developers for questions, bug reports, or '
         'feature requests.\n'
@@ -25,11 +25,8 @@ class Devs(CmdDefault):
     async def cmd(params, user_id):
         return ReplyPayload(
             content=Devs.DEV_TEXT.format(
-                DiscordData.devs[0].name,
-                DiscordData.devs[0].discriminator,
-                DiscordData.devs[1].name,
-                DiscordData.devs[1].discriminator,
-                DiscordData.devs[2].name,
-                DiscordData.devs[2].discriminator,
+                str(DiscordData.devs[0]),
+                str(DiscordData.devs[1]),
+                str(DiscordData.devs[2]),
             )
         )
