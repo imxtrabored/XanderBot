@@ -35,8 +35,8 @@ class HeroMerges(CmdDefault):
             )
         title = format_hero_title(hero)
         bonuses = '\n'.join([
-            f'{f"+{merges}".rjust(3)}:'
-            f'{"|".join([str(stat).rjust(3) for stat in row])}'
+            f'{merges:+3}:'
+            f'{"|".join([f"{stat:3}" for stat in row])}'
             for merges, row in enumerate(hero.get_merge_table(), 1)
         ])
         description = (
@@ -47,12 +47,12 @@ class HeroMerges(CmdDefault):
             f'{em.get(Stat.DEF)} · '
             f'{em.get(Stat.RES)} · '
             f'BST: {hero.max_total}'
-            f'```L{str(hero.level).rjust(2)}:'
-            f'{str(hero.max_hp ).rjust(3)}|'
-            f'{str(hero.max_atk).rjust(3)}|'
-            f'{str(hero.max_spd).rjust(3)}|'
-            f'{str(hero.max_def).rjust(3)}|'
-            f'{str(hero.max_res).rjust(3)}\n'
+            f'```L{hero.level:2}:'
+            f'{hero.max_hp:3}|'
+            f'{hero.max_atk:3}|'
+            f'{hero.max_spd:3}|'
+            f'{hero.max_def:3}|'
+            f'{hero.max_res:3}\n'
             f'{bonuses}```\n'
             f'Dragonflower bonus order:\n'
             f'{hero.merge_order[0][2].short}, '

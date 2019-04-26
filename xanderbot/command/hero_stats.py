@@ -107,22 +107,22 @@ class HeroStats(CmdDefault):
                 f'BST: {hero.max_total}'
             )
             lvl1_stats = ' |'.join([
-                f'{str(start_stats[0]).rjust(2)} |'
-                f'{str(start_stats[1]).rjust(2)} |'
-                f'{str(start_stats[2]).rjust(2)} |'
-                f'{str(start_stats[3]).rjust(2)} |'
-                f'{str(start_stats[4]).rjust(2)}'
+                f'{start_stats[0]:2} |'
+                f'{start_stats[1]:2} |'
+                f'{start_stats[2]:2} |'
+                f'{start_stats[3]:2} |'
+                f'{start_stats[4]:2}'
             ])
             superboons = [
                 ' ' if x == 0 else '+' if x > 0 else '-'
                 for x in hero.get_boons_banes()
             ]
             max_stats = ''.join([
-                f'{str(final_stats[0]).rjust(2)}{superboons[0]}|'
-                f'{str(final_stats[1]).rjust(2)}{superboons[1]}|'
-                f'{str(final_stats[2]).rjust(2)}{superboons[2]}|'
-                f'{str(final_stats[3]).rjust(2)}{superboons[3]}|'
-                f'{str(final_stats[4]).rjust(2)}{superboons[4]}'
+                f'{final_stats[0]:2}{superboons[0]}|'
+                f'{final_stats[1]:2}{superboons[1]}|'
+                f'{final_stats[2]:2}{superboons[2]}|'
+                f'{final_stats[3]:2}{superboons[3]}|'
+                f'{final_stats[4]:2}{superboons[4]}'
             ])
             desc_stat = (
                 f'{stat_emojis}\n```\n{lvl1_stats}\n{max_stats}\n```{equipped}'
