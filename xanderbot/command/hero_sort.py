@@ -8,11 +8,7 @@ from command.common import ReactMenu, ReplyPayload, ReactEditPayload
 from feh.emojilib import EmojiLib as em
 from feh.unitlib import UnitLib
 
-BOTTOM_SYNONYMS = re.compile(
-    r'bottom|lowest|worst|least|fewest|asc|up|low|small|little')
-FROM_SYNONYMS = re.compile(r'(?:\s+|^)(?:in|from|within|among|amongst)\s+')
-SORT_SPLIT = re.compile(r',|\b\s+\b')
-TOP_SYNONYMS = re.compile(r'top|highest|best|most|greatest|high|big')
+FROM_SYNONYMS = re.compile(r'(?:\s+|^)(?:in|from|within|among(?:st)?)\s+')
 
 PAGE_LIMIT = 20
 
@@ -51,7 +47,7 @@ class HeroSort(CmdDefault):
         else:
             matching = ''
         embed.title = (
-            f'Heroes{matching} sorted by ({sort_param}) '
+            f'Heroes{matching} sorted by ({sort_param or "None"}) '
             f'({start + 1} - {end} of {len(results)}):')
         embed.description = result
         return embed
@@ -65,20 +61,7 @@ class HeroSort(CmdDefault):
                     emojis=HeroSort.REACT_MENU, callback=HeroSort.react),
             )
         tokens = FROM_SYNONYMS.split(params, maxsplit=1)
-        sort_exprs = SORT_SPLIT.split(tokens[0])
-        sort_terms = []
-        for expr in sort_exprs:
-            expr = expr.strip()
-            test = TOP_SYNONYMS.subn('', expr, count=1)
-            if test[1] == 1 and test[0]:
-                sort_terms.append(test)
-                continue
-            test = BOTTOM_SYNONYMS.subn('', expr, count=1)
-            if test[1] == 1 and test[0]:
-                sort_terms.append((test[0], 0))
-                continue
-            if expr:
-                sort_terms.append((expr, 1))
+        sort_terms = tokens[0].split(',')
         if len(tokens) > 1:
             search_terms = tokens[1]
         else:

@@ -109,7 +109,6 @@ class Stat(Enum):
 
     @classmethod
     def get_by_name(cls, name):
-        print(name)
         for stat in cls:
             if name in stat.aliases:
                 return stat

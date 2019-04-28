@@ -1,6 +1,5 @@
 import asyncio
 import re
-import math
 import sqlite3
 from copy import copy
 from string import punctuation, whitespace
@@ -11,8 +10,13 @@ from feh.skill import Skill, SkillType, Refine
 
 ALPHA_CHARS = re.compile(r'[a-z]')
 SORT_FLOAT = re.compile(r'[/\.](?=[0-9])')
-ENEMY_NAME = re.compile(r'^enemy|enemy$')
-SEARCH_STRIP = re.compile(r'^[&|*\s]+|[&|\-\s]+$')
+BOTTOM_SYNONYMS = re.compile(
+    r'\s*(?:bot(?:tom)?|lowest|worst|least|fewest|ascending|up|low|small'
+    r'|little)\s*'
+)
+FULL_SHORTNAMES = re.compile(r'^[cwmasdrh]+$')
+TOP_SYNONYMS = re.compile(
+    r'\s*(?:top|highest|best|most|greatest|descending|down|high|big)\s*')
 STAT_NAMES_R = (
     r'\bh(?:p|it(?:points)?)?\b'
     r'|\ba(?:t(?:k|tack))?\b'
@@ -25,41 +29,23 @@ WEAPON_R = r'\bw(?:e(?:p|apon))?(?:type)?\b'
 MOVE_R = r'\bm(?:ove(?:ment)?)?(?:type)?\b'
 SORT_ALLOWED = re.compile('|'.join((
     STAT_NAMES_R, COLOR_R, WEAPON_R, MOVE_R,
-    r'[+\-](?=\w)|(?<=\w)[*/](?=\w)|[0-9()]|\.(?=[0-9])',
+    r'[+\-](?=[\w(])|(?<=[\w)])[*/](?=[\w(])|[0-9]*\.?[0-9]+|[()]',
 )))
 STAT_NAMES = re.compile(STAT_NAMES_R)
 COLOR_LIT = re.compile(COLOR_R)
 WEAPON_LIT = re.compile(WEAPON_R)
 MOVE_LIT = re.compile(MOVE_R)
-SEARCH_SPECIAL_CHARS = r'"()*'
-NON_ALPHANUM = str.maketrans('', '', punctuation + whitespace)
-TRANS_PUNCTUATION = str.maketrans('', '', punctuation)
-TRANS_WHITESPACE = str.maketrans('', '', whitespace)
+SEARCH_SPECIAL_CHARS = '"&\'()*-|'
+ONLY_ALPHANUM = str.maketrans('', '', whitespace + punctuation)
+PUNCT_NON_SEARCH = str.maketrans('', '', punctuation.translate(
+    str.maketrans('', '', SEARCH_SPECIAL_CHARS)))
+REMOVE_SEARCH_SPECIAL = str.maketrans(
+    SEARCH_SPECIAL_CHARS, ' ' * len(SEARCH_SPECIAL_CHARS))
+REMOVE_PUNCT = str.maketrans('', '', punctuation)
+REMOVE_WSPACE = str.maketrans('', '', whitespace)
+LSTRIP_SEARCH = whitespace + '*&|)'
+RSTRIP_SEARCH = whitespace + '-&|('
 
-PROCESS_SEARCH = re.compile(
-    r'^[&|*\s]+|[&|\-\s]+$|(&)|(\|)|(^\s*-)|(-)|[/W_]+')
-
-def PROCESS_SEARCH_HERO(match):
-    if match.group(1):
-        return ' AND '
-    if match.group(2):
-        return ' OR '
-    if match.group(3):
-        return 'any NOT '
-    if match.group(4):
-        return ' NOT '
-    return ''
-
-def PROCESS_SEARCH_SKILL(match):
-    if match.group(1):
-        return ' AND '
-    if match.group(2):
-        return ' OR '
-    if match.group(3):
-        return 'tags NOT '
-    if match.group(4):
-        return ' NOT '
-    return ''
 
 class UnitLib(object):
     '''Library of units, loaded into memory'''
@@ -220,9 +206,9 @@ class UnitLib(object):
             FROM skill_emoji WHERE id < 0 ORDER BY id DESC;"""
         )
         empty_slots = cur.fetchall()
-        Skill.EMPTY_WEAPON   .icon = client.get_emoji(int(empty_slots[0][1]))
-        Skill.EMPTY_ASSIST   .icon = client.get_emoji(int(empty_slots[1][1]))
-        Skill.EMPTY_SPECIAL  .icon = client.get_emoji(int(empty_slots[2][1]))
+        Skill.EMPTY_WEAPON .icon = client.get_emoji(int(empty_slots[0][1]))
+        Skill.EMPTY_ASSIST .icon = client.get_emoji(int(empty_slots[1][1]))
+        Skill.EMPTY_SPECIAL.icon = client.get_emoji(int(empty_slots[2][1]))
         Skill.EMPTY_PASSIVE_A.icon = client.get_emoji(int(empty_slots[3][1]))
         Skill.EMPTY_PASSIVE_B.icon = client.get_emoji(int(empty_slots[4][1]))
         Skill.EMPTY_PASSIVE_C.icon = client.get_emoji(int(empty_slots[5][1]))
@@ -231,7 +217,9 @@ class UnitLib(object):
 
     @staticmethod
     def filter_name(name):
-        return name.lower().replace('+', 'plus').translate(NON_ALPHANUM)
+        return (
+            name.lower().replace('+', 'plus').translate(ONLY_ALPHANUM).strip()
+        )
 
     @classmethod
     def check_name(cls, hero_name):
@@ -240,14 +228,16 @@ class UnitLib(object):
     @classmethod
     def get_base_hero(cls, hero_name, user_id):
         hero_name = cls.filter_name(hero_name)
-        enemy_name = ENEMY_NAME.subn('', hero_name, 1)
-        if enemy_name[1] > 0:
-            if enemy_name[0] in cls.singleton.enemy_names:
-                hero = copy(cls.singleton.enemy_names[enemy_name[0]])
-                hero.equipped = (
-                    copy(cls.singleton.enemy_names[enemy_name[0]].equipped))
-                return hero
-            return None
+        enemy_name = None
+        if hero_name.startswith('enemy'):
+            enemy_name = hero_name[5:].strip()
+        elif hero_name.endswith('enemy'):
+            enemy_name = hero_name[:-5].strip()
+        if enemy_name is not None and enemy_name in cls.singleton.enemy_names:
+            hero = copy(cls.singleton.enemy_names[enemy_name])
+            hero.equipped = (
+                copy(cls.singleton.enemy_names[enemy_name].equipped))
+            return hero
         if hero_name in cls.singleton.unit_names:
             hero = copy(cls.singleton.unit_names[hero_name])
             hero.equipped = copy(cls.singleton.unit_names[hero_name].equipped)
@@ -256,7 +246,13 @@ class UnitLib(object):
 
     @classmethod
     def search_hero(cls, hero_name, user_id):
-        hero_name = PROCESS_SEARCH.sub(PROCESS_SEARCH_HERO, hero_name)
+        hero_name = (
+            hero_name.translate(PUNCT_NON_SEARCH).lstrip(LSTRIP_SEARCH)
+            .rstrip(RSTRIP_SEARCH).replace('&', ' AND ').replace('|', ' OR ')
+            .replace('-', ' NOT ')
+        )
+        if hero_name.startswith(' NOT'):
+            hero_name = 'any' + hero_name
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         try:
@@ -266,6 +262,7 @@ class UnitLib(object):
                 (hero_name,)
             )
         except sqlite3.OperationalError:
+            hero_name = hero_name.translate(REMOVE_SEARCH_SPECIAL)
             try:
                 cur.execute(
                     'SELECT id FROM hero_search WHERE hero_search MATCH ? '
@@ -305,11 +302,38 @@ class UnitLib(object):
 
     @classmethod
     def sort_heroes(cls, sort_terms, search_terms):
+        sort_exprs = []
+        for term in sort_terms:
+            term = term.strip()
+            test = TOP_SYNONYMS.subn('', term, count=1)
+            if test[1] == 1 and test[0]:
+                if FULL_SHORTNAMES.fullmatch(test[0]):
+                    for char in test[0]:
+                        sort_terms.append((char, 1))
+                else:
+                    sort_terms.append(test)
+                continue
+            test = BOTTOM_SYNONYMS.subn('', term, count=1)
+            if test[1] == 1 and test[0]:
+                if FULL_SHORTNAMES.fullmatch(test[0]):
+                    for char in test[0]:
+                        sort_terms.append((char, 1))
+                else:
+                    sort_terms.append((test[0], 0))
+            elif FULL_SHORTNAMES.fullmatch(term):
+                for char in term:
+                    sort_terms.append((char, 1))
+            elif term:
+                sort_terms.append((term, 1))
         if search_terms:
             match = 'WHERE hero_search MATCH ? '
-            parameterized = (
-                PROCESS_SEARCH.sub(PROCESS_SEARCH_HERO, search_terms),
+            search_terms = (
+                search_terms.replace('&', ' AND ').replace('|', ' OR ')
+                .replace('-', ' NOT ').translate(PUNCT_NON_SEARCH)
             )
+            if search_terms.startswith(' NOT'):
+                search_terms = 'any' + hero_name
+            parameterized = (search_terms,)
         else:
             match = ''
             parameterized = ()
@@ -324,22 +348,21 @@ class UnitLib(object):
         if any(sort_terms):
             for term in sort_terms:
                 pre_filtered = ''.join(SORT_ALLOWED.findall(
-                        term[0].lower().translate(TRANS_WHITESPACE)))
-                # doing these three separately is faster than regex
+                        term[0].lower().translate(REMOVE_WSPACE)))
                 if COLOR_LIT.search(pre_filtered):
                     filtered_order.append(
                         f'hero.color {"ASC" if term[1] else "DESC"}')
-                    filtered_disp.append('color')
+                    filtered_disp.append('Color')
                     continue
                 if WEAPON_LIT.search(pre_filtered):
                     filtered_order.append(
                         f'hero.weapon_type {"ASC" if term[1] else "DESC"}')
-                    filtered_disp.append('weapon')
+                    filtered_disp.append('Weapon')
                     continue
                 if MOVE_LIT.search(pre_filtered):
                     filtered_order.append(
                         f'hero.move_type {"ASC" if term[1] else "DESC"}')
-                    filtered_disp.append('move')
+                    filtered_disp.append('Move')
                     continue
                 filtered_term = (
                     STAT_NAMES.sub(
@@ -363,22 +386,27 @@ class UnitLib(object):
                         prec.append(1)
                     else:
                         prec.append(0)
+                    print(filtered_term)
                     if ALPHA_CHARS.search(filtered_term):
                         try:
                             cur.execute(
-                                f'SELECT {filtered_term} '
+                                f'SELECT ABS({filtered_term}) '
                                 'FROM hero_search '
                                 'JOIN hero ON hero_search.id = hero.id '
                                 f'{match}'
-                                f'ORDER BY {filtered_term} DESC LIMIT 1',
+                                f'ORDER BY ABS({filtered_term}) DESC LIMIT 1',
                                 parameterized
                             )
                         except sqlite3.OperationalError as e:
                             return None, ''
-                        padding.append(int(math.log10(cur.fetchone()[0]))
-                                       + 1 + 2 *prec[-1])
                         filtered_order.append(
                             f'{filtered_term} {"DESC" if term[1] else "ASC"}')
+                        max_val = cur.fetchone()[0]
+                        if max_val is not None and max_val != 0:
+                            padding.append(int(math.log10(max_val))
+                                           + 1 + 2 * prec[-1])
+                        else:
+                            padding.append(0)
                     else:
                         padding.append(0)
         filtered_order.append('hero.id ASC')
@@ -403,7 +431,7 @@ class UnitLib(object):
             ]
         elif len(filtered_short) == 1:
             hero_list = [(
-                    f'``({row[2]:·>{padding[0]}.{prec[0]}f})`` '
+                    f'``({row[2] or 0:·>{padding[0]}.{prec[0]}f})`` '
                     f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
                     f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
                     f'{row[1]}'
@@ -414,7 +442,7 @@ class UnitLib(object):
             hero_list = [(
                     f'''``{" | ".join([
                         f"{filtered_short[cou]}="
-                        f"{row[cou + 2]:·>{padding[cou]}.{prec[cou]}f}"
+                        f"{row[cou + 2] or 0:·>{padding[cou]}.{prec[cou]}f}"
                         for cou in range(len(filtered_short))
                     ])}`` '''
                     f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
@@ -429,7 +457,13 @@ class UnitLib(object):
     #todo: THIS DOESNT WORK!!!
     @classmethod
     def get_skill_by_search(cls, skill_name):
-        skill_name = PROCESS_SEARCH.sub(PROCESS_SEARCH_SKILL, skill_name)
+        skill_name = (
+            skill_name.translate(PUNCT_NON_SEARCH).lstrip(LSTRIP_SEARCH)
+            .rstrip(RSTRIP_SEARCH).replace('&', ' AND ').replace('|', ' OR ')
+            .replace('-', ' NOT ')
+        )
+        if skill_name.startswith(' NOT'):
+            hero_name = 'tags' + skill_name
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         cur.execute(
@@ -502,8 +536,14 @@ class UnitLib(object):
     def search_skills(cls, search_str):
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
-        # use a regex here so string is only parsed once
-        search_str = PROCESS_SEARCH.sub(PROCESS_SEARCH_SKILL, search_str)
+        # remember this is still faster than regex
+        search_str = (
+            search_str.translate(PUNCT_NON_SEARCH).lstrip(LSTRIP_SEARCH)
+            .rstrip(RSTRIP_SEARCH).replace('&', ' AND ').replace('|', ' OR ')
+            .replace('-', ' NOT ')
+        )
+        if search_str.startswith(' NOT'):
+            search_str = 'any' + search_str
         try:
             cur.execute(
                 'SELECT id, identity, '
@@ -514,7 +554,7 @@ class UnitLib(object):
             )
         except sqlite3.OperationalError:
             #EAFP
-            search_str = search_str.translate(TRANS_PUNCTUATION)
+            search_str = search_str.translate(REMOVE_SEARCH_SPECIAL)
             try:
                 cur.execute(
                     'SELECT id, identity, '
