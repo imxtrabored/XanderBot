@@ -67,8 +67,8 @@ class HeroMerges(CmdDefault):
             err_text.append('I did not understand the following: '
                             f'{", ".join(bad_args)}')
         if any(not_allowed):
-            err_text.append('The following are unavailable for this hero:'
-                            f'{", ".join(not_allowed)}')
+            err_text.append('The following skills are unavailable for this '
+                            f'hero: {", ".join(not_allowed)}')
         content = '\n'.join(err_text)
         embed.set_thumbnail(
             url=('https://raw.githubusercontent.com/imxtrabored/XanderBot/'

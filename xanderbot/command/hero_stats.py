@@ -183,8 +183,8 @@ class HeroStats(CmdDefault):
             err_text.append('I did not understand the following: '
                             f'{", ".join(bad_args)}')
         if any(not_allowed):
-            err_text.append('The following are unavailable for this hero:'
-                            f'{", ".join(not_allowed)}')
+            err_text.append('The following skills are unavailable for this '
+                            f'hero: {", ".join(not_allowed)}')
         content = '\n'.join(err_text)
         react_emojis[7] = em.get(DragonflowerInc.get_type(hero.move_type))
         react_menu = ReactMenu(
@@ -261,8 +261,8 @@ class HeroStats(CmdDefault):
                     delete=True,
                     replyable=UserPrompt(
                         callback=callback_save,
-                        content=(
-                            f'Enter a new name for custom {data.hero.name}:'),
+                        content=('Enter a new name for custom '
+                                 f'{data.hero.short_name} (or "cancel"):'),
                         data=data.hero
                     )
                 )

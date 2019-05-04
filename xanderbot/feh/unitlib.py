@@ -1,4 +1,5 @@
 import asyncio
+import math
 import re
 import sqlite3
 from copy import copy
@@ -303,28 +304,27 @@ class UnitLib(object):
     @classmethod
     def sort_heroes(cls, sort_terms, search_terms):
         sort_exprs = []
-        for term in sort_terms:
-            term = term.strip()
-            test = TOP_SYNONYMS.subn('', term, count=1)
+        for expr in sort_terms:
+            test = TOP_SYNONYMS.subn('', expr, count=1)
             if test[1] == 1 and test[0]:
                 if FULL_SHORTNAMES.fullmatch(test[0]):
                     for char in test[0]:
-                        sort_terms.append((char, 1))
+                        sort_exprs.append((char, 1))
                 else:
-                    sort_terms.append(test)
+                    sort_exprs.append(test)
                 continue
-            test = BOTTOM_SYNONYMS.subn('', term, count=1)
+            test = BOTTOM_SYNONYMS.subn('', expr, count=1)
             if test[1] == 1 and test[0]:
                 if FULL_SHORTNAMES.fullmatch(test[0]):
                     for char in test[0]:
-                        sort_terms.append((char, 1))
+                        sort_exprs.append((char, 1))
                 else:
-                    sort_terms.append((test[0], 0))
-            elif FULL_SHORTNAMES.fullmatch(term):
-                for char in term:
-                    sort_terms.append((char, 1))
-            elif term:
-                sort_terms.append((term, 1))
+                    sort_exprs.append((test[0], 0))
+            elif FULL_SHORTNAMES.fullmatch(expr):
+                for char in expr:
+                    sort_exprs.append((char, 1))
+            elif expr:
+                sort_exprs.append((expr, 1))
         if search_terms:
             match = 'WHERE hero_search MATCH ? '
             search_terms = (
@@ -345,23 +345,23 @@ class UnitLib(object):
         padding = []
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
-        if any(sort_terms):
-            for term in sort_terms:
+        if any(sort_exprs):
+            for expr in sort_exprs:
                 pre_filtered = ''.join(SORT_ALLOWED.findall(
-                        term[0].lower().translate(REMOVE_WSPACE)))
+                        expr[0].lower().translate(REMOVE_WSPACE)))
                 if COLOR_LIT.search(pre_filtered):
                     filtered_order.append(
-                        f'hero.color {"ASC" if term[1] else "DESC"}')
+                        f'hero.color {"ASC" if expr[1] else "DESC"}')
                     filtered_disp.append('Color')
                     continue
                 if WEAPON_LIT.search(pre_filtered):
                     filtered_order.append(
-                        f'hero.weapon_type {"ASC" if term[1] else "DESC"}')
+                        f'hero.weapon_type {"ASC" if expr[1] else "DESC"}')
                     filtered_disp.append('Weapon')
                     continue
                 if MOVE_LIT.search(pre_filtered):
                     filtered_order.append(
-                        f'hero.move_type {"ASC" if term[1] else "DESC"}')
+                        f'hero.move_type {"ASC" if expr[1] else "DESC"}')
                     filtered_disp.append('Move')
                     continue
                 filtered_term = (
@@ -386,7 +386,6 @@ class UnitLib(object):
                         prec.append(1)
                     else:
                         prec.append(0)
-                    print(filtered_term)
                     if ALPHA_CHARS.search(filtered_term):
                         try:
                             cur.execute(

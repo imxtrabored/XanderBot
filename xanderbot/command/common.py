@@ -10,15 +10,15 @@ from feh.hero import Stat, LegendElement, LegendStat, SummonerSupport
 from feh.unitlib import UnitLib
 
 
+TEMP_SEP = '#@@@'
 TRANSTAB = str.maketrans('', '', punctuation + whitespace)
 BOON_ASSET = re.compile(r'boon|asset')
-MERGE_TEST = re.compile(r'merges?')
 MINUS_BANE_FLAW = re.compile(r'minus|bane|flaw')
 NON_DECIMAL = re.compile(r'[^\d]+')
+PARENTHETICAL = re.compile(r'\(.*\)')
 PLUS_MINUS = re.compile(r'plus|minus')
 PLUSPLUS_FLOWER_DF = re.compile(r'plusplus|flower|^df|df$')
 SPLITTER = re.compile(r',(?![^()]*\))')
-STARS_RARITY = re.compile(r'\*|stars|star|rarity')
 WITH_SYNONYMS = re.compile(
     r'\s+(?:with|having|has|using|equip|equipping|equipped)\s+')
 
@@ -147,7 +147,11 @@ def format_legend_eff(hero):
 
 def try_equip(hero, skill_name):
     skill = UnitLib.get_skill(skill_name)
-    return skill and hero.equip(skill)
+    if not skill:
+        return 0
+    if not hero.equip(skill):
+        return 1
+    return 2
 
 
 def process_hero_args(hero, args):
@@ -163,11 +167,12 @@ def process_hero_args(hero, args):
     for token in args:
         filtered = filter_name(token[:40])
         # rarity, merges, iv, level, "summoned"
-        rarity_test = STARS_RARITY.sub('', filtered)
+        rarity_test = (filtered.replace('*', '').replace('stars', '')
+                       .replace('star', '').replace('rarity', ''))
         if rarity_test.isdecimal():
             rarity = int(rarity_test)
         elif 'merge' in filtered:
-            merge_test = MERGE_TEST.sub('', filtered, 1)
+            merge_test = filtered.replace('merges', '').replace('merge', '')
             if merge_test.isdecimal():
                 merges = int(merge_test)
             else:
@@ -177,7 +182,10 @@ def process_hero_args(hero, args):
             if plus_test.isdecimal():
                 flowers = int(plus_test)
             else:
-                if not try_equip(hero, filtered):
+                equip_status = try_equip(hero, filtered)
+                if equip_status == 0:
+                    bad_args.append(token.strip())
+                elif equip_status == 1:
                     not_allowed.append(token.strip())
         elif 'plus' in filtered:
             # this might be merges, iv, or a skill
@@ -191,10 +199,8 @@ def process_hero_args(hero, args):
                 else:
                     if 'minus' in filtered:
                         iv_order = PLUS_MINUS.findall(filtered)
-                        iv_tokens = [
-                            token for token in PLUS_MINUS.split(filtered)
-                            if token
-                        ]
+                        iv_tokens = tuple(filter(
+                            None, PLUS_MINUS.split(filtered)))
                         if len(iv_order) == 2:
                             if len(iv_tokens) == 2:
                                 if iv_order[0] == 'plus':
@@ -226,15 +232,19 @@ def process_hero_args(hero, args):
                             bad_args.append(token.strip())
                     else:
                         # "minus" does not appear in any skill names
-                        if not try_equip(hero, filtered):
+                        equip_status = try_equip(hero, filtered)
+                        if equip_status == 0:
+                            bad_args.append(token.strip())
+                        elif equip_status == 1:
                             not_allowed.append(token.strip())
-        elif BOON_ASSET.search(filtered) is not None:
-            asset_test = BOON_ASSET.sub('', filtered)
+        elif 'boon' in filtered or 'asset' in filtered:
+            asset_test = filtered.replace('boon', '').replace('asset', '')
             stat = Stat.get_by_name(asset_test)
             if stat is not None:
                 boon = stat
-        elif MINUS_BANE_FLAW.search(filtered) is not None:
-            flaw_test = MINUS_BANE_FLAW.sub('', filtered)
+        elif 'minus' in filtered or 'bane' in filtered or 'flaw' in filtered:
+            flaw_test = (filtered.replace('minus', '').replace('bane', '')
+                         .replace('flaw', ''))
             stat = Stat.get_by_name(flaw_test)
             if stat is not None:
                 bane = stat
@@ -254,11 +264,17 @@ def process_hero_args(hero, args):
                              if s[2] and s[2] <= max_rarity), None))
             hero.equip(next((s[0] for s in hero.special[::-1]
                              if s[2] and s[2] <= max_rarity), None))
-        elif 'prf' in filtered and hero.weapon_prf is not None:
-            hero.equip(hero.weapon_prf)
+        elif 'prf' in filtered:
+            if hero.weapon_prf is not None:
+                hero.equip(hero.weapon_prf)
+            else:
+                not_allowed.append(token.strip())
         else:
-            if not try_equip(hero, filtered):
-                not_allowed.append(token)
+            equip_status = try_equip(hero, filtered)
+            if equip_status == 0:
+                bad_args.append(token.strip())
+            elif equip_status == 1:
+                not_allowed.append(token.strip())
     if boon is None and bane is not None:
         bane = None
         bad_args.append(
@@ -300,11 +316,13 @@ def process_hero_spaces(params, user_id):
 def process_hero(params, user_id):
     if not params:
         return None, '', False
-    tokens = WITH_SYNONYMS.split(params, maxsplit=1)
+    tokens = PARENTHETICAL.sub(
+        lambda match: match.group().replace(',', TEMP_SEP), params)
+    tokens = WITH_SYNONYMS.split(tokens, maxsplit=1)
     if len(tokens) < 2 and ',' in params:
         tokens = params.split(',', 1)
     if len(tokens) > 1:
-        hero_args = SPLITTER.split(tokens[1])
+        hero_args = tokens[1].split(',')
     else:
         hero_args = ()
     hero = UnitLib.get_hero(tokens[0], user_id)
@@ -313,7 +331,8 @@ def process_hero(params, user_id):
             no_commas = True
             hero, bad_args, not_allowed = process_hero_spaces(params, user_id)
         else:
-            hero, bad_args, no_commas = None, tokens[0], False
+            hero, bad_args, not_allowed, no_commas = (
+                None, tokens[0], None, False)
     else:
         no_commas = False
         hero, bad_args, not_allowed = process_hero_args(hero, hero_args)

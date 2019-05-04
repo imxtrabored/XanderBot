@@ -1,6 +1,5 @@
 from command.cmd_default import CmdDefault
-from command.common import (
-    UserPrompt, ReplyPayload, SPLITTER, process_hero_args, process_hero_spaces)
+from command.common import UserPrompt, ReplyPayload, process_hero
 from command.common_barracks import callback_save
 from feh.unitlib import UnitLib
 
@@ -36,18 +35,18 @@ class BarracksSave(CmdDefault):
                 content=('No input. Please enter a new name followed by '
                          'a hero expression, separated by comma (,).')
             )
-        tokens = SPLITTER.split(params)
-        if len(tokens) < 2:
+        tokens = params.partition(',')
+        if not tokens[1]:
             #did not use commas
-            tokens = params.split(' ')
-            if len(tokens) < 2:
-                hero = UnitLib.get_base_hero(tokens[0], user_id)
+            tokens = params.partition(' ')
+            if not tokens[1]:
+                hero = UnitLib.get_hero(tokens[0], user_id)
                 if hero:
                     return ReplyPayload(
                         replyable=UserPrompt(
                             callback=callback_save,
-                            content=(
-                                f'Enter a new name for custom {hero.name}:'
+                            content=('Enter a new name for custom '
+                                     f'{hero.short_name} (or "cancel"):'
                             ),
                             data=hero
                         )
@@ -56,42 +55,69 @@ class BarracksSave(CmdDefault):
                     'Invalid input. Please enter a new name followed by '
                     'a hero expression, separated by comma (,).'
                 ))
-        hero = UnitLib.get_hero(tokens[1], user_id)
+        hero, bad_args, not_allowed, no_commas = process_hero(
+            tokens[2], user_id)
         if not hero:
-            hero = UnitLib.get_base_hero(tokens[0], user_id)
+            hero, bad_args, not_allowed, no_commas = process_hero(
+                params, user_id)
             if hero:
-                hero, bad_args, not_allowed = process_hero_args(hero, tokens[1:])
-                prepend = []
+                errors = []
                 if any(bad_args):
-                    prepend.append(
+                    errors.append(
                         'I did not understand the following, so they '
-                        f'will not be applied: {", ".join(bad_args)}.\n\n'
+                        f'will not be applied: {", ".join(bad_args)}.'
                     )
                 if any(not_allowed):
-                    prepend.append(
-                        'The following are unavailable for this hero: '
+                    errors.append(
+                        'The following skills are unavailable for this hero: '
                         f'{", ".join(not_allowed)}'
                     )
+                if no_commas:
+                    errors.append(
+                        'Please delimit modifiers with commas (,) in the '
+                        'future to improve command processing.'
+                    )
+                if errors:
+                    errors.append('\n')
+                    err_text = '\n'.join(errors)
+                else:
+                    err_text = ''
                 return ReplyPayload(
                     replyable=UserPrompt(
                         callback=callback_save,
-                        content=(
-                            f'{prepend}Enter a new name for this hero:'),
+                        content=(f'{err_text}Enter a new name for custom '
+                                 f'{hero.short_name} (or "cancel"):'),
                         data=hero
                     )
                 )
-            hero_expr = ', '.join(tokens[1:])
-            if ',' not in hero_expr:
-                hero, bad_args = process_hero_spaces(hero_expr, user_id)
-            if not hero:
-                return ReplyPayload(
-                    content=(
-                        f'Hero not found: {tokens[1]}. Please enter a new '
-                        'name followed by a hero expression, separated by '
-                        'comma (,).'
-                    ),
-                )
+            return ReplyPayload(
+                content=(
+                    f'Hero not found: {tokens[2]}. Please enter a new '
+                    'name followed by a hero expression, separated by '
+                    'comma (,).'
+                ),
+            )
         else:
-            hero, bad_args, not_allowed = process_hero_args(hero, tokens[2:])
-            new_name = tokens[0]
-        return await callback_save(new_name, hero, user_id)
+            errors = []
+            if any(bad_args):
+                errors.append(
+                    'I did not understand the following, so they '
+                    f'will not be applied: {", ".join(bad_args)}.'
+                )
+            if any(not_allowed):
+                errors.append(
+                    'The following skills are unavailable for this hero: '
+                    f'{", ".join(not_allowed)}'
+                )
+            if no_commas:
+                errors.append(
+                    'Please delimit modifiers with commas (,) in the future '
+                    'to improve command processing.'
+                )
+            if errors:
+                errors.append('\n')
+                err_text = '\n'.join(errors)
+            else:
+                err_text = ''
+            return await callback_save(tokens[0], hero, user_id,
+                                       err_text=err_text)

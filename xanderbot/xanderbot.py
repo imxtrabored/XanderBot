@@ -155,16 +155,12 @@ class XanderBotClient(discord.Client):
         except asyncio.CancelledError:
             pass
         finally:
-            #print('editable deleted:')
-            #print(user_msg.id)
             del self.editable_library[user_msg.id]
 
     def register_editable(self, bot_msg, user_msg, cmd_type):
         task = asyncio.create_task(self.forget_reactable(user_msg))
         self.editable_library[user_msg.id] = Editable(
             bot_msg, user_msg, [cmd_type], task)
-        #print('editable registered:')
-        #print(user_msg.id)
 
     async def forget_reactable(self, bot_msg):
         try:
@@ -172,16 +168,12 @@ class XanderBotClient(discord.Client):
         except asyncio.CancelledError:
             pass
         finally:
-            #print('reactable deleted:')
-            #print(bot_msg.id)
             del self.reactable_library[bot_msg.id]
 
     def register_reactable(self, bot_msg, callback, user, data, self_destruct):
         task = asyncio.create_task(self.forget_reactable(bot_msg))
         self.reactable_library[bot_msg.id] = Reactable(
             bot_msg, callback, user, data, self_destruct, task)
-        #print('reactable registered:')
-        #print(bot_msg.id)
 
     async def forget_replyable(self, user_id):
         try:

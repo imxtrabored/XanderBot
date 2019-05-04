@@ -310,8 +310,6 @@ class Skill(object):
             self.tier = 1
         else: self.tier = self.prereq1.set_tier_recursive()
         if self.prereq2: self.prereq2.set_tier_recursive()
-        # if self.tier > 3 and self.type != SkillType.WEAPON: print(self.name)
-        # if self.tier >= 3 and self.name.endswith('2'): print(self.name)
         return self.tier + 1
 
     def get_cumul_sp_recursive(self):
@@ -351,8 +349,6 @@ class Skill(object):
             self.refine_def = unit_lib.get_rskill_by_id(self.refine_def_id)
         if self.refine_res_id:
             self.refine_res = unit_lib.get_rskill_by_id(self.refine_res_id)
-        # note: replace this error checking line
-        # if self.prereq1 == self: print(self.name+', '+str(self.prereq1_id-1))
 
 Skill.EMPTY_WEAPON = Skill(
     -1, 'null weapon', 'None', 'Empty weapon slot',

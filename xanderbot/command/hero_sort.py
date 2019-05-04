@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from discord import Embed
 
 from command.cmd_default import CmdDefault
-from command.common import ReactMenu, ReplyPayload, ReactEditPayload
+from command.common import (
+    ReactMenu, ReplyPayload, ReactEditPayload, WITH_SYNONYMS)
 from feh.emojilib import EmojiLib as em
 from feh.unitlib import UnitLib
 
@@ -54,12 +55,6 @@ class HeroSort(CmdDefault):
 
     @staticmethod
     async def cmd(params, user_id):
-        if not params:
-            return ReplyPayload(
-                content='No input.',
-                reactable=ReactMenu(
-                    emojis=HeroSort.REACT_MENU, callback=HeroSort.react),
-            )
         tokens = FROM_SYNONYMS.split(params, maxsplit=1)
         sort_terms = tokens[0].split(',')
         if len(tokens) > 1:
