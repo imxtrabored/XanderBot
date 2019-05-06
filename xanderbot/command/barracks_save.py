@@ -38,8 +38,8 @@ class BarracksSave(CmdDefault):
         tokens = params.partition(',')
         if not tokens[1]:
             #did not use commas
-            tokens = params.partition(' ')
-            if not tokens[1]:
+            tokens = params.split()
+            if len(tokens) < 2:
                 hero = UnitLib.get_hero(tokens[0], user_id)
                 if hero:
                     return ReplyPayload(

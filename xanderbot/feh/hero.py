@@ -708,16 +708,23 @@ class Hero(object):
         recalculates lv1 stats and growths from ivs
         note that this invalidates merge_stat
         '''
-        if boon == bane and boon != Stat.NONE:
+        if boon == bane:
+            self.modify_iv(self.boon, False)
+            self.boon = Stat.NONE
+            self.modify_iv(self.bane, True)
+            self.bane = Stat.NONE
             return
-        if self.boon != boon:
+        if boon is not None and self.boon != boon:
             self.modify_iv(self.boon, False)
             self.modify_iv(boon, True)
             self.boon = boon
-        if self.bane != bane:
+        if bane is not None and self.bane != bane:
             self.modify_iv(self.bane, True)
             self.modify_iv(bane, False)
             self.bane = bane
+        if self.boon == self.bane:
+            self.boon = Stat.NONE
+            self.bane = Stat.NONE
 
     def modify_merge(self, stat_enum, amount):
         '''this is a convenience method to make update_merges look cleaner'''
@@ -820,10 +827,7 @@ class Hero(object):
 
     def update_stat_mods(self, *, boon=None, bane=None, merges=None,
                          rarity=None, flowers=None, summ_support=None):
-        if (boon and bane
-            and (boon != self.boon or bane != self.bane)
-            and ((boon != Stat.NONE and bane != Stat.NONE)
-                 or (boon == bane))):
+        if (boon or bane) and (boon != self.boon or bane != self.bane):
             self.update_ivs(boon, bane)
             update_boons = True
             if merges is None:

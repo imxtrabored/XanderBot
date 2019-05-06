@@ -18,7 +18,6 @@ NON_DECIMAL = re.compile(r'[^\d]+')
 PARENTHETICAL = re.compile(r'\(.*\)')
 PLUS_MINUS = re.compile(r'plus|minus')
 PLUSPLUS_FLOWER_DF = re.compile(r'plusplus|flower|^df|df$')
-SPLITTER = re.compile(r',(?![^()]*\))')
 WITH_SYNONYMS = re.compile(
     r'\s+(?:with|having|has|using|equip|equipping|equipped)\s+')
 
@@ -154,7 +153,7 @@ def try_equip(hero, skill_name):
     return 2
 
 
-def process_hero_args(hero, args):
+def process_hero_args(hero, args, *, defer_iv_match=False):
     bad_args = []
     not_allowed = []
     rarity = None
@@ -214,7 +213,8 @@ def process_hero_args(hero, args):
                                 for i in range(3, len(iv_tokens[0])):
                                     stat1 = Stat.get_by_name(iv_tokens[0][:i])
                                     if stat1 is not None:
-                                        stat2 = Stat.get_by_name(iv_tokens[0][i:])
+                                        stat2 = Stat.get_by_name(
+                                            iv_tokens[0][i:])
                                         if stat2 is not None:
                                             break
                                 if stat1 is not None and stat2 is not None:
@@ -275,27 +275,14 @@ def process_hero_args(hero, args):
                 bad_args.append(token.strip())
             elif equip_status == 1:
                 not_allowed.append(token.strip())
-    if boon is None and bane is not None:
-        bane = None
-        bad_args.append(
-            f'\n{hero.short_name} has flaw but no asset; ignoring flaw')
-    elif boon is not None and bane is None:
-        if boon != Stat.HP:
-            bane = Stat.HP
-            if max(merges or 0, hero.merges) > 0:
-                bad_args.append(
-                    f'\n{hero.short_name} guessing patched flaw was HP')
+    if not defer_iv_match:
+        if boon is None and bane is not None:
+            bane = None
+        elif boon is not None and bane is None:
+            if boon != Stat.HP:
+                bane = Stat.HP
             else:
-                bad_args.append(
-                    f'\n{hero.short_name} no flaw given; guessing HP')
-        else:
-            bane = Stat.RES
-            if max(merges or 0, hero.merges) > 0:
-                bad_args.append(
-                    f'\n{hero.short_name} guessing patched flaw was Res')
-            else:
-                bad_args.append(
-                    f'\n{hero.short_name} no flaw given; guessing Res')
+                bane = Stat.RES
     hero.update_stat_mods(boon=boon, bane=bane, merges=merges, rarity=rarity,
                           flowers=flowers, summ_support=support)
     return hero, bad_args, not_allowed
@@ -303,13 +290,15 @@ def process_hero_args(hero, args):
 
 def process_hero_spaces(params, user_id):
     tokens = [filter_name(token) for token in params.split()]
-    is_hero = 0
+    match_hero = None
+    match_hero_index = 0
     for i in range(1, len(tokens)):
-        if UnitLib.check_name(''.join(tokens[:i])):
-            is_hero = i
-    if is_hero:
-        hero = UnitLib.get_hero(''.join(tokens[:is_hero]), user_id)
-        return process_hero_args(hero, tokens[is_hero:])
+        hero = UnitLib.get_hero(''.join(tokens[:i]), user_id)
+        if hero:
+            match_hero = hero
+            match_hero_index = i
+    if match_hero:
+        return process_hero_args(match_hero, tokens[match_hero_index:])
     return None, params, ()
 
 

@@ -3,7 +3,8 @@ from collections import Counter
 from discord import Embed
 
 from command.cmd_default import CmdDefault
-from command.common import ReplyPayload, SPLITTER, process_hero_args
+from command.common import (
+    ReplyPayload, filter_name, process_hero, process_hero_args)
 from command.hero_stats import HeroStats
 from feh.currency import Dragonflower
 from feh.emojilib import EmojiLib as em
@@ -210,8 +211,8 @@ class HeroCompare(CmdDefault):
                     f'({final_list})'
                 )
             else:
-                res_str = f'{em.get(Stat.RES)} All heroes have equal '
-                'Resistance.'
+                res_str = (
+                    f'{em.get(Stat.RES)} All heroes have equal Resistance.')
             stat_sort = sorted(heroes, key=lambda h: h.final_total, reverse=True)
             if stat_sort[0].final_total > stat_sort[-1].final_total:
                 final_list = ", ".join([
@@ -242,39 +243,82 @@ class HeroCompare(CmdDefault):
         embed = Embed()
         bad_args = []
         not_allowed = []
-        if ';' not in params:
+        if ';' in params:
+            # fastest mode
+            heroes, bad_args, not_allowed, no_commas = zip(*[
+                process_hero(param, user_id) for param in params.split(';')])
+            bad_args = [arg for arg_list in bad_args for arg in arg_list]
+            not_allowed = [arg for arg_list in not_allowed for arg in arg_list]
+        elif ',' in params:
             # slow mode
-            params = SPLITTER.split(params)
+            params = params.split(',')
             heroes = []
             for param in params:
-                this_hero = UnitLib.get_hero(param, user_id)
-                if this_hero: heroes.append(this_hero)
+                this_hero, bad_arg, n_allow, no_commas = process_hero(
+                    param, user_id)
+                if this_hero:
+                    heroes.append(this_hero)
+                    bad_args.extend(bad_arg)
+                    not_allowed.extend(n_allow)
                 else:
                     if not heroes:
                         bad_args.append(param)
                     else:
-                        heroes[-1], bad_arg, n_allow = (
-                            process_hero_args(heroes[-1], [param]))
+                        heroes[-1], bad_arg, n_allow = process_hero_args(
+                                heroes[-1], (param,), defer_iv_match=True)
                         bad_args.extend(bad_arg)
                         not_allowed.extend(n_allow)
+            for hero in heroes:
+                if hero.boon == Stat.NONE and hero.bane != Stat.NONE:
+                    hero.update_stat_mods(bane=Stat.NONE)
+                elif hero.boon != Stat.NONE and hero.bane == Stat.NONE:
+                    if hero.boon != Stat.HP:
+                        hero.update_stat_mods(boon=Stat.HP)
+                    else:
+                        hero.update_stat_mods(boon=Stat.RES)
             embed.set_footer(
                 text=('Please delimit compared heroes with semicolons (;) '
                       'in the future to improve speed and clarity.')
             )
         else:
-            # normal mode
-            hero_list = (SPLITTER.split(param) for param in params.split(';'))
+            # slowest mode
+            params = [filter_name(param) for param in params.split()]
             heroes = []
-            for param in hero_list:
-                this_hero = UnitLib.get_hero(param[0], user_id)
-                if this_hero:
-                    this_hero, bad_arg, n_allow = (
-                        process_hero_args(this_hero, param[1:]))
-                    heroes.append(this_hero)
-                    bad_args.extend(bad_arg)
-                    not_allowed.extend(n_allow)
+            ctr = 0
+            while ctr < len(params):
+                if heroes:
+                    hero, bad_arg, n_allow = process_hero_args(
+                        heroes[-1], (params[ctr],), defer_iv_match=True)
+                    if not bad_arg:
+                        not_allowed.extend(n_allow)
+                        ctr += 1
+                        continue
+                match_hero = None
+                match_hero_index = 0
+                for i in range(1, len(params[ctr:]) + 1):
+                    hero = UnitLib.get_hero(
+                        ''.join(params[ctr:ctr + i]), user_id)
+                    if hero:
+                        match_hero = hero
+                        match_hero_index = i
+                if match_hero:
+                    heroes.append(match_hero)
+                    ctr += match_hero_index
                 else:
-                    bad_args.append(param[0])
+                    bad_args.append(params[ctr])
+                    ctr += 1
+            for hero in heroes:
+                if hero.boon == Stat.NONE and hero.bane != Stat.NONE:
+                    hero.update_stat_mods(bane=Stat.NONE)
+                elif hero.boon != Stat.NONE and hero.bane == Stat.NONE:
+                    if hero.boon != Stat.HP:
+                        hero.update_stat_mods(bane=Stat.HP)
+                    else:
+                        hero.update_stat_mods(bane=Stat.RES)
+            embed.set_footer(
+                text=('Please delimit compared heroes with semicolons (;) '
+                      'in the future to improve speed and clarity.')
+            )
         # modify duplicate hero names (detect dupes using id)
         for hero in heroes:
             if hero.custom_name:
@@ -289,9 +333,12 @@ class HeroCompare(CmdDefault):
                     f'{heroes[i].short_name} ({counts[item]})')
                 counts[item] -= 1
         embed = HeroCompare.format_compare(embed, heroes, zoom_state)
-        if bad_args:
-            content = ('I did not understand the following arguments: '
-                       f'{", ".join(bad_args)}')
-        else:
-            content = ''
+        err_text = []
+        if any(bad_args):
+            err_text.append('I did not understand the following: '
+                            f'{", ".join(bad_args)}')
+        if any(not_allowed):
+            err_text.append('The following skills are unavailable for this '
+                            f'hero: {", ".join(not_allowed)}')
+        content = '\n'.join(err_text)
         return ReplyPayload(content=content, embed=embed)
