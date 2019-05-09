@@ -7,7 +7,7 @@ from discord import Embed
 
 from feh.emojilib import EmojiLib as em
 from feh.hero import Stat, LegendElement, LegendStat, SummonerSupport
-from feh.unitlib import UnitLib
+from feh.unitlib import UnitLib, PARENTHETICAL
 
 
 TEMP_SEP = '#@@@'
@@ -15,7 +15,6 @@ TRANSTAB = str.maketrans('', '', punctuation + whitespace)
 BOON_ASSET = re.compile(r'boon|asset')
 MINUS_BANE_FLAW = re.compile(r'minus|bane|flaw')
 NON_DECIMAL = re.compile(r'[^\d]+')
-PARENTHETICAL = re.compile(r'\(.*\)')
 PLUS_MINUS = re.compile(r'plus|minus')
 PLUSPLUS_FLOWER_DF = re.compile(r'plusplus|flower|^df|df$')
 WITH_SYNONYMS = re.compile(

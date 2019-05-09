@@ -55,14 +55,21 @@ class HeroSort(CmdDefault):
 
     @staticmethod
     async def cmd(params, user_id):
-        tokens = FROM_SYNONYMS.split(params, maxsplit=1)
-        sort_terms = tokens[0].split(',')
+        tokens = FROM_SYNONYMS.split(params.lower(), maxsplit=1)
         if len(tokens) > 1:
-            search_terms = tokens[1]
+            sort_terms = tokens[0].split(',')
+            tokens = WITH_SYNONYMS.split(tokens[1], maxsplit=1)
+            search_terms = tokens[0]
         else:
             search_terms = None
-        sorted_list, sort_terms = UnitLib.sort_heroes(
-            sort_terms, search_terms)
+            tokens = WITH_SYNONYMS.split(tokens[0], maxsplit=1)
+            sort_terms = tokens[0].split(',')
+        if len(tokens) > 1:
+            equip_terms = tokens[1]
+        else:
+            equip_terms = None
+        sorted_list, sort_terms, bad_args = UnitLib.sort_heroes(
+            sort_terms, search_terms, equip_terms)
         if sorted_list is None:
             return ReplyPayload(
                 content=('Syntax error. Use ``f?help sort`` for help '
@@ -73,6 +80,11 @@ class HeroSort(CmdDefault):
         embed = Embed()
         HeroSort.format_sort(
             embed, sorted_list, search_terms, sort_terms, 0)
+        if any(bad_args):
+            content = ('I did not understand the following: '
+                       f'{", ".join(bad_args)}')
+        else:
+            content = ''
         embed.color = em.get_color(None)
         react_menu = ReactMenu(
             emojis=HeroSort.REACT_MENU,
@@ -80,7 +92,7 @@ class HeroSort(CmdDefault):
                 embed, sorted_list, search_terms, sort_terms, 0),
             callback=HeroSort.react,
         )
-        return ReplyPayload(embed=embed, reactable=react_menu)
+        return ReplyPayload(content=content, embed=embed, reactable=react_menu)
 
     @staticmethod
     async def react(reaction, data, user_id):

@@ -64,7 +64,7 @@ class HelpCmd(CmdDefault):
         '``f?help skillsearch`` for advanced syntax.\n'
         '``addalias``: Adds an alternate name for a hero to my database.\n'
         '``skillalias``: Adds an alternate name for a skill to my database.\n'
-        '``ping``: Displays my current latency to the Discord server.\n'
+        '``ping``: Displays my current latency to Discord\'s servers.\n'
         '``devs``: Find out about XanderBot\'s development team.\n'
         '``donate``: Find out how you can make donations.'
     )

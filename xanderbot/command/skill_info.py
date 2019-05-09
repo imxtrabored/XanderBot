@@ -22,10 +22,11 @@ class SkillInfo(CmdDefault):
 
     @dataclass
     class Data(object):
-        __slots__ = ('embed', 'skill', 'zoom_state')
+        __slots__ = ('embed', 'skill', 'zoom_state', 'progression')
         embed: Embed
         skill: Skill
         zoom_state: bool
+        progression: dict
 
     REACT_MENU = (
         '🔍',
@@ -116,15 +117,14 @@ class SkillInfo(CmdDefault):
             sp = f'**SP:** {skill.sp}'
         if zoom_state:
             if skill.postreq:
-                prf_postreq_count = len(
-                    [sk for sk in skill.postreq if sk.exclusive]
-                )
-                # optimize note?
-                postreq_list = (', '.join([
+                postreq_list = [
                     f'{postreq.icon} {postreq.name}'
                     for postreq in skill.postreq
                     if not postreq.exclusive
-                ])
+                ]
+                prf_postreq_count = len(skill.postreq) - len(postreq_list)
+                # optimize note?
+                postreq_str = (', '.join(postreq_list)
                 if len(skill.postreq) - prf_postreq_count < 10
                 else ', '.join([
                     f'{postreq.name}'
@@ -134,9 +134,9 @@ class SkillInfo(CmdDefault):
                 prf_postreqs = (f' and {prf_postreq_count} Prf skills.'
                                 if prf_postreq_count else '')
             else:
-                postreq_list = 'None'
+                postreq_str = 'None'
                 prf_postreqs = ''
-            postreqs = f'**Required for:** {postreq_list}{prf_postreqs}'
+            postreqs = f'**Required for:** {postreq_str}{prf_postreqs}'
             cumul_sp = skill.get_cumul_sp_recursive()
             skill_cumul_sp = (
                 f'**Cumulative SP:** {cumul_sp}'
@@ -159,7 +159,6 @@ class SkillInfo(CmdDefault):
             evolve_src,
             postreqs,
         ]))
-        print(len(description))
         embed.add_field(name=title, value=description, inline=False)
         if skill.skill_type == SkillType.PASSIVE_SEAL:
             learnable = ''
@@ -177,7 +176,7 @@ class SkillInfo(CmdDefault):
                   and skill.tier <= 1):
                 learnable = 'Basic assist available to all staff users.'
             #elif reduce(lambda x, y: x + len(y), skill.learnable[1:], 0) > 20:
-            elif learnable_count > 20:
+            elif learnable_count > 25:
                 learnable = (
                     f'{learnable_count} different heroes know this skill.')
             elif learnable_count == 0:
@@ -326,7 +325,7 @@ class SkillInfo(CmdDefault):
         SkillInfo.format_skill(embed, skill, False)
         react_menu = ReactMenu(
             emojis=SkillInfo.REACT_MENU,
-            data=SkillInfo.Data(embed, skill, False),
+            data=SkillInfo.Data(embed, skill, False, {skill.tier: skill}),
             callback=SkillInfo.react,
         )
         return ReplyPayload(embed=embed, reactable=react_menu)
@@ -339,13 +338,19 @@ class SkillInfo(CmdDefault):
         if reaction.emoji == '🔍':
             data.zoom_state = not data.zoom_state
         elif reaction.emoji == '⬆':
-            if data.skill.postreq:
+            if data.skill.tier + 1 in data.progression:
+                data.skill = data.progression[data.skill.tier + 1]
+            elif data.skill.postreq:
                 data.skill = data.skill.postreq[0]
+                data.progression[data.skill.tier] = data.skill
             else:
                 return ReactEditPayload(delete=True)
         elif reaction.emoji == '⬇':
-            if data.skill.prereq1:
+            if data.skill.tier - 1 in data.progression:
+                data.skill = data.progression[data.skill.tier - 1]
+            elif data.skill.prereq1:
                 data.skill = data.skill.prereq1
+                data.progression[data.skill.tier] = data.skill
             else:
                 return ReactEditPayload(delete=True)
         elif reaction.emoji == '👁':

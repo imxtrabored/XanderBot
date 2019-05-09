@@ -5,6 +5,7 @@ import sqlite3
 from copy import copy
 from string import punctuation, whitespace
 
+import command.common
 from feh.emojilib import EmojiLib as em
 from feh.hero import Hero, Stat, UnitColor, UnitWeaponType, MoveType
 from feh.skill import Skill, SkillType, Refine
@@ -40,12 +41,50 @@ SEARCH_SPECIAL_CHARS = '"&\'()*-|'
 ONLY_ALPHANUM = str.maketrans('', '', whitespace + punctuation)
 PUNCT_NON_SEARCH = str.maketrans('', '', punctuation.translate(
     str.maketrans('', '', SEARCH_SPECIAL_CHARS)))
+PARENTHETICAL = re.compile(r'\(.*\)')
 REMOVE_SEARCH_SPECIAL = str.maketrans(
     SEARCH_SPECIAL_CHARS, ' ' * len(SEARCH_SPECIAL_CHARS))
 REMOVE_PUNCT = str.maketrans('', '', punctuation)
 REMOVE_WSPACE = str.maketrans('', '', whitespace)
 LSTRIP_SEARCH = whitespace + '*&|)'
 RSTRIP_SEARCH = whitespace + '-&|('
+
+
+class DummyHero(Hero):
+
+    __slots__ = ('equip_list_all')
+
+    def __init__(
+            self, index, name, short_name, epithet, color,
+            weapon_type, move_type,
+            base_hp, base_atk, base_spd, base_def, base_res,
+            grow_hp, grow_atk, grow_spd, grow_def, grow_res,
+            max_hp, max_atk, max_spd, max_def, max_res,
+    ):
+        super().__init__(
+            index, name, short_name, epithet, color,
+            weapon_type, move_type,
+            base_hp, base_atk, base_spd, base_def, base_res,
+            grow_hp, grow_atk, grow_spd, grow_def, grow_res,
+            max_hp, max_atk, max_spd, max_def, max_res,
+        )
+        self.equip_list_all = []
+
+    def equip(self, skill, *, force_seal=False):
+        if force_seal:
+            skill = copy(skill)
+            skill.skill_type = SkillType.PASSIVE_SEAL
+        self.equip_list_all.append(skill)
+        return True
+
+
+DUMMY_HERO = DummyHero(
+    0, 'null', 'Null', 'Null Hero',
+    UnitColor.RED, UnitWeaponType.R_SWORD, MoveType.INFANTRY,
+    15, 8, 8, 8, 8,
+    55, 50, 50, 50, 50,
+    39, 30, 30, 30, 30,
+)
 
 
 class UnitLib(object):
@@ -302,7 +341,7 @@ class UnitLib(object):
         return cls.singleton.unit_list[hero_id]
 
     @classmethod
-    def sort_heroes(cls, sort_terms, search_terms):
+    def sort_heroes(cls, sort_terms, search_terms, equip_terms):
         sort_exprs = []
         for expr in sort_terms:
             test = TOP_SYNONYMS.subn('', expr, count=1)
@@ -332,11 +371,13 @@ class UnitLib(object):
                 .replace('-', ' NOT ').translate(PUNCT_NON_SEARCH)
             )
             if search_terms.startswith(' NOT'):
-                search_terms = 'any' + hero_name
+                search_terms = 'any' + search_terms
             parameterized = (search_terms,)
         else:
             match = ''
             parameterized = ()
+        if equip_terms:
+            filtered_cache_terms = []
         filtered_terms = ['hero.id, hero.short_name']
         filtered_order = []
         filtered_disp = []
@@ -350,29 +391,49 @@ class UnitLib(object):
                 pre_filtered = ''.join(SORT_ALLOWED.findall(
                         expr[0].lower().translate(REMOVE_WSPACE)))
                 if COLOR_LIT.search(pre_filtered):
-                    filtered_order.append(
-                        f'hero.color {"ASC" if expr[1] else "DESC"}')
+                    if equip_terms:
+                        filtered_order.append(
+                            f'{"" if expr[1] else "-"}hero.color')
+                    else:
+                        filtered_order.append(
+                            f'hero.color {"ASC" if expr[1] else "DESC"}')
                     filtered_disp.append('Color')
                     continue
                 if WEAPON_LIT.search(pre_filtered):
-                    filtered_order.append(
-                        f'hero.weapon_type {"ASC" if expr[1] else "DESC"}')
+                    if equip_terms:
+                        filtered_order.append(
+                            f'{"" if expr[1] else "-"}hero.weapon_type')
+                    else:
+                        filtered_order.append(
+                            f'hero.weapon_type {"ASC" if expr[1] else "DESC"}')
                     filtered_disp.append('Weapon')
                     continue
                 if MOVE_LIT.search(pre_filtered):
-                    filtered_order.append(
-                        f'hero.move_type {"ASC" if expr[1] else "DESC"}')
+                    if equip_terms:
+                        filtered_order.append(
+                            f'{"" if expr[1] else "-"}hero.move_type')
+                    else:
+                        filtered_order.append(
+                            f'hero.move_type {"ASC" if expr[1] else "DESC"}')
                     filtered_disp.append('Move')
                     continue
                 filtered_term = (
                     STAT_NAMES.sub(
-                        lambda match: Stat.get_by_name(match.group()).db_col,
+                        lambda match:
+                            Stat.get_by_name(match.group()).db_col,
                         pre_filtered
                     )
                     .replace('/', '*1.0/')
                 )
                 if filtered_term:
                     filtered_terms.append(filtered_term)
+                    if equip_terms:
+                        filtered_cache_terms.append(STAT_NAMES.sub(
+                            lambda match:
+                                Stat.get_by_name(match.group()).hero_final,
+                            pre_filtered
+                        ).replace('*', '\*')
+                    )
                     filtered_disp.append(STAT_NAMES.sub(
                             lambda match:
                                 Stat.get_by_name(match.group()).short,
@@ -393,13 +454,22 @@ class UnitLib(object):
                                 'FROM hero_search '
                                 'JOIN hero ON hero_search.id = hero.id '
                                 f'{match}'
-                                f'ORDER BY ABS({filtered_term}) DESC LIMIT 1',
+                                f'ORDER BY ABS({filtered_term}) DESC '
+                                'LIMIT 1',
                                 parameterized
                             )
                         except sqlite3.OperationalError as e:
                             return None, ''
-                        filtered_order.append(
-                            f'{filtered_term} {"DESC" if term[1] else "ASC"}')
+                        if equip_terms:
+                            filtered_order.append(
+                                f'{"-" if expr[1] else ""}'
+                                f'{filtered_cache_terms[-1]}'
+                            )
+                        else:
+                            filtered_order.append(
+                                f'{filtered_term} '
+                                f'{"DESC" if expr[1] else "ASC"}'
+                            )
                         max_val = cur.fetchone()[0]
                         if max_val is not None and max_val != 0:
                             padding.append(int(math.log10(max_val))
@@ -408,50 +478,124 @@ class UnitLib(object):
                             padding.append(0)
                     else:
                         padding.append(0)
-        filtered_order.append('hero.id ASC')
-        select_terms = ', '.join(filtered_terms)
-        try:
-            cur.execute(
-                f'SELECT {select_terms} '
-                'FROM hero_search JOIN hero ON hero_search.id = hero.id '
-                f'{match}'
-                f'ORDER BY {", ".join(filtered_order)}',
-                parameterized
-            )
-        except sqlite3.OperationalError as e:
-            return None, ''
-        if len(filtered_short) == 0:
-            hero_list = [(
-                    f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
-                    f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
-                    f'{row[1]}'
-                )
-                for row in cur
-            ]
-        elif len(filtered_short) == 1:
-            hero_list = [(
-                    f'``({row[2] or 0:·>{padding[0]}.{prec[0]}f})`` '
-                    f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
-                    f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
-                    f'{row[1]}'
-                )
-                for row in cur
-            ]
+        if equip_terms:
+            filtered_order.append('hero.index')
         else:
-            hero_list = [(
-                    f'''``{" | ".join([
-                        f"{filtered_short[cou]}="
-                        f"{row[cou + 2] or 0:·>{padding[cou]}.{prec[cou]}f}"
-                        for cou in range(len(filtered_short))
-                    ])}`` '''
-                    f'{em.get(cls.singleton.unit_list[row[0]].weapon_type)}'
-                    f'{em.get(cls.singleton.unit_list[row[0]].move_type)} '
-                    f'{row[1]}'
+            filtered_order.append('hero.id ASC')
+        if not equip_terms or not filtered_short:
+            try:
+                cur.execute(
+                    f'SELECT {", ".join(filtered_terms)} '
+                    'FROM hero_search JOIN hero ON hero_search.id = hero.id '
+                    f'{match}'
+                    f'ORDER BY {", ".join(filtered_order)}',
+                    parameterized
                 )
-                for row in cur
-            ]
+            except sqlite3.OperationalError as e:
+                return None, ''
+            if len(filtered_short) == 0:
+                hero_list = [(
+                        f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
+                        f'{em.get(cls.singleton.unit_list[rw[0]].move_type)} '
+                        f'{rw[1]}'
+                    )
+                    for rw in cur
+                ]
+            elif len(filtered_short) == 1:
+                hero_list = [(
+                        f'``({rw[2] or 0:·>{padding[0]}.{prec[0]}f})`` '
+                        f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
+                        f'{em.get(cls.singleton.unit_list[rw[0]].move_type)} '
+                        f'{rw[1]}'
+                    )
+                    for rw in cur
+                ]
+            else:
+                hero_list = [(
+                        f'''``{" | ".join([
+                            f"{filtered_short[cou]}="
+                            f"{rw[cou + 2] or 0:·>{padding[cou]}.{prec[cou]}f}"
+                            for cou in range(len(filtered_short))
+                        ])}`` '''
+                        f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
+                        f'{em.get(cls.singleton.unit_list[rw[0]].move_type)} '
+                        f'{rw[1]}'
+                    )
+                    for rw in cur
+                ]
+            bad_args = []
+        else:
+            eq_tokens = PARENTHETICAL.sub(
+                lambda match: match.group().replace(',', TEMP_SEP), equip_terms)
+            hero_args = eq_tokens.split(',')
+            dummy_hero = copy(DUMMY_HERO)
+            dummy_hero, bad_args, not_allowed = (
+                command.common.process_hero_args(dummy_hero, hero_args))
+            if bad_args and len(hero_args) == 1:
+                dummy_hero, bad_args, not_allowed = (
+                    command.common.process_hero_args(
+                        dummy_hero, hero_args[0].split()))
+            try:
+                cur.execute(
+                    f'SELECT hero.id '
+                    'FROM hero_search JOIN hero ON hero_search.id = hero.id '
+                    f'{match}',
+                    parameterized
+                )
+            except sqlite3.OperationalError as e:
+                return None, ''
+            heroes = [copy(cls.singleton.unit_list[row[0]]) for row in cur]
+            sort_dummy = f'({", ".join(filtered_order)})'.replace('\*', '*')
+            sort_values = (
+                f'({", ".join(filtered_cache_terms)})'.replace('\*', '*'))
+            for hero in heroes:
+                hero.equipped = copy(hero.equipped)
+                for skill in dummy_hero.equip_list_all:
+                    hero.equip(skill, fail_fast=True)
+                    hero.update_stat_mods(
+                        boon=dummy_hero.boon, bane=dummy_hero.bane,
+                        merges=dummy_hero.merges, rarity=dummy_hero.rarity,
+                        flowers=dummy_hero.flowers,
+                        summ_support=dummy_hero.summ_support
+                    )
+                hero.sort_dummy = eval(
+                    sort_dummy, {'__builtins__': None}, {'hero': hero})
+                hero.sort_values = eval(
+                    sort_values, {'__builtins__': None}, {'hero': hero})
+            heroes.sort(key=lambda hero: hero.sort_dummy)
+            if len(filtered_short) == 0:
+                hero_list = [(
+                        f'{em.get(hero.weapon_type)}{em.get(hero.move_type)} '
+                        f'{hero.short_name}'
+                    )
+                    for hero in heroes
+                ]
+            elif len(filtered_short) == 1:
+                hero_list = [(
+                        '``('
+                        f'{hero.sort_values or 0:·>{padding[0]}.{prec[0]}f}'
+                        ')`` '
+                        f'{em.get(hero.weapon_type)}{em.get(hero.move_type)} '
+                        f'{hero.short_name}'
+                    )
+                    for hero in heroes
+                ]
+            else:
+                hero_list = [(
+                        f'''``{" | ".join([
+                            f"{filtered_short[cou]}="
+                            f"""{hero.sort_values[cou] or 0
+                            :·>{padding[cou]}.{prec[cou]}f}"""
+                            for cou in range(len(filtered_short))
+                        ])}`` '''
+                        f'{em.get(hero.weapon_type)}'
+                        f'{em.get(hero.move_type)} '
+                        f'{hero.short_name}'
+                    )
+                    for hero in heroes
+                ]
         con.close()
-        return hero_list, ', '.join(filtered_disp)
+        return hero_list, ', '.join(filtered_disp), bad_args
 
     #todo: THIS DOESNT WORK!!!
     @classmethod
@@ -462,7 +606,7 @@ class UnitLib(object):
             .replace('-', ' NOT ')
         )
         if skill_name.startswith(' NOT'):
-            hero_name = 'tags' + skill_name
+            skill_name = 'tags' + skill_name
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         cur.execute(

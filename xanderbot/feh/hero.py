@@ -2,8 +2,27 @@ from copy import copy
 from enum import Enum, unique
 
 
+class OrderedEnum(Enum):
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value >= other.value
+        return NotImplemented
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value > other.value
+        return NotImplemented
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value <= other.value
+        return NotImplemented
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
+
+
 @unique
-class UnitColor(Enum):
+class UnitColor(OrderedEnum):
     '''Enum for each unit color'''
     NONE      = 0
     RED       = 1
@@ -12,7 +31,7 @@ class UnitColor(Enum):
     COLORLESS = 4
 
 @unique
-class UnitWeaponType(Enum):
+class UnitWeaponType(OrderedEnum):
     '''Enum for each weapon type'''
     NONE     = 0
     R_SWORD  = 1
@@ -40,7 +59,7 @@ class UnitWeaponType(Enum):
     C_BEAST  = 23
 
 @unique
-class MoveType(Enum):
+class MoveType(OrderedEnum):
     '''Enum for each movement type'''
     INFANTRY = 1
     ARMOR    = 2
@@ -84,16 +103,16 @@ class LegendStat(Enum):
 @unique
 class Stat(Enum):
     '''Enum for each unit stat'''
-    NONE = (1, 'None', 'None', '', set())
-    HP   = (2, 'HP', 'Hit Points', 'hero.max_hp',
+    NONE = (1, 'None', 'None', '', '', set())
+    HP   = (2, 'HP', 'Hit Points', 'hero.max_hp', 'hero.final_hp',
             {'hp', 'hitpoint', 'hitpoints', 'h',})
-    ATK  = (3, 'Atk', 'Attack', 'hero.max_atk',
+    ATK  = (3, 'Atk', 'Attack', 'hero.max_atk', 'hero.final_atk',
             {'atk', 'attack', 'a',})
-    SPD  = (4, 'Spd', 'Speed', 'hero.max_spd',
+    SPD  = (4, 'Spd', 'Speed', 'hero.max_spd', 'hero.final_spd',
             {'spd', 'speed', 's',})
-    DEF  = (5, 'Def', 'Defense', 'hero.max_def',
+    DEF  = (5, 'Def', 'Defense', 'hero.max_def', 'hero.final_def',
             {'def', 'defense', 'defence', 'd',})
-    RES  = (6, 'Res', 'Resistance', 'hero.max_res',
+    RES  = (6, 'Res', 'Resistance', 'hero.max_res', 'hero.final_res',
             {'res', 'resistance', 'r',})
 
     def __new__(cls, *args, **kwds):
@@ -101,10 +120,11 @@ class Stat(Enum):
         obj._value_ = args[0]
         return obj
 
-    def __init__(self, _, short, long, db_col, aliases):
+    def __init__(self, _, short, long, db_col, hero_final, aliases):
         self.short = short
         self.long = long
         self.db_col = db_col
+        self.hero_final = hero_final
         self.aliases = aliases
 
     @classmethod
@@ -209,11 +229,11 @@ class Hero(object):
         'is_story', 'is_seasonal', 'is_grail', 'is_veteran', 'is_trainee',
         'is_dancer', 'is_brave', 'is_sigurd', 'is_enemy', 'generation',
         'is_arena_bonus', 'is_aether_bonus', 'is_aether_bonus_next',
-        'is_tempest_bonus'
+        'is_tempest_bonus', 'sort_dummy', 'sort_values',
     )
 
     # we could calculate this easily, but this is faster anyways
-    # first element of row 2 is 50%
+    # first element of row 2 is 50% growths
     STATS_RARITY = (
         (),
         (0, 1, 3, 4, 6, 8, 9, 11, 13, 14,
@@ -397,6 +417,9 @@ class Hero(object):
         self.is_aether_bonus_next = False
         self.is_tempest_bonus = False
 
+        self.sort_dummy = None
+        self.sort_values = None
+
 
     @property
     def start_hp(self):
@@ -437,19 +460,26 @@ class Hero(object):
         return sum((self.final_hp, self.final_atk, self.final_spd,
                     self.final_def, self.final_res))
 
-    def equip(self, skill):
+    def equip(self, skill, *, force_seal=False, fail_fast=False):
         if (skill is None or self.weapon_type in skill.restrict_set
                 or self.move_type in skill.restrict_set
                 or (skill.exclusive
                     and self.index not in skill.exclusive_to_id)
             ):
             return False
-        if skill.skill_type == SkillType.WEAPON:
+        if (skill.skill_type == SkillType.WEAPON
+                and not (fail_fast and self.equipped.weapon)):
             self.equipped.weapon = skill
-        elif skill.skill_type == SkillType.ASSIST:
+        elif (skill.skill_type == SkillType.ASSIST
+                and not (fail_fast and self.equipped.assist)):
             self.equipped.assist = skill
-        elif skill.skill_type == SkillType.SPECIAL:
+        elif (skill.skill_type == SkillType.SPECIAL
+                and not (fail_fast and self.equipped.special)):
             self.equipped.special = skill
+        elif ((skill.skill_type == SkillType.PASSIVE_SEAL
+                or (force_seal and skill.is_seal)
+                and not (fail_fast and self.equipped.passive_s))):
+            self.equipped.passive_s = skill
         elif skill.skill_type == SkillType.PASSIVE_A:
             if not self.equipped.passive_a:
                 self.equipped.passive_a = skill
@@ -459,9 +489,9 @@ class Hero(object):
                 elif self.equipped.passive_a.is_seal:
                     self.equipped.passive_s = self.equipped.passive_a
                     self.equipped.passive_a = skill
-                else:
+                elif not fail_fast:
                     self.equipped.passive_a = skill
-            else:
+            elif not fail_fast:
                 self.equipped.passive_a = skill
         elif skill.skill_type == SkillType.PASSIVE_B:
             if not self.equipped.passive_b:
@@ -472,9 +502,9 @@ class Hero(object):
                 elif self.equipped.passive_b.is_seal:
                     self.equipped.passive_s = self.equipped.passive_b
                     self.equipped.passive_b = skill
-                else:
+                elif not fail_fast:
                     self.equipped.passive_b = skill
-            else:
+            elif not fail_fast:
                 self.equipped.passive_b = skill
         elif skill.skill_type == SkillType.PASSIVE_C:
             if not self.equipped.passive_c:
@@ -485,12 +515,10 @@ class Hero(object):
                 elif self.equipped.passive_c.is_seal:
                     self.equipped.passive_s = self.equipped.passive_c
                     self.equipped.passive_c = skill
-                else:
+                elif not fail_fast:
                     skill.equipped.passive_c = skill
-            else:
+            elif not fail_fast:
                 self.equipped.passive_c = skill
-        elif skill.skill_type == SkillType.PASSIVE_SEAL:
-            self.equipped.passive_s = skill
         return True
 
     def get_boons_banes(self):
