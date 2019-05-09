@@ -459,7 +459,7 @@ class UnitLib(object):
                                 parameterized
                             )
                         except sqlite3.OperationalError as e:
-                            return None, ''
+                            return None, '', ()
                         if equip_terms:
                             filtered_order.append(
                                 f'{"-" if expr[1] else ""}'
@@ -470,10 +470,28 @@ class UnitLib(object):
                                 f'{filtered_term} '
                                 f'{"DESC" if expr[1] else "ASC"}'
                             )
-                        max_val = cur.fetchone()[0]
+                        max_val = cur.fetchone()
+                        if max_val is None:
+                            return (), '', ()
+                        max_val = max_val[0]
+                        try:
+                            cur.execute(
+                                'SELECT CASE '
+                                f'WHEN {filtered_term} < 0 THEN 1 ELSE 0 '
+                                'END negative '
+                                'FROM hero_search '
+                                'JOIN hero ON hero_search.id = hero.id '
+                                f'{match}'
+                                f'ORDER BY {filtered_term} ASC '
+                                'LIMIT 1',
+                                parameterized
+                            )
+                        except sqlite3.OperationalError as e:
+                            return None, '', ()
+                        negative = cur.fetchone()[0]
                         if max_val is not None and max_val != 0:
                             padding.append(int(math.log10(max_val))
-                                           + 1 + 2 * prec[-1])
+                                           + 1 + 2 * prec[-1] + negative)
                         else:
                             padding.append(0)
                     else:
@@ -492,7 +510,7 @@ class UnitLib(object):
                     parameterized
                 )
             except sqlite3.OperationalError as e:
-                return None, ''
+                return None, '', ()
             if len(filtered_short) == 0:
                 hero_list = [(
                         f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
@@ -503,7 +521,7 @@ class UnitLib(object):
                 ]
             elif len(filtered_short) == 1:
                 hero_list = [(
-                        f'``({rw[2] or 0:·>{padding[0]}.{prec[0]}f})`` '
+                        f'``({rw[2] or 0:·> {padding[0]}.{prec[0]}f})`` '
                         f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
                         f'{em.get(cls.singleton.unit_list[rw[0]].move_type)} '
                         f'{rw[1]}'
@@ -514,7 +532,7 @@ class UnitLib(object):
                 hero_list = [(
                         f'''``{" | ".join([
                             f"{filtered_short[cou]}="
-                            f"{rw[cou + 2] or 0:·>{padding[cou]}.{prec[cou]}f}"
+                            f"{rw[cou+2] or 0:·> {padding[cou]}.{prec[cou]}f}"
                             for cou in range(len(filtered_short))
                         ])}`` '''
                         f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
@@ -543,7 +561,7 @@ class UnitLib(object):
                     parameterized
                 )
             except sqlite3.OperationalError as e:
-                return None, ''
+                return None, '', ()
             heroes = [copy(cls.singleton.unit_list[row[0]]) for row in cur]
             sort_dummy = f'({", ".join(filtered_order)})'.replace('\*', '*')
             sort_values = (
@@ -573,7 +591,7 @@ class UnitLib(object):
             elif len(filtered_short) == 1:
                 hero_list = [(
                         '``('
-                        f'{hero.sort_values or 0:·>{padding[0]}.{prec[0]}f}'
+                        f'{hero.sort_values or 0:·> {padding[0]}.{prec[0]}f}'
                         ')`` '
                         f'{em.get(hero.weapon_type)}{em.get(hero.move_type)} '
                         f'{hero.short_name}'
@@ -585,7 +603,7 @@ class UnitLib(object):
                         f'''``{" | ".join([
                             f"{filtered_short[cou]}="
                             f"""{hero.sort_values[cou] or 0
-                            :·>{padding[cou]}.{prec[cou]}f}"""
+                            :·> {padding[cou]}.{prec[cou]}f}"""
                             for cou in range(len(filtered_short))
                         ])}`` '''
                         f'{em.get(hero.weapon_type)}'
