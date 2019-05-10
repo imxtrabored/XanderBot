@@ -74,12 +74,12 @@ class SkillInfo(CmdDefault):
            ):
             effective = SkillInfo.format_eff(skill)
             if skill.refine_path:
-                refine_stats = (
-                    f'{" HP+{skill.bonus_hp}" if skill.bonus_hp else ""}',
-                    f'{" Spd+{skill.bonus_spd}" if skill.bonus_spd else ""}',
-                    f'{" Def+{skill.bonus_def}" if skill.bonus_def else ""}',
-                    f'{" Res+{skill.bonus_res}" if skill.bonus_res else ""}',
-                 )
+                refine_stats = ''.join((
+                    f'{f" HP+{skill.bonus_hp}" if skill.bonus_hp else ""}',
+                    f'{f" Spd+{skill.bonus_spd}" if skill.bonus_spd else ""}',
+                    f'{f" Def+{skill.bonus_def}" if skill.bonus_def else ""}',
+                    f'{f" Res+{skill.bonus_res}" if skill.bonus_res else ""}',
+                 ))
             else:
                 refine_stats = ''
             weapon_desc = (f'Mt: {skill.might} '

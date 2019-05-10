@@ -420,6 +420,10 @@ class Hero(object):
         self.sort_dummy = None
         self.sort_values = None
 
+    def __eq__(self, other):
+        if self.__class__ is other.__class__:
+            return self.index == other.index
+        return NotImplemented
 
     @property
     def start_hp(self):
@@ -461,7 +465,24 @@ class Hero(object):
                     self.final_def, self.final_res))
 
     def learns_skill(self, skill):
-        pass
+        if skill is None:
+            return False
+        if skill.skill_type == SkillType.WEAPON:
+            return skill in [s[0] for s in self.weapon if s[1] and s[1] <= 5]
+        if skill.skill_type == SkillType.ASSIST:
+            return skill in (s[0] for s in self.assist if s[1] and s[1] <= 5)
+        if skill.skill_type == SkillType.SPECIAL:
+            return skill in (s[0] for s in self.special if s[1] and s[1] <= 5)
+        if skill.skill_type == SkillType.PASSIVE_A:
+            return skill in (s[0] for s in self.passive_a
+                             if s[1] and s[1] <= 5)
+        if skill.skill_type == SkillType.PASSIVE_B:
+            return skill in (s[0] for s in self.passive_b
+                             if s[1] and s[1] <= 5)
+        if skill.skill_type == SkillType.PASSIVE_C:
+            return skill in (s[0] for s in self.passive_c
+                             if s[1] and s[1] <= 5)
+        return False
 
     def equip(self, skill, *, force_seal=False, fail_fast=False,
               keyword_mode=False, max_rarity=5):
@@ -471,14 +492,20 @@ class Hero(object):
                 self.equipped.weapon = self.weapon_prf
             elif skill == 'summoned':
                 if not (fail_fast and self.equipped.weapon):
-                    self.equip(next((s[0] for s in self.weapon[::-1]
-                                     if s[2] and s[2] <= max_rarity), None))
+                    self.equipped.weapon = (
+                        next((s[0] for s in self.weapon[::-1]
+                              if s[2] and s[2] <= max_rarity), None)
+                    )
                 if not (fail_fast and self.equipped.assist):
-                    self.equip(next((s[0] for s in self.assist[::-1]
-                                     if s[2] and s[2] <= max_rarity), None))
+                    self.equipped.assist = (
+                        next((s[0] for s in self.assist[::-1]
+                              if s[2] and s[2] <= max_rarity), None)
+                    )
                 if not (fail_fast and self.equipped.special):
-                    self.equip(next((s[0] for s in self.special[::-1]
-                                     if s[2] and s[2] <= max_rarity), None))
+                    self.equipped.special = (
+                        next((s[0] for s in self.special[::-1]
+                              if s[2] and s[2] <= max_rarity), None)
+                    )
             else:
                 return False
             return True

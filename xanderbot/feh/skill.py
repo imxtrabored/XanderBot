@@ -260,6 +260,11 @@ class Skill(object):
         self.seal_small_badges = seal_small_badges
         self.seal_coins        = seal_coins
 
+    def __eq__(self, other):
+        if self.__class__ is other.__class__:
+            return self.index == other.index
+        return NotImplemented
+
     def get_refine(self, refine):
         if refine == Refine.EFFECT:
             return self.refine_eff
@@ -305,34 +310,47 @@ class Skill(object):
         return skill
 
     def set_tier_recursive(self):
-        if self.tier: return self.tier + 1
+        if self.tier:
+            return self.tier + 1
         if not self.prereq1:
             self.tier = 1
-        else: self.tier = self.prereq1.set_tier_recursive()
-        if self.prereq2: self.prereq2.set_tier_recursive()
+        else:
+            self.tier = self.prereq1.set_tier_recursive()
+        if self.prereq2:
+            self.tier = min(self.tier, self.prereq2.set_tier_recursive())
         return self.tier + 1
 
     def get_cumul_sp_recursive(self):
+        refine_sp = self.refine_sp if self.refine_path else 0
         if not self.prereq1:
-            if not self.refine_path:
-                return self.sp
-            return self.sp + self.refine_sp
+            return self.sp + refine_sp
         else:
-            if not self.refine_path:
-                return self.prereq1.get_cumul_sp_recursive() + self.sp
-            return (self.prereq1.get_cumul_sp_recursive() + self.sp
-                    + self.refine_sp)
+            return self.prereq1.get_cumul_sp_recursive() + self.sp + refine_sp
 
     def get_cumul_sp_hero_recur(self, hero):
-        if not self.prereq1:
-            if not self.refine_path:
-                return self.sp
-            return self.sp + self.refine_sp
+        self_sp = self.sp if hero.learns_skill(self) else self.sp * 3 // 2
+        if self.refine_path:
+            refine_sp = (self.refine_sp if hero.learns_skill(self)
+                         else self.refine_sp * 3 // 2)
         else:
-            if not self.refine_path:
-                return self.prereq1.get_cumul_sp_recursive() + self.sp
-            return (self.prereq1.get_cumul_sp_recursive() + self.sp
-                    + self.refine_sp)
+            refine_sp = 0
+        if not self.prereq1:
+            return self_sp + refine_sp
+        else:
+            if self.prereq2:
+                if hero.learns_skill(self.evolves_from):
+                    # KLUDGE KLUDGE FIX ME
+                    return min(
+                        self.prereq1.get_cumul_sp_hero_recur(hero)
+                        + self_sp + refine_sp,
+                        self.prereq2.get_cumul_sp_hero_recur(hero)
+                        + self.sp + min(refine_sp, self.refine_sp)
+                    )
+                return (min(self.prereq1.get_cumul_sp_hero_recur(hero),
+                            self.prereq2.get_cumul_sp_hero_recur(hero))
+                        + self_sp + refine_sp)
+            return (self.prereq1.get_cumul_sp_hero_recur(hero)
+                    + self_sp + refine_sp)
 
     def link(self, unit_lib):
         if self.prereq1_id:

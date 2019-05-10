@@ -48,21 +48,10 @@ class HeroTotalSp(CmdDefault):
                 hero.equipped.passive_c or Skill.EMPTY_PASSIVE_C,
             )
             for skill in skills:
-                sp = skill.get_cumul_sp_recursive()
+                sp = skill.get_cumul_sp_hero_recur(hero=hero)
                 total_sp += sp
-                inherit_sp = (
-                    sp * 3 // 2
-                    - (skill.refine_sp // 2 if skill.refine_path else 0)
-                )
-                sp_rows.append(
-                    f'{skill.icon}: **{sp} SP** '
-                    f'(**{inherit_sp} SP**) · '
-                    f'{skill.name}')
-            total_sp_text = (
-                f'Total SP: **{total_sp}**\n'
-                'Total SP if all skills are inherited: '
-                f'**{total_sp * 3 // 2}**'
-            )
+                sp_rows.append(f'{skill.icon}: **{sp} SP** · {skill.name}')
+            total_sp_text = f'Total SP: **{total_sp}**'
         else:
             skills = (
                 next((s[0] for s in hero.weapon[::-1] if s[1] <= hero.rarity),
