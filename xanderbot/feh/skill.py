@@ -323,6 +323,17 @@ class Skill(object):
             return (self.prereq1.get_cumul_sp_recursive() + self.sp
                     + self.refine_sp)
 
+    def get_cumul_sp_hero_recur(self, hero):
+        if not self.prereq1:
+            if not self.refine_path:
+                return self.sp
+            return self.sp + self.refine_sp
+        else:
+            if not self.refine_path:
+                return self.prereq1.get_cumul_sp_recursive() + self.sp
+            return (self.prereq1.get_cumul_sp_recursive() + self.sp
+                    + self.refine_sp)
+
     def link(self, unit_lib):
         if self.prereq1_id:
             self.prereq1 = unit_lib.get_rskill_by_id(self.prereq1_id)

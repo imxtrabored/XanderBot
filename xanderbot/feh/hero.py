@@ -460,7 +460,28 @@ class Hero(object):
         return sum((self.final_hp, self.final_atk, self.final_spd,
                     self.final_def, self.final_res))
 
-    def equip(self, skill, *, force_seal=False, fail_fast=False):
+    def learns_skill(self, skill):
+        pass
+
+    def equip(self, skill, *, force_seal=False, fail_fast=False,
+              keyword_mode=False, max_rarity=5):
+        if keyword_mode and skill.__class__ == str:
+            if (skill == 'prf' and self.weapon_prf
+                    and not (fail_fast and self.equipped.weapon)):
+                self.equipped.weapon = self.weapon_prf
+            elif skill == 'summoned':
+                if not (fail_fast and self.equipped.weapon):
+                    self.equip(next((s[0] for s in self.weapon[::-1]
+                                     if s[2] and s[2] <= max_rarity), None))
+                if not (fail_fast and self.equipped.assist):
+                    self.equip(next((s[0] for s in self.assist[::-1]
+                                     if s[2] and s[2] <= max_rarity), None))
+                if not (fail_fast and self.equipped.special):
+                    self.equip(next((s[0] for s in self.special[::-1]
+                                     if s[2] and s[2] <= max_rarity), None))
+            else:
+                return False
+            return True
         if (skill is None or self.weapon_type in skill.restrict_set
                 or self.move_type in skill.restrict_set
                 or (skill.exclusive
@@ -519,6 +540,8 @@ class Hero(object):
                     skill.equipped.passive_c = skill
             elif not fail_fast:
                 self.equipped.passive_c = skill
+        else:
+            return False
         return True
 
     def get_boons_banes(self):

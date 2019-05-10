@@ -256,17 +256,10 @@ def process_hero_args(hero, args, *, defer_iv_match=False):
             else:
                 bad_args.append(token.strip())
         elif 'summoned' in filtered:
-            max_rarity = rarity or hero.rarity
-            hero.equip(next((s[0] for s in hero.weapon[::-1]
-                             if s[2] and s[2] <= max_rarity), None))
-            hero.equip(next((s[0] for s in hero.assist[::-1]
-                             if s[2] and s[2] <= max_rarity), None))
-            hero.equip(next((s[0] for s in hero.special[::-1]
-                             if s[2] and s[2] <= max_rarity), None))
+            hero.equip('summoned', keyword_mode=True,
+                       max_rarity=rarity or hero.rarity)
         elif 'prf' in filtered:
-            if hero.weapon_prf is not None:
-                hero.equip(hero.weapon_prf)
-            else:
+            if not hero.equip('prf', keyword_mode=True):
                 not_allowed.append(token.strip())
         else:
             equip_status = try_equip(hero, filtered)

@@ -70,7 +70,8 @@ class DummyHero(Hero):
         )
         self.equip_list_all = []
 
-    def equip(self, skill, *, force_seal=False):
+    def equip(self, skill, *, force_seal=False, fail_fast=False,
+              keyword_mode=False, max_rarity=5):
         if force_seal:
             skill = copy(skill)
             skill.skill_type = SkillType.PASSIVE_SEAL
@@ -521,7 +522,7 @@ class UnitLib(object):
                 ]
             elif len(filtered_short) == 1:
                 hero_list = [(
-                        f'``({rw[2] or 0:·> {padding[0]}.{prec[0]}f})`` '
+                        f'``({rw[2] or 0:·>{padding[0]}.{prec[0]}f})`` '
                         f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
                         f'{em.get(cls.singleton.unit_list[rw[0]].move_type)} '
                         f'{rw[1]}'
@@ -532,7 +533,7 @@ class UnitLib(object):
                 hero_list = [(
                         f'''``{" | ".join([
                             f"{filtered_short[cou]}="
-                            f"{rw[cou+2] or 0:·> {padding[cou]}.{prec[cou]}f}"
+                            f"{rw[cou+2] or 0:·>{padding[cou]}.{prec[cou]}f}"
                             for cou in range(len(filtered_short))
                         ])}`` '''
                         f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
@@ -569,7 +570,7 @@ class UnitLib(object):
             for hero in heroes:
                 hero.equipped = copy(hero.equipped)
                 for skill in dummy_hero.equip_list_all:
-                    hero.equip(skill, fail_fast=True)
+                    hero.equip(skill, fail_fast=True, keyword_mode=True)
                     hero.update_stat_mods(
                         boon=dummy_hero.boon, bane=dummy_hero.bane,
                         merges=dummy_hero.merges, rarity=dummy_hero.rarity,
@@ -591,7 +592,7 @@ class UnitLib(object):
             elif len(filtered_short) == 1:
                 hero_list = [(
                         '``('
-                        f'{hero.sort_values or 0:·> {padding[0]}.{prec[0]}f}'
+                        f'{hero.sort_values or 0:·>{padding[0]}.{prec[0]}f}'
                         ')`` '
                         f'{em.get(hero.weapon_type)}{em.get(hero.move_type)} '
                         f'{hero.short_name}'
@@ -603,11 +604,10 @@ class UnitLib(object):
                         f'''``{" | ".join([
                             f"{filtered_short[cou]}="
                             f"""{hero.sort_values[cou] or 0
-                            :·> {padding[cou]}.{prec[cou]}f}"""
+                            :·>{padding[cou]}.{prec[cou]}f}"""
                             for cou in range(len(filtered_short))
                         ])}`` '''
-                        f'{em.get(hero.weapon_type)}'
-                        f'{em.get(hero.move_type)} '
+                        f'{em.get(hero.weapon_type)}{em.get(hero.move_type)} '
                         f'{hero.short_name}'
                     )
                     for hero in heroes
