@@ -1,6 +1,7 @@
 import asyncio
 from collections import namedtuple
 from enum import Enum
+from string import punctuation
 
 import discord
 
@@ -23,6 +24,7 @@ from command.hero_skills import HeroSkills
 from command.hero_sort import HeroSort
 from command.hero_stats import HeroStats
 from command.hero_total_sp import HeroTotalSp
+from command.minesweeper import Minesweeper
 from command.ping import Ping
 from command.skill_info import SkillInfo
 from command.skill_search import SkillSearch
@@ -37,6 +39,7 @@ except ImportError:
 else:
     easter_eggs = True
 
+REMOVE_PUNCT = str.maketrans('', '', punctuation)
 
 Reactable = namedtuple(
     'Reactable', 'bot_msg callback user data self_destruct task')
@@ -111,6 +114,8 @@ COMMAND_DICT = {
     'sort'       : HeroSort      ,
     'addalias'   : HeroAlias     ,
     'skillalias' : SkillAlias    ,
+    'minesweeper': Minesweeper   ,
+    'minesweep'  : Minesweeper   ,
     'ping'       : Ping          ,
     'devs'       : Devs          ,
     'developers' : Devs          ,
@@ -217,10 +222,8 @@ class XanderBotClient(discord.Client):
             asyncio.create_task(easter_egg.process_eggs(self, message))
         test_string = message.content[:4].lower()
         if not (
-                    test_string.startswith('f?')
-                    or test_string.startswith('feh?')
-                    or test_string.startswith('f!')
-                    or test_string.startswith('feh!')
+                test_string.startswith('f?')
+                or test_string.startswith('feh?')
             ):
             if (self.reply_listen
                     and message.author.id in self.replyable_library
@@ -266,7 +269,7 @@ class XanderBotClient(discord.Client):
             predicate = split_command[1]
         else: predicate = ''
         try:
-            command = split_command[0].lower()
+            command = split_command[0].lower().translate(REMOVE_PUNCT)
             if command in COMMAND_DICT:
                 command_type = COMMAND_DICT[command]
                 payload = await command_type.cmd(predicate, message.author.id)
@@ -325,7 +328,9 @@ class XanderBotClient(discord.Client):
 
         except discord.HTTPException as e:
             bot_reply = await message.channel.send(
-                'Discord connection or server issue. Please try again later.'
+                'HTTP Error. This may be an issue with the Discord servers '
+                'or connection, or may be an issue with my response. Please '
+                'try again later.'
             )
             self.register_editable(bot_reply, message, CmdDefault)
             raise e
@@ -345,15 +350,14 @@ class XanderBotClient(discord.Client):
         if not (
                 test_string.startswith('f?')
                 or test_string.startswith('feh?')
-                or test_string.startswith('f!')
-                or test_string.startswith('feh!')
             ):
             return
         if after.id not in self.editable_library:
             return
         msg_bundle = self.editable_library[after.id]
         bot_msg = msg_bundle.bot_msg
-        manage_messages = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
+        manage_messages = (bot_msg.channel.permissions_for(bot_msg.author)
+                           .manage_messages)
         if test_string.startswith('feh'):
             content = after.content[4:]
         else:
@@ -363,7 +367,7 @@ class XanderBotClient(discord.Client):
             predicate = split_command[1]
         else: predicate = ''
         try:
-            command = split_command[0].lower()
+            command = split_command[0].lower().translate(REMOVE_PUNCT)
             if command in COMMAND_DICT:
                 command_type = COMMAND_DICT[command]
                 payload = await command_type.cmd(predicate, after.author.id)
@@ -389,15 +393,19 @@ class XanderBotClient(discord.Client):
                             await bot_msg.clear_reactions()
                         for emoji in payload.reactable.emojis:
                             await bot_msg.add_reaction(emoji)
+                if command_type.LOGGING:
+                    await DiscordData.devs[0].send(
+                        content = f'{after.author}: {after.content}')
             else:
-                await bot_msg.edit(content = 'Command invalid!', embed = None)
+                await bot_msg.edit(content='Command invalid!', embed=None)
                 if manage_messages: await bot_msg.clear_reactions()
 
         except discord.HTTPException as e:
             await bot_msg.edit(
                 content = (
-                    'Discord connection or server issue. Please try again '
-                    'later.'
+                    'HTTP Error. This may be an issue with the Discord '
+                    'servers or connection, or may be an issue with my '
+                    'response. Please try again later.'
                 ),
                 embed = None
             )
@@ -415,14 +423,16 @@ class XanderBotClient(discord.Client):
 
     async def on_reaction_add(self, reaction, user):
         if (reaction.message.author != client.user
-            or user == client.user
-            or reaction.message.id not in self.reactable_library): return
+                or user == client.user
+                or reaction.message.id not in self.reactable_library):
+            return
         msg_bundle = self.reactable_library[reaction.message.id]
         if user != msg_bundle.user: return
         bot_msg = msg_bundle.bot_msg
         payload = await msg_bundle.callback(
             reaction, msg_bundle.data, user.id)
-        manage_msg = bot_msg.channel.permissions_for(bot_msg.author).manage_messages
+        manage_msg = (bot_msg.channel.permissions_for(bot_msg.author)
+                      .manage_messages)
         if manage_msg and payload.delete:
             asyncio.create_task(bot_msg.remove_reaction(reaction, user))
         if payload.replyable:
@@ -433,12 +443,13 @@ class XanderBotClient(discord.Client):
             if payload.embed is None and bot_msg.embeds:
                 embed = msg_bundle.bot_msg.embeds[0]
             else: embed = payload.embed
-            await msg_bundle.bot_msg.edit(content = content, embed = embed)
+            await msg_bundle.bot_msg.edit(content=content, embed=embed)
         if payload.self_destruct:
             payload.task.cancel()
 
     async def on_message_delete(self, message):
-        if message.author == self.user or message.id not in self.editable_library:
+        if (message.author == self.user
+                or message.id not in self.editable_library):
             return
         msg_bundle = self.editable_library[message.id]
         if msg_bundle.bot_msg in self.reactable_library:

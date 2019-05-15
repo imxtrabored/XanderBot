@@ -213,7 +213,10 @@ class UnitLib(object):
                 hero.passive_c.append((skill, index[2], index[3]))
             skill.learnable[index[2]].append(hero)
             if skill.exclusive:
+                # these ids are only used for valid hero build checks
                 skill.exclusive_to_id.add(index[0])
+                if skill.evolves_to:
+                    skill.evolves_to.exclusive_to_id.add(index[0])
         con.close()
         con = sqlite3.connect("feh/names.db")
         cur = con.cursor()

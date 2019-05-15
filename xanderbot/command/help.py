@@ -17,6 +17,7 @@ from command.hero_skills import HeroSkills
 from command.hero_sort import HeroSort
 from command.hero_stats import HeroStats
 from command.hero_total_sp import HeroTotalSp
+from command.minesweeper import Minesweeper
 from command.ping import Ping
 from command.skill_info import SkillInfo
 from command.skill_search import SkillSearch
@@ -158,6 +159,8 @@ COMMAND_DICT = {
     'sort'       : HeroSort,
     'addalias'   : HeroAlias,
     'skillalias' : SkillAlias,
+    'minesweeper': Minesweeper,
+    'minesweep'  : Minesweeper,
     'ping'       : Ping,
     'devs'       : Devs,
     'developers' : Devs,
