@@ -12,6 +12,7 @@ from command.hero_alias import HeroAlias
 from command.hero_alts import HeroAlts
 from command.hero_art import HeroArt
 from command.hero_compare import HeroCompare
+from command.hero_list import HeroList
 from command.hero_merges import HeroMerges
 from command.hero_skills import HeroSkills
 from command.hero_sort import HeroSort
@@ -156,11 +157,24 @@ COMMAND_DICT = {
     'art'        : HeroArt,
     'skill'      : SkillInfo,
     'skillsearch': SkillSearch,
+    'searchskills': SkillSearch,
+    'searchskill': SkillSearch,
+    'ssearch'    : SkillSearch,
+    'list'       : HeroList,
+    'herolist'   : HeroList,
+    'hlist'      : HeroList,
+    'listheroes' : HeroList,
+    'heroes'     : HeroList,
+    'herosearch' : HeroList,
+    'searchhero' : HeroList,
+    'searchheroes': HeroList,
+    'hsearch'    : HeroList,
     'sort'       : HeroSort,
     'addalias'   : HeroAlias,
     'skillalias' : SkillAlias,
     'minesweeper': Minesweeper,
     'minesweep'  : Minesweeper,
+    'mines'      : Minesweeper,
     'ping'       : Ping,
     'devs'       : Devs,
     'developers' : Devs,
