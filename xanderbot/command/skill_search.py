@@ -65,6 +65,7 @@ class SkillSearch(CmdDefault):
     def format_search(embed, results, param, zoom_state, start=0):
         if not results:
             start = -1
+            results = (tuple(), tuple())
             if 'fish' in param:
                 end = '🐟'
                 result = '🐟'

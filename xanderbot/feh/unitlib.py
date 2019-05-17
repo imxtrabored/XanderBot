@@ -39,8 +39,10 @@ WEAPON_LIT = re.compile(WEAPON_R)
 MOVE_LIT = re.compile(MOVE_R)
 SEARCH_SPECIAL_CHARS = '"&\'()*-|'
 ONLY_ALPHANUM = str.maketrans('', '', whitespace + punctuation)
-PUNCT_NON_SEARCH = str.maketrans('', '', punctuation.translate(
-    str.maketrans('', '', SEARCH_SPECIAL_CHARS)))
+PUNCT_NON_SEARCH_STR = punctuation.translate(
+    str.maketrans('', '', SEARCH_SPECIAL_CHARS))
+PUNCT_NON_SEARCH = str.maketrans(
+    PUNCT_NON_SEARCH_STR, ' ' * len(PUNCT_NON_SEARCH_STR))
 PARENTHETICAL = re.compile(r'\(.*\)')
 REMOVE_SEARCH_SPECIAL = str.maketrans(
     SEARCH_SPECIAL_CHARS, ' ' * len(SEARCH_SPECIAL_CHARS))
@@ -48,6 +50,7 @@ REMOVE_PUNCT = str.maketrans('', '', punctuation)
 REMOVE_WSPACE = str.maketrans('', '', whitespace)
 LSTRIP_SEARCH = whitespace + '*&|)'
 RSTRIP_SEARCH = whitespace + '-&|('
+HAS_DIGIT = re.compile(r'\d')
 
 
 class DummyHero(Hero):
@@ -191,6 +194,42 @@ class UnitLib(object):
         )
         for index in cur:
             hero = self.unit_list[index[0]]
+            skill = self.skill_list[index[1]]
+            if skill.skill_type == SkillType.WEAPON:
+                hero.weapon.append((skill, index[2], index[3]))
+                if skill.evolves_to is not None:
+                    if skill.exclusive:
+                        hero.weapon.append((skill.evolves_to, 12, None))
+                    else:
+                        hero.weapon.append((skill.evolves_to, 11, None))
+                if skill.exclusive:
+                    hero.weapon_prf = skill
+            elif skill.skill_type == SkillType.ASSIST:
+                hero.assist.append((skill, index[2], index[3]))
+            elif skill.skill_type == SkillType.SPECIAL:
+                hero.special .append((skill, index[2], index[3]))
+            elif skill.skill_type == SkillType.PASSIVE_A:
+                hero.passive_a.append((skill, index[2], index[3]))
+            elif skill.skill_type == SkillType.PASSIVE_B:
+                hero.passive_b.append((skill, index[2], index[3]))
+            elif skill.skill_type == SkillType.PASSIVE_C:
+                hero.passive_c.append((skill, index[2], index[3]))
+            skill.learnable[index[2]].append(hero)
+            if skill.exclusive:
+                # these ids are only used for valid hero build checks
+                skill.exclusive_to_id.add(index[0])
+                if skill.evolves_to:
+                    skill.evolves_to.exclusive_to_id.add(index[0])
+        cur.execute(
+            """SELECT enemy_skillsets.heroid, enemy_skillsets.skillid,
+            enemy_skillsets.unlockRarity, enemy_skillsets.defaultRarity
+            FROM enemy_skillsets
+            JOIN skills ON enemy_skillsets.skillid = skills.id
+            ORDER BY enemy_skillsets.heroid ASC,
+            enemy_skillsets.unlockRarity ASC, skills.exclusive ASC;"""
+        )
+        for index in cur:
+            hero = self.enemy_list[abs(index[0])]
             skill = self.skill_list[index[1]]
             if skill.skill_type == SkillType.WEAPON:
                 hero.weapon.append((skill, index[2], index[3]))
@@ -625,30 +664,110 @@ class UnitLib(object):
         con.close()
         return hero_list, ', '.join(filtered_disp), bad_args
 
-    #todo: THIS DOESNT WORK!!!
+    @classmethod
+    async def log_skill_search(cls, skill_name):
+        con = sqlite3.connect("feh/fehdata.db")
+        cur = con.cursor()
+        try:
+            cur.execute(
+                'INSERT INTO skill_search_log (search_str) '
+                'VALUES (?)', (skill_name,)
+            )
+        except sqlite3.OperationalError:
+            pass
+        else:
+            con.commit()
+        finally:
+            con.close()
+
     @classmethod
     def get_skill_by_search(cls, skill_name):
         skill_name = (
-            skill_name.translate(PUNCT_NON_SEARCH).lstrip(LSTRIP_SEARCH)
-            .rstrip(RSTRIP_SEARCH).replace('&', ' AND ').replace('|', ' OR ')
-            .replace('-', ' NOT ')
+            skill_name.replace('+', ' plus ').translate(PUNCT_NON_SEARCH)
+            .lstrip(LSTRIP_SEARCH).rstrip(RSTRIP_SEARCH).replace('&', ' AND ')
+            .replace('|', ' OR ').replace('-', ' NOT ')
         )
         if skill_name.startswith(' NOT'):
-            skill_name = 'tags' + skill_name
+            skill_name = 'any' + skill_name
+        if 'random' in skill_name:
+            order_by = 'RANDOM()'
+            logging = False
+        else:
+            order_by = (
+                'LENGTH(skill_search.tags) '
+                '+ LENGTH(skill_search.search_name) ASC, '
+                'skills.skill_rank DESC, skill_search.id ASC')
+            logging = True
+        if HAS_DIGIT.search(skill_name):
+            num_results = 2
+        else:
+            num_results = 4
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
-        cur.execute(
-            'SELECT id FROM skill_fullsearch WHERE skill_fullsearch MATCH ? '
-            'ORDER BY RANDOM() LIMIT 2',
-            (skill_name,)
-        )
+        try:
+            cur.execute(
+                'SELECT skill_search.id FROM skill_search '
+                'LEFT JOIN skills ON skill_search.id = skills.id '
+                'WHERE skill_search MATCH ? '
+                'AND skill_search.is_real_skill = 1 '
+                f'ORDER BY {order_by} LIMIT {num_results}',
+                (f'{{search_name tags random}} : ({skill_name})',)
+            )
+        except sqlite3.OperationalError:
+            skill_name = skill_name.translate(REMOVE_SEARCH_SPECIAL)
+            try:
+                cur.execute(
+                    'SELECT skill_search.id FROM skill_search '
+                    'LEFT JOIN skills ON skill_search.id = skills.id '
+                    'WHERE skill_search MATCH ? '
+                    'AND skill_search.is_real_skill = 1 '
+                    f'ORDER BY {order_by} LIMIT {num_results}',
+                    (f'{{search_name tags random}} : ({skill_name})',)
+                )
+            except sqlite3.OperationalError:
+                con.close()
+                return None
         skill_id = cur.fetchone()
+        if skill_id is None:
+            try:
+                cur.execute(
+                    'SELECT skill_search.id FROM skill_search '
+                    'LEFT JOIN skills ON skill_search.id = skills.id '
+                    'WHERE skill_search MATCH ? '
+                    'AND skill_search.is_real_skill = 1 '
+                    f'ORDER BY {order_by} LIMIT {num_results}',
+                    ('{search_name type exclusive tags wielder random} : '
+                     f'({skill_name})',)
+                )
+            except sqlite3.OperationalError:
+                skill_name = skill_name.translate(REMOVE_SEARCH_SPECIAL)
+                try:
+                    cur.execute(
+                        'SELECT skill_search.id FROM skill_search '
+                        'LEFT JOIN skills ON skill_search.id = skills.id '
+                        'WHERE skill_search MATCH ? '
+                        'AND skill_search.is_real_skill = 1 '
+                        f'ORDER BY {order_by} LIMIT {num_results}',
+                        ('{search_name type exclusive tags wielder random} : '
+                         f'({skill_name})',)
+                    )
+                except sqlite3.OperationalError:
+                    con.close()
+                    return None
+            skill_id = cur.fetchone()
         if skill_id is not None:
             skill = cls.singleton.skill_list[skill_id[0]]
-            if cur.fetchone() is None:
+            if len(cur.fetchall()) < num_results - 1:
                 asyncio.create_task(
-                    cls.insert_skill_alias(skill, cls.filter_name(skill_name)))
+                    cls.insert_skill_alias(
+                        cls.singleton.skill_list[skill_id[0]],
+                        cls.filter_name(skill_name))
+                    )
+            elif logging:
+                asyncio.create_task(log_skill_search(skill_name))
+            con.close()
             return skill
+        con.close()
         return None
        
     @classmethod
@@ -688,7 +807,7 @@ class UnitLib(object):
             skill = cls.singleton.skill_names[search_name]
             ref_type = None
         else:
-            return None
+            return cls.get_skill_by_search(skill_name)
         if ref_type:
             refine = skill.get_refine(ref_type)
             if refine is None and skill.postreq: # fail case
@@ -696,7 +815,16 @@ class UnitLib(object):
                 if new_refine is not None:
                     skill = skill.postreq[0]
                     refine = new_refine
-            skill = skill.get_refined(refine)
+            if refine is None:
+                if search_name in cls.singleton.skill_names:
+                    return cls.singleton.skill_names[search_name]
+                elif (search_name.endswith('plus')
+                        and search_name[:-4] in cls.singleton.skill_names):
+                    return cls.singleton.skill_names[search_name[:-4]]
+                else:
+                    return cls.get_skill_by_search(skill_name)
+            else:
+                skill = skill.get_refined(refine)
         return skill
 
     @classmethod
@@ -717,24 +845,28 @@ class UnitLib(object):
             search_str = 'any' + search_str
         try:
             cur.execute(
-                'SELECT id, identity, '
+                'SELECT icon_id, identity, '
                 'snippet(skill_search, -1, "**", "**", "…", 10) '
                 'FROM skill_search '
-                'WHERE skill_search MATCH ? ORDER BY rank ASC;',
-                (search_str,)
+                'WHERE skill_search MATCH ? AND search_relevant = 1 '
+                'ORDER BY rank ASC;',
+                ('{identity description type exclusive tags wielder} : '
+                 f'({search_str})',)
             )
         except sqlite3.OperationalError:
             #EAFP
             search_str = search_str.translate(REMOVE_SEARCH_SPECIAL)
             try:
                 cur.execute(
-                    'SELECT id, identity, '
+                    'SELECT icon_id, identity, '
                     'snippet(skill_search, -1, "**", "**", "…", 10) '
                     'FROM skill_search '
                     'WHERE skill_search MATCH ? ORDER BY rank ASC;',
-                    (search_str,)
+                    ('{identity description type exclusive tags wielder} : '
+                     f'({search_str})',)
                 )
             except sqlite3.OperationalError:
+                con.close()
                 return None
         results = tuple(zip(*[(
                 f'{cls.singleton.skill_list[int(result[0])].icon} {result[1]}',
