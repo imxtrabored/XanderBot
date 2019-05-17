@@ -1,3 +1,5 @@
+from asyncio import create_task
+
 from command.cmd_default import CmdDefault
 from command.common import DiscordData, ReplyPayload, filter_name
 from feh.unitlib import UnitLib
@@ -44,19 +46,21 @@ class SkillAlias(CmdDefault):
         skills = [UnitLib.get_skill(n) for n in names]
         if len(names) == 2:
             if skills[0] and not skills[1]:
-                UnitLib.insert_skill_alias(skills[0], names[1])
+                await UnitLib.insert_skill_alias(skills[0], names[1])
                 content = (f'Added alias {tokens[1].strip()} for '
                            f'{skills[0].name}.')
-                await DiscordData.devs[0].send(
+                create_task(DiscordData.devs[0].send(
                     #f'{message.author.name}#{message.author.discriminator} '
-                    f'added alias {names[1]} for {skills[0].name}.')
+                    f'added alias {names[1]} for {skills[0].name}.'
+                ))
             elif skills[1] and not skills[0]:
-                UnitLib.insert_skill_alias(skills[1], names[0])
+                await UnitLib.insert_skill_alias(skills[1], names[0])
                 content = (f'Added alias {tokens[0].strip()} for '
                            f'{skills[1].name}.')
-                await DiscordData.devs[0].send(
+                create_task(DiscordData.devs[0].send(
                     #f'{message.author.name}#{message.author.discriminator} '
-                    f'added alias {names[0]} for {skills[1].name}.')
+                    f'added alias {names[0]} for {skills[1].name}.'
+                ))
             elif skills[0] and skills[1]:
                 content = 'All names are already skill aliases!'
             else:
@@ -67,7 +71,7 @@ class SkillAlias(CmdDefault):
             else:
                 added_names = [
                     name for name in names[1:]
-                    if UnitLib.insert_skill_alias(skills[0], name)
+                    if await UnitLib.insert_skill_alias(skills[0], name)
                 ]
                 if added_names:
                     name_list = ', '.join(added_names)
@@ -75,8 +79,10 @@ class SkillAlias(CmdDefault):
                         f'Added aliases for {skills[0].identity}:\n'
                         f'{name_list}'
                     )
-                    await DiscordData.devs[0].send(
+                    create_task(DiscordData.devs[0].send(
                         f'added aliases for {skills[0].identity}:\n'
-                        f'{name_list}')
-                else: content = 'All names are already aliases.'
+                        f'{name_list}'
+                    ))
+                else:
+                    content = 'All names are already aliases.'
         return ReplyPayload(content=content)

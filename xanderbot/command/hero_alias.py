@@ -1,3 +1,5 @@
+from asyncio import create_task
+
 from command.cmd_default import CmdDefault, ReplyPayload
 from command.common import DiscordData, filter_name
 from feh.unitlib import UnitLib
@@ -45,16 +47,18 @@ class HeroAlias(CmdDefault):
                 await UnitLib.insert_hero_alias(heroes[0], names[1])
                 content = (f'Added alias {tokens[1].strip()} for '
                            f'{heroes[0].short_name}.')
-                await DiscordData.devs[0].send(
+                create_task(DiscordData.devs[0].send(
                     #f'{message.author.name}#{message.author.discriminator} '
-                    f'added alias {names[1]} for {heroes[0].short_name}.')
+                    f'added alias {names[1]} for {heroes[0].short_name}.'
+                ))
             elif heroes[1] and not heroes[0]:
                 await UnitLib.insert_hero_alias(heroes[1], names[0])
                 content = (f'Added alias {tokens[0].strip()} for '
                            f'{heroes[1].short_name}.')
-                await DiscordData.devs[0].send(
+                create_task(DiscordData.devs[0].send(
                     #f'{message.author.name}#{message.author.discriminator} '
-                    f'added alias {names[0]} for {heroes[1].short_name}.')
+                    f'added alias {names[0]} for {heroes[1].short_name}.'
+                ))
             elif heroes[0] and heroes[1]:
                 content = 'All names are already hero aliases!'
             else:
@@ -73,9 +77,10 @@ class HeroAlias(CmdDefault):
                         f'Added aliases for {heroes[0].short_name}:\n'
                         f'{name_list}'
                     )
-                    await DiscordData.devs[0].send(
+                    create_task(DiscordData.devs[0].send(
                         f'added aliases for {heroes[0].short_name}:\n'
                         f'{name_list}'
-                    )
-                else: content = 'All names are already aliases.'
+                    ))
+                else:
+                    content = 'All names are already aliases.'
         return ReplyPayload(content=content)
