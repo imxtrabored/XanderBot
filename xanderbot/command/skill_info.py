@@ -119,8 +119,7 @@ class SkillInfo(CmdDefault):
             if skill.postreq:
                 postreq_list = [
                     f'{postreq.icon} {postreq.name}'
-                    for postreq in skill.postreq
-                    if not postreq.exclusive
+                    for postreq in skill.postreq if not postreq.exclusive
                 ]
                 prf_postreq_count = len(skill.postreq) - len(postreq_list)
                 # optimize note?
@@ -144,7 +143,7 @@ class SkillInfo(CmdDefault):
             )
             if skill.evolves_from:
                 evolve_src = (
-                    f'**Evolves from:** '
+                    '**Evolves from:** '
                     f'{skill.evolves_from.icon} {skill.evolves_from.name}')
             else: evolve_src = None
         else:

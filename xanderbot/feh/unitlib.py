@@ -20,7 +20,7 @@ FULL_SHORTNAMES = re.compile(r'^[cwmasdrh]+$')
 TOP_SYNONYMS = re.compile(
     r'\s*(?:top|highest|best|most|greatest|descending|down|high|big)\s*')
 STAT_NAMES_R = (
-    r'\bh(?:p|it(?:points)?)?\b'
+    r'\bh(?:p|it(?:points?)?)?\b'
     r'|\ba(?:t(?:k|tack))?\b'
     r'|\bs(?:p(?:d|eed))?\b'
     r'|\bd(?:ef(?:en[cs]e)?)?\b'
@@ -325,7 +325,9 @@ class UnitLib(object):
                         cls.singleton.unit_list[hero_id[0]],
                         cls.filter_name(hero_name))
                     )
+            con.close()
             return hero
+        con.close()
         return None
 
     @classmethod
@@ -462,7 +464,8 @@ class UnitLib(object):
                                 'LIMIT 1',
                                 parameterized
                             )
-                        except sqlite3.OperationalError as e:
+                        except sqlite3.OperationalError:
+                            con.close()
                             return None, '', ()
                         if equip_terms:
                             filtered_order.append(
@@ -476,6 +479,7 @@ class UnitLib(object):
                             )
                         max_val = cur.fetchone()
                         if max_val is None:
+                            con.close()
                             return (), '', ()
                         max_val = max_val[0]
                         try:
@@ -490,7 +494,8 @@ class UnitLib(object):
                                 'LIMIT 1',
                                 parameterized
                             )
-                        except sqlite3.OperationalError as e:
+                        except sqlite3.OperationalError:
+                            con.close()
                             return None, '', ()
                         negative = cur.fetchone()[0]
                         if max_val is not None and max_val != 0:
@@ -513,7 +518,8 @@ class UnitLib(object):
                     f'ORDER BY {", ".join(filtered_order)}',
                     parameterized
                 )
-            except sqlite3.OperationalError as e:
+            except sqlite3.OperationalError:
+                con.close()
                 return None, '', ()
             if len(filtered_short) == 0:
                 hero_list = [(
@@ -564,7 +570,8 @@ class UnitLib(object):
                     f'{match}',
                     parameterized
                 )
-            except sqlite3.OperationalError as e:
+            except sqlite3.OperationalError:
+                con.close()
                 return None, '', ()
             heroes = [copy(cls.singleton.unit_list[row[0]]) for row in cur]
             sort_dummy = f'({", ".join(filtered_order)})'.replace('\*', '*')
@@ -760,7 +767,7 @@ class UnitLib(object):
         return True
 
     @classmethod
-    def insert_skill_alias(cls, skill, name):
+    async def insert_skill_alias(cls, skill, name):
         if name in cls.singleton.skill_names:
             return False
         con = sqlite3.connect("feh/names.db")
