@@ -670,7 +670,7 @@ class UnitLib(object):
         cur = con.cursor()
         try:
             cur.execute(
-                'INSERT INTO skill_search_log (search_str) '
+                'INSERT OR IGNORE INTO skill_search_log (search_str) '
                 'VALUES (?)', (skill_name,)
             )
         except sqlite3.OperationalError:
