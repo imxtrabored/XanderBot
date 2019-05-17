@@ -73,9 +73,9 @@ class DiscordData:
     async def setup_commands(cls, client):
         cls.client = client
         cls.devs = []
-        cls.devs.append(await client.get_user_info(151913154803269633))
-        cls.devs.append(await client.get_user_info(196379129472352256))
-        cls.devs.append(await client.get_user_info(248284024097734658))
+        cls.devs.append(await client.fetch_user(151913154803269633))
+        cls.devs.append(await client.fetch_user(196379129472352256))
+        cls.devs.append(await client.fetch_user(248284024097734658))
 
 
 class ReactMenu(NamedTuple):
