@@ -95,7 +95,7 @@ class Skill(object):
         'evolves_from', 'evolve_from_id',
         'seal_badge_color', 'seal_great_badges', 'seal_small_badges',
         'seal_coins',
-        'skill_rank', 'tier',
+        'skill_rank', 'tier', 'duel_bst'
     )
 
     def __init__(
@@ -124,7 +124,7 @@ class Skill(object):
             evolve_dew = 0, evolve_from = None,
             seal_badge_color = 1, seal_great_badges = 0, seal_small_badges = 0,
             seal_coins = 0,
-            skill_rank = 0, tier = 0,
+            skill_rank = 0, tier = 0, duel_bst = None
     ):
         '''theres no way to make this look pretty is there haw haw haw'''
 
@@ -140,6 +140,7 @@ class Skill(object):
         self.w_icon = ''
         self.skill_rank = skill_rank
         self.tier = tier
+        self.duel_bst = duel_bst
 
         self.is_staff = staff_exclusive
         self.is_seal = is_seal

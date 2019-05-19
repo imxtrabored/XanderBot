@@ -47,7 +47,7 @@ class BarracksSave(CmdDefault):
                             callback=callback_save,
                             content=('Enter a new name for custom '
                                      f'{hero.short_name} (or "cancel"):'
-                            ),
+                                     ),
                             data=hero
                         )
                     )

@@ -471,6 +471,69 @@ class Hero(object):
         return sum((self.final_hp, self.final_atk, self.final_spd,
                     self.final_def, self.final_res))
 
+    @property
+    def bst_score(self):
+        max_hp  = (self.iv_hp  + self.rmod_hp
+               + Hero.STATS_RARITY[self.rarity][self.grow_hp // 5])
+        max_atk = (self.iv_atk + self.rmod_atk
+               + Hero.STATS_RARITY[self.rarity][self.grow_atk // 5])
+        max_spd = (self.iv_spd + self.rmod_spd
+               + Hero.STATS_RARITY[self.rarity][self.grow_spd // 5])
+        max_def = (self.iv_def + self.rmod_def
+               + Hero.STATS_RARITY[self.rarity][self.grow_def // 5])
+        max_res = (self.iv_res + self.rmod_res
+               + Hero.STATS_RARITY[self.rarity][self.grow_res // 5])
+        bonus = 0
+        if self.merges > 0:
+            if self.bane == Stat.NONE:
+                bonus = 3
+            elif self.bane == Stat.HP:
+                max_hp  += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_hp + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_hp // 5] + 1
+                )
+            elif self.bane == Stat.ATK:
+                max_atk += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_atk + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_atk // 5] + 1
+                )
+            elif self.bane == Stat.SPD:
+                max_spd += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_spd + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_spd // 5] + 1
+                )
+            elif self.bane == Stat.DEF:
+                max_def += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_def + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_def // 5] + 1
+                )
+            elif self.bane == Stat.RES:
+                max_res += (
+                    Hero.STATS_RARITY[self.rarity][(self.grow_res + 5) // 5]
+                    - Hero.STATS_RARITY[self.rarity][self.grow_res // 5] + 1
+                )
+        bst = max_hp + max_atk + max_spd + max_def + max_res + bonus
+        if self.rarity == 5 and self.level == 40:
+            duel_skills = [skill.duel_bst for skill in self.equipped
+                           if skill.duel_bst]
+            if any(duel_skills):
+                bst = max(bst, max(duel_skills))
+            if self.is_legend and self.legend_boost == LegendStat.DUEL:
+                bst = max(bst, 175)
+        if self.rarity == 5:
+            rfactor = 182
+        elif self.rarity == 4:
+            rfactor = 168
+        elif self.rarity == 3:
+            rfactor = 158
+        elif self.rarity == 2:
+            rfactor = 146
+        else:
+            rfactor = 136
+        sp_score = sum([skill.sp for skill in self.equipped]) // 100 * 2
+        return (390 + self.rarity * 4 + rfactor * self.level // 39
+                + bst // 5 * 2 + self.merges * 4 + sp_score)
+
     def learns_skill(self, skill):
         if skill is None:
             return False
@@ -991,7 +1054,7 @@ class Hero(object):
         elif pair is not None:
             self.update_pair(pair)
         if (rarity or update_boons or merges is not None or flowers is not None
-            or summ_support is not None or pair is not None or unpair):
+                or summ_support is not None or pair is not None or unpair):
             self.recalc_stats()
 
     def get_merge_table(self):

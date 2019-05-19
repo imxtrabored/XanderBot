@@ -171,7 +171,7 @@ class UnitLib(object):
             refine_staff1, refine_staff2, refine_atk, refine_spd, refine_def,
             refine_res, evolves_to, evolve_medals, evolve_stones, evolve_dew,
             evolves_from, seal_badge_color, seal_great_badges,
-            seal_small_badges, seal_coins, skill_rank, tier
+            seal_small_badges, seal_coins, skill_rank, tier, duel_bst
             FROM skills ORDER BY id ASC;"""
         )
         self.skill_list = [None,]

@@ -10,7 +10,7 @@ from command.common import (
 from command.common_barracks import callback_save
 from feh.currency import Dragonflower
 from feh.emojilib import EmojiLib as em
-from feh.hero import Hero, Rarity, Stat
+from feh.hero import Hero, Rarity, Stat, LegendElement
 from feh.interface import DragonflowerInc, RarityInc
 from feh.skill import Skill
 from feh.unitlib import UnitLib
@@ -66,9 +66,22 @@ class HeroInfo(CmdDefault):
             else:
                 legend_desc = ''
             hero_desc = f'\n```{hero.description}```'
+            if not hero.is_legend:
+                blessing_text = '(+4 per matched blessing)'
+            elif hero.legend_element in {
+                    LegendElement.LIGHT, LegendElement.DARK,
+                    LegendElement.ASTRA, LegendElement.ANIMA
+                    }:
+                blessing_text = ('(+4 per active Legendary blessing\n'
+                                 'during matching Mythic season)')
+            else:
+                blessing_text = ''
+            bst_score = (f'\nArena/Allegiance Score: {hero.bst_score}\n'
+                         f'{blessing_text}')
         else:
             legend_desc = ''
             hero_desc = ''
+            bst_score = ''
         desc_level = (
             f'{legend_desc}{desc_rarity} LV. {hero.level}+{hero.merges} · '
             f'{em.get(Dragonflower.get_move(hero.move_type))}+{hero.flowers}'
@@ -83,7 +96,7 @@ class HeroInfo(CmdDefault):
                 f'{em.get(Stat.SPD)} Spd: {hero_stats[2]}\n'
                 f'{em.get(Stat.DEF)} Def: {hero_stats[3]}\n'
                 f'{em.get(Stat.RES)} Res: {hero_stats[4]}\n\n'
-                f'Total: {sum(hero_stats)}'
+                f'Total: {sum(hero_stats)}{bst_score}'
             )
             weapon = hero.equipped.weapon or Skill.EMPTY_WEAPON
             assist = hero.equipped.assist or Skill.EMPTY_ASSIST
@@ -105,7 +118,7 @@ class HeroInfo(CmdDefault):
                 f'{em.get(Stat.SPD)} Spd: {hero.max_spd}{superboons[2]}\n'
                 f'{em.get(Stat.DEF)} Def: {hero.max_def}{superboons[3]}\n'
                 f'{em.get(Stat.RES)} Res: {hero.max_res}{superboons[4]}\n\n'
-                f'Total: {hero.max_total}'
+                f'Total: {hero.max_total}{bst_score}'
             )
             weapon = next((s[0] for s in hero.weapon[::-1]
                            if s[1] <= hero.rarity), Skill.EMPTY_WEAPON)
