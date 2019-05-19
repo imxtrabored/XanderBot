@@ -13,7 +13,12 @@ class HeroTotalSp(CmdDefault):
         'a hero\'s equipped skills.\n\n'
         'Usage: ``f?totalsp {hero name}, {modifier 1}, {modifier 2}, '
         '{additional modifiers...}``\n\n'
-        'Note: This command will be redesigned soon to make it more useful.\n'
+        'Note: This command finds the least amount of SP needed to learn the '
+        'given skills and the minimum amount of prerequisites, based on which '
+        'skills the hero can learn naturally and which skills must be '
+        'inherited. The actual amount you need may vary slightly based on '
+        'which skills the hero already knows and which inheritance routes they '
+        'take.\n'
         'For help on hero modifier syntax, use ``f?help syntax``.'
     )
 
@@ -80,6 +85,10 @@ class HeroTotalSp(CmdDefault):
             url=('https://raw.githubusercontent.com/imxtrabored/XanderBot/'
                  f'master/xanderbot/feh/data/heroes/{hero.index}/Face.png')
         )
+        embed.set_footer(text=(
+            'Note that this is the minimum SP needed to learn these skills. '
+            'Actual SP may vary slightly based on inheritance route.'
+        ))
         err_text = []
         if any(bad_args):
             err_text.append('I did not understand the following: '

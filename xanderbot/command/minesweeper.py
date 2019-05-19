@@ -51,7 +51,25 @@ INT_2_EMOJI = {
 class Minesweeper(CmdDefault):
     """description of class"""
 
-    help_text = 'No help is available for this command.'
+    help_text = (
+        'The ``minesweeper`` command generates a game of Minesweeper.\n\n'
+        'Usage: ``f?minesweeper {options}``\n\n'
+        'The goal of the game is to reveal all safe tiles that do not contain '
+        'mines. Each tile without a mine has a number from 0 - 8, indicating '
+        'how many of the adjacent tiles contain mines (including diagonally). '
+        'The player loses when they reveal a mine.\n\n'
+        'The options for this command let you set the difficulty or create a '
+        'custom difficulty.\n\n'
+        'The difficulty settings are as follows:\n'
+        'Easy: 9x9, 10 mines\n'
+        'Medium: 17x15, 40 mines\n'
+        'Hard: 32x15, 99 mines\n\n'
+        'To set a custom difficulty, specify the board size using '
+        '``len {length}, wid {width}`` or ``{length} * {width}``, or a '
+        'similar format (the parser is accomodating). Then, set the mine count '
+        'with ``mines {count}``. Each parameter also works with one-letter '
+        'abbreviations.'
+    )
 
     @staticmethod
     async def cmd(params, user_id):
@@ -61,18 +79,18 @@ class Minesweeper(CmdDefault):
         difficulty_str = EASY_STR
         for param in params.lower().replace('*', 'by').split(','):
             param = param.translate(TRANSTAB)
-            if 'easy' in param:
+            if 'easy' in param or param == 'e':
                 length = EASY_LEN
                 width = EASY_WID
                 mines = EASY_MINES
                 difficulty_str = EASY_STR
             elif ('med' in param or 'interm' in param or 'mid' in param
-                  or 'normal' in param):
+                  or 'normal' in param or param == 'm'):
                 length = MED_LEN
                 width = MED_WID
                 mines = MED_MINES
                 difficulty_str = MED_STR
-            elif 'hard' in param or 'difficult' in param:
+            elif 'hard' in param or 'difficult' in param or param == 'h':
                 length = HARD_LEN
                 width = HARD_WID
                 mines = HARD_MINES
@@ -151,8 +169,7 @@ class Minesweeper(CmdDefault):
                        f'{length} x {width}, {mines} mines')
         if length * width * 11 < 2000:
             embed.description = '\n'.join([' '.join([
-                INT_2_EMOJI[val] for val in row]) for row in grid]
-            )
+                INT_2_EMOJI[val] for val in row]) for row in grid])
         else:
             max_field = 1000 // (width * 11) # good enough approximation
             num_fields = length // max_field + (length % max_field > 0)

@@ -13,6 +13,32 @@ PAGE_LIMIT = 24
 
 class HeroList(CmdDefault):
 
+    help_text = (
+        'The ``list`` command lists all heroes that match the provided search '
+        'parameters.\n\n'
+        'Usage: ``f?list {search params}``\n\n'
+        'For a similar search that lets you sort heroes by their attributes, '
+        'see the ``sort`` command, which operates similarly to this command.'
+        '\n\n'
+        'Special syntax for search:\n'
+        'The logical operators ``AND``, ``OR``, and ``NOT`` can be '
+        'represented by the symbols ``&``, ``|``, and ``-``, respectively. '
+        '``&`` is somewhat redundant as it is implicit between terms, but it '
+        'is needed for logical groupings.\n'
+        'Parentheses ``()`` can be used to logically group terms for logical '
+        'operators. The implicit ``AND`` operator is NOT inserted before or '
+        'after parenthetical statements.\n'
+        'Double quotation marks (``"``) group terms together as a single '
+        'string. For instance, ``turn 1`` will match any skills with "turn" '
+        'and "1" anywhere in their description, but ``"turn 1"`` will only '
+        'match skills with exactly "turn 1" in their description.\n'
+        'The asterisk (``*``) symbol immediately following a term marks it as '
+        'a prefix token. For instance, ``sword*`` will match any word that '
+        'begins with "sword", such as "swordbreaker".\n'
+        'If your search contains a syntax error, the search will be attempted '
+        'with all special operators stripped out instead.'
+    )
+
     REACT_MENU = (
         '⬆',
         '⬇',

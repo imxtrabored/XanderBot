@@ -16,6 +16,39 @@ PAGE_LIMIT = 24
 
 class HeroSort(CmdDefault):
 
+    help_text = (
+        'The ``sort`` command displays all heroes in the game that match '
+        'the search terms ordered by the specified sort terms.\n\n'
+        'Usage: ``f?sort {sort terms} from {search terms} with {modifiers}``'
+        '\n\n'
+        'The sort terms can contain any number of any hero attribute (hp, '
+        'atk, spd, def, res), any of the four basic arithmetic operators '
+        '(+ - * /), and the attributes color, weapon, or move, separated by '
+        'commas. Each attribute can be optionally reduced to one letter. This '
+        'allows for flexibly searching for the top heroes in any category.\n\n'
+        'Example Searches:\n'
+        '``f?sort h + d`` will sort all heroes by their total physical bulk '
+        '(HP + Def).\n'
+        '``f?sort d * r, h from dragons`` will sort all dragons by Def * Res, '
+        'then by HP. This shows which dragon units make the best mixed tanks '
+        '(since Def * Res biases towards units with equally high values in '
+        'both).\n'
+        '``f?sort cwma from prf with prf, +atk`` will show each hero that has '
+        'a Prf weapon skill ordered by the categories Color, Weapon type, and '
+        'Move type. Within each category, the heroes are sorted by their '
+        'total Atk stat when their Prf weapon is equipped and with an asset '
+        'in Attack.\n\n'
+        'Note that the hero modifiers work slightly differently for this '
+        'command. When multiple skills for the same slot are provided, each '
+        'hero will equip the _first_ skill that they are able to equip. For '
+        'example, ``f?sort a from blue mages with prf, thoron+`` will equip '
+        'each hero with access to a Prf weapon with that Prf weapon, and each '
+        'other hero will be equipped with Thoron+.\n\n'
+        'The search terms for this command use the same "Special syntax for '
+        'search" rules as the ``list`` command; see ``f?help list`` for '
+        'details.'
+    )
+
     REACT_MENU = (
         '⬆',
         '⬇',

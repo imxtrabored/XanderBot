@@ -16,6 +16,12 @@ class SkillInfo(CmdDefault):
         'The ``skill`` command displays details about a skill (weapons, '
         'assists, specials, passives, or sacred seals).\n\n'
         'Usage: ``f?skill {skill name}``\n\n'
+        'If a name input matches more than one skill, the most relevant skill '
+        'is displayed. You can also include the word ``random`` to find a '
+        'random skill of a certain type; e.g. ``f?skill random stance`` or '
+        '``f?skill random lance``. This type of usage also allows similar '
+        'logical operators to the ``skillsearch`` command; see ``f?help '
+        'skillsearch``for more details.\n\n'
         'Note: To display information on the skills known by a hero, by '
         'default, use the ``skills`` (with an s) command.'
     )
