@@ -602,6 +602,7 @@ class UnitLib(object):
                 lambda match: match.group().replace(',', TEMP_SEP), equip_terms)
             hero_args = eq_tokens.split(',')
             dummy_hero = copy(DUMMY_HERO)
+            dummy_hero.equip_list_all = copy(dummy_hero.equip_list_all)
             dummy_hero, bad_args, not_allowed = (
                 command.common.process_hero_args(
                     dummy_hero, hero_args, user_id))
