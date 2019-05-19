@@ -160,18 +160,23 @@ class UnitLib(object):
         cur.execute(
             """SELECT id, identity, name, description, type, weapon_type,
             staff_exclusive, is_seal, is_refine, is_refined_variant, range,
-            might, eff_infantry, eff_armor, eff_cavalry, eff_flier,
-            eff_magic, eff_dragon, hp, atk, spd, def, res, cd_mod,
-            special_cd, prereq1, prereq2, sp, exclusive, infantry, armor,
-            cavalry, flier, r_sword, r_tome, r_breath, b_lance, b_tome,
-            b_breath, g_axe, g_tome, g_breath, c_bow, c_dagger, c_staff,
-            c_breath, r_bow, b_bow, g_bow, r_dagger, b_dagger, g_dagger,
-            r_beast, b_beast, g_beast, c_beast, refinable, refined_version,
-            refine_sp, refine_medals, refine_stones, refine_dew, refine_eff,
-            refine_staff1, refine_staff2, refine_atk, refine_spd, refine_def,
-            refine_res, evolves_to, evolve_medals, evolve_stones, evolve_dew,
-            evolves_from, seal_badge_color, seal_great_badges,
-            seal_small_badges, seal_coins, skill_rank, tier, duel_bst
+            might, hp, atk, spd, def, res, cd_mod, special_cd, prereq1,
+            prereq2, sp, exclusive, eff_infantry, eff_armor, eff_cavalry,
+            eff_flier, eff_r_sword, eff_b_lance, eff_g_axe, eff_r_bow,
+            eff_b_bow, eff_g_bow, eff_c_bow, eff_r_dagger, eff_b_dagger,
+            eff_g_dagger, eff_c_dagger, eff_r_tome, eff_b_tome, eff_g_tome,
+            eff_c_staff, eff_r_breath, eff_b_breath, eff_g_breath,
+            eff_c_breath, eff_r_beast, eff_b_beast, eff_g_beast, eff_c_beast,
+            infantry, armor, cavalry, flier, r_sword, b_lance, g_axe, r_bow,
+            b_bow, g_bow, c_bow, r_dagger, b_dagger, g_dagger, c_dagger,
+            r_tome, b_tome, g_tome, c_staff, r_breath, b_breath, g_breath,
+            c_breath, r_beast, b_beast, g_beast, c_beast, refinable,
+            refined_version, refine_sp, refine_medals, refine_stones,
+            refine_dew, refine_eff, refine_staff1, refine_staff2, refine_atk,
+            refine_spd, refine_def, refine_res, evolves_to, evolve_medals,
+            evolve_stones, evolve_dew, evolves_from, seal_badge_color,
+            seal_great_badges, seal_small_badges, seal_coins, skill_rank,
+            tier, duel_bst
             FROM skills ORDER BY id ASC;"""
         )
         self.skill_list = [None,]

@@ -39,6 +39,8 @@ class Refine(Enum):
     STAFF1 = 6
     STAFF2 = 7
 
+effective_types = ()
+
 restrictable_types = (
     MoveType.INFANTRY,
     MoveType.ARMOR   ,
@@ -73,15 +75,15 @@ class Skill(object):
     '''Represents a skill in FEH'''
 
     __slots__ = (
-        'index', 'identity', 'name', 'description', 'skill_type', 'weapon_type',
+        'index', 'identity', 'name', 'description', 'skill_type',
+        'weapon_type',
         'is_staff', 'is_seal', 'is_refine', 'is_refined_variant',
         'range', 'might', 'icon', 'w_icon',
-        'eff_infantry', 'eff_armor', 'eff_cavalry', 'eff_flier',
-        'eff_magic', 'eff_dragon',
         'bonus_hp', 'bonus_atk', 'bonus_spd', 'bonus_def', 'bonus_res',
         'cd_mod', 'special_cd',
         'prereq1', 'prereq1_id', 'prereq2', 'prereq2_id', 'postreq',
-        'sp', 'exclusive', 'exclusive_to_id', 'learnable', 'restrict_from',
+        'sp', 'exclusive', 'exclusive_to_id',
+        'eff_against', 'eff_set', 'learnable', 'restrict_from',
         'restrict_set',
         'refinable', 'refined_ver', 'refined_ver_id',
         'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
@@ -103,17 +105,25 @@ class Skill(object):
             weapon_type = 0,
             staff_exclusive = False, is_seal = False, is_refine = False,
             is_refined_variant = False, range = 0, might = 0,
-            eff_infantry = False, eff_armor = False, eff_cavalry = False,
-            eff_flier = False, eff_magic = False, eff_dragon = False,
             bonus_hp = 0, bonus_atk = 0, bonus_spd = 0, bonus_def = 0,
             bonus_res = 0, cd_mod = 0, special_cd = 0,
             prereq1 = False, prereq2 = False, sp = 0, exclusive = False,
+            eff_infantry = False, eff_armor = False, eff_cavalry = False,
+            eff_flier = False,
+            eff_r_sword = False, eff_b_lance = False ,eff_g_axe = False,
+            eff_r_bow = False, eff_b_bow = False, eff_g_bow = False,
+            eff_c_bow = False, eff_r_dagger = False, eff_b_dagger = False,
+            eff_g_dagger = False, eff_c_dagger = False, eff_r_tome = False,
+            eff_b_tome = False, eff_g_tome = False, eff_c_staff = False,
+            eff_r_breath = False, eff_b_breath = False, eff_g_breath = False,
+            eff_c_breath = False, eff_r_beast = False, eff_b_beast = False,
+            eff_g_beast = False, eff_c_beast = False,
             infantry = True, armor = True, cavalry = True, flier = True,
-            r_sword = True, r_tome = True, r_breath = True, b_lance = True,
-            b_tome = True, b_breath = True, g_axe = True, g_tome = True,
-            g_breath = True, c_bow = True, c_dagger = True, c_staff = True,
-            c_breath = True, r_bow = True, b_bow = True, g_bow = True,
-            r_dagger = True, b_dagger = True, g_dagger = True,
+            r_sword = True, b_lance = True, g_axe = True, r_bow = True,
+            b_bow = True, g_bow = True, c_bow = True, r_dagger = True,
+            b_dagger = True, g_dagger = True, c_dagger = True, r_tome = True,
+            b_tome = True, g_tome = True, c_staff = True, r_breath = True,
+            b_breath = True, g_breath = True, c_breath = True,
             r_beast = True, b_beast = True, g_beast = True, c_beast = True,
             refinable = None, refined_version = None, refine_sp = None,
             refine_medals = 0, refine_stones = 0, refine_dew = 0,
@@ -150,12 +160,6 @@ class Skill(object):
         #display
         self.range        = range
         self.might        = might
-        self.eff_infantry = eff_infantry
-        self.eff_armor    = eff_armor
-        self.eff_cavalry  = eff_cavalry
-        self.eff_flier    = eff_flier
-        self.eff_magic    = eff_magic
-        self.eff_dragon   = eff_dragon
 
         #stats
         self.bonus_hp   = bonus_hp
@@ -175,6 +179,45 @@ class Skill(object):
         self.sp = sp
         self.exclusive = exclusive
         self.exclusive_to_id = set()
+
+        #effective
+        effective = (
+            eff_infantry,
+            eff_armor   ,
+            eff_cavalry ,
+            eff_flier   ,
+            eff_r_sword ,
+            eff_r_bow   ,
+            eff_r_dagger,
+            eff_r_tome  ,
+            eff_r_breath,
+            eff_r_beast ,
+            eff_b_lance ,
+            eff_b_bow   ,
+            eff_b_dagger,
+            eff_b_tome  ,
+            eff_b_breath,
+            eff_b_beast ,
+            eff_g_axe   ,
+            eff_g_bow   ,
+            eff_g_dagger,
+            eff_g_tome  ,
+            eff_g_breath,
+            eff_g_beast ,
+            eff_c_bow   ,
+            eff_c_dagger,
+            eff_c_staff ,
+            eff_c_breath,
+            eff_c_beast ,
+        )
+
+        self.eff_against = [
+            restrictable_types[i]
+            for i, val in enumerate(effective)
+            if val
+        ]
+
+        self.eff_set = set(self.eff_against)
 
         #learnable
         self.learnable = (

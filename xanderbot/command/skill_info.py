@@ -42,27 +42,12 @@ class SkillInfo(CmdDefault):
 
     @staticmethod
     def format_eff(skill):
-        if any((
-                skill.eff_infantry,
-                skill.eff_armor   ,
-                skill.eff_cavalry ,
-                skill.eff_flier   ,
-                skill.eff_magic   ,
-                skill.eff_dragon  ,
-        )):
-            eff_list = [' Eff: ']
-            if skill.eff_infantry: eff_list.append(str(em.get(MoveType.INFANTRY)))
-            if skill.eff_armor   : eff_list.append(str(em.get(MoveType.ARMOR   )))
-            if skill.eff_cavalry : eff_list.append(str(em.get(MoveType.CAVALRY )))
-            if skill.eff_flier   : eff_list.append(str(em.get(MoveType.FLIER   )))
-            if skill.eff_magic   :
-                eff_list.append(str(em.get(SkillWeaponGroup.R_TOME)))
-                eff_list.append(str(em.get(SkillWeaponGroup.B_TOME)))
-                eff_list.append(str(em.get(SkillWeaponGroup.G_TOME)))
-            if skill.eff_dragon  : eff_list.append(str(em.get(SkillWeaponGroup.S_BREATH)))
-            effective = ''.join(eff_list)
-        else: effective = ''
-        return effective
+        if any(skill.eff_against):
+            return (
+                ' Eff: '
+                f'{"".join([str(em.get(type)) for type in skill.eff_against])}'
+            )
+        return ''
 
     @staticmethod
     def format_skill(embed, skill, zoom_state):
