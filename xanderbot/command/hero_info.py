@@ -47,6 +47,19 @@ class HeroInfo(CmdDefault):
                 ivs = f'\n(+{hero.boon.short}/~~-{hero.bane.short}~~)'
         else:
             ivs = ''
+        if hero.p_hero_id is not None:
+            if hero.p_custom:
+                pair = (
+                    f'\n**Pair Up:** {hero.p_custom} '
+                    f'({UnitLib.get_rhero_by_id(hero.p_hero_id).short_name})'
+                )
+            else:
+                pair = (
+                    '\n**Pair Up:** '
+                    f'{UnitLib.get_rhero_by_id(hero.p_hero_id).short_name}'
+                )
+        else:
+            pair = ''
         if zoom_state:
             if hero.is_legend:
                 legend_desc = f'{format_legend_eff(hero)}\n'
@@ -59,14 +72,8 @@ class HeroInfo(CmdDefault):
         desc_level = (
             f'{legend_desc}{desc_rarity} LV. {hero.level}+{hero.merges} · '
             f'{em.get(Dragonflower.get_move(hero.move_type))}+{hero.flowers}'
-            f'{ivs}{hero_desc}'
+            f'{ivs}{pair}{hero_desc}'
         )
-        """
-        superboons = [
-            '' if x == 0 else ' (+)' if x > 0 else ' (-)'
-            for x in hero.get_boons_banes()
-        ]
-        """
         if any(hero.equipped):
             hero_stats = (hero.final_hp, hero.final_atk, hero.final_spd,
                           hero.final_def, hero.final_res)
@@ -169,7 +176,7 @@ class HeroInfo(CmdDefault):
         if not hero:
             return ReplyPayload(
                 content=(
-                    f'Hero not found: {bad_args}. Don\'t forget that '
+                    f'Hero not found: {bad_args[0]}. Don\'t forget that '
                     'modifiers should be delimited by commas.'
                 ),
                 reactable=ReactMenu(

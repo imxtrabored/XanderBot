@@ -4,7 +4,7 @@ from random import sample
 from discord import Embed
 
 from command.cmd_default import CmdDefault
-from command.common import ReplyPayload, TRANSTAB, NON_DECIMAL
+from command.common import ReplyPayload, TRANSTAB
 from feh.emojilib import EmojiLib as em
 
 EASY_LEN = 9
@@ -67,7 +67,7 @@ class Minesweeper(CmdDefault):
                 mines = EASY_MINES
                 difficulty_str = EASY_STR
             elif ('med' in param or 'interm' in param or 'mid' in param
-                    or 'normal' in param):
+                  or 'normal' in param):
                 length = MED_LEN
                 width = MED_WID
                 mines = MED_MINES
@@ -88,7 +88,7 @@ class Minesweeper(CmdDefault):
                 mines = HARD_MINES
                 difficulty_str = HARD_STR
             elif ('mine' in param or param.startswith('m')
-                    or param.endswith('m')):
+                  or param.endswith('m')):
                 param = (param.replace('mines', '').replace('mine', '')
                          .replace('m', ''))
                 if param.isdecimal():
@@ -101,8 +101,8 @@ class Minesweeper(CmdDefault):
                     width = int(dim[1])
                     difficulty_str = CUSTOM_STR
             elif ('len' in param or 'height' in param or param.startswith('l')
-                    or param.endswith('l') or param.startswith('h')
-                    or param.endswith('h')):
+                  or param.endswith('l') or param.startswith('h')
+                  or param.endswith('h')):
                 param = (param.replace('length', '').replace('len', '')
                          .replace('height', '').replace('l', '')
                          .replace('h', ''))
@@ -110,7 +110,7 @@ class Minesweeper(CmdDefault):
                     length = int(param)
                     difficulty_str = CUSTOM_STR
             elif ('wid' in param or param.startswith('w')
-                    or param.endswith('w')):
+                  or param.endswith('w')):
                 param = (param.replace('width', '').replace('wid', '')
                          .replace('w', ''))
                 if param.isdecimal():
@@ -138,7 +138,7 @@ class Minesweeper(CmdDefault):
                 grid[row - 1][col] += 1
                 if col > 0:
                     grid[row - 1][col - 1] += 1
-                if col < width - 1: 
+                if col < width - 1:
                     grid[row - 1][col + 1] += 1
             if row < length - 1:
                 grid[row + 1][col] += 1
@@ -150,14 +150,15 @@ class Minesweeper(CmdDefault):
         embed.title = (f'Minesweeper: {difficulty_str} difficulty, '
                        f'{length} x {width}, {mines} mines')
         if length * width * 11 < 2000:
-            embed.description = '\n'.join([' '.join(
-                [INT_2_EMOJI[val] for val in row]) for row in grid]
+            embed.description = '\n'.join([' '.join([
+                INT_2_EMOJI[val] for val in row]) for row in grid]
             )
         else:
             max_field = 1000 // (width * 11) # good enough approximation
             num_fields = length // max_field + (length % max_field > 0)
             disp_grid = [
-                '\n'.join([' '.join([INT_2_EMOJI[val] for val in row])
+                '\n'.join([
+                    ' '.join([INT_2_EMOJI[val] for val in row])
                     for row in grid[start : start+max_field]])
                 for start in range(0, num_fields * max_field, max_field)
             ]

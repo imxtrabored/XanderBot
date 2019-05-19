@@ -22,7 +22,7 @@ class HeroAlts(CmdDefault):
         if not hero:
             return ReplyPayload(
                 content=(
-                    f'Hero not found: {bad_args}. Don\'t forget that '
+                    f'Hero not found: {bad_args[0]}. Don\'t forget that '
                     'modifiers should be delimited by commas.'
                 )
             )

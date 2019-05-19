@@ -156,6 +156,7 @@ COMMAND_DICT = {
     'merges'     : HeroMerges,
     'art'        : HeroArt,
     'skill'      : SkillInfo,
+    'seal'       : SkillInfo,
     'skillsearch': SkillSearch,
     'searchskills': SkillSearch,
     'searchskill': SkillSearch,

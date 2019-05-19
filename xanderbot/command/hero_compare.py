@@ -265,7 +265,7 @@ class HeroCompare(CmdDefault):
                         bad_args.append(param)
                     else:
                         heroes[-1], bad_arg, n_allow = process_hero_args(
-                                heroes[-1], (param,), defer_iv_match=True)
+                            heroes[-1], (param,), user_id, defer_iv_match=True)
                         bad_args.extend(bad_arg)
                         not_allowed.extend(n_allow)
             for hero in heroes:
@@ -288,7 +288,8 @@ class HeroCompare(CmdDefault):
             while ctr < len(params):
                 if heroes:
                     hero, bad_arg, n_allow = process_hero_args(
-                        heroes[-1], (params[ctr],), defer_iv_match=True)
+                        heroes[-1], (params[ctr],), user_id,
+                        defer_iv_match=True)
                     if not bad_arg:
                         not_allowed.extend(n_allow)
                         ctr += 1

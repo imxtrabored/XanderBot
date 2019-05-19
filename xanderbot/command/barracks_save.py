@@ -97,27 +97,26 @@ class BarracksSave(CmdDefault):
                     'comma (,).'
                 ),
             )
+        errors = []
+        if any(bad_args):
+            errors.append(
+                'I did not understand the following, so they '
+                f'will not be applied: {", ".join(bad_args)}.'
+            )
+        if any(not_allowed):
+            errors.append(
+                'The following skills are unavailable for this hero: '
+                f'{", ".join(not_allowed)}'
+            )
+        if no_commas:
+            errors.append(
+                'Please delimit modifiers with commas (,) in the future '
+                'to improve command processing.'
+            )
+        if errors:
+            errors.append('\n')
+            err_text = '\n'.join(errors)
         else:
-            errors = []
-            if any(bad_args):
-                errors.append(
-                    'I did not understand the following, so they '
-                    f'will not be applied: {", ".join(bad_args)}.'
-                )
-            if any(not_allowed):
-                errors.append(
-                    'The following skills are unavailable for this hero: '
-                    f'{", ".join(not_allowed)}'
-                )
-            if no_commas:
-                errors.append(
-                    'Please delimit modifiers with commas (,) in the future '
-                    'to improve command processing.'
-                )
-            if errors:
-                errors.append('\n')
-                err_text = '\n'.join(errors)
-            else:
-                err_text = ''
-            return await callback_save(tokens[0], hero, user_id,
-                                       err_text=err_text)
+            err_text = ''
+        return await callback_save(tokens[0], hero, user_id,
+                                   err_text=err_text)

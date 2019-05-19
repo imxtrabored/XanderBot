@@ -50,7 +50,7 @@ class HeroList(CmdDefault):
     @staticmethod
     async def cmd(params, user_id):
         result_list, _, bad_args = UnitLib.sort_heroes(
-            (), params, '')
+            (), params, None, user_id)
         if result_list is None:
             return ReplyPayload(
                 content=('Syntax error. Use ``f?help list`` for help '
@@ -78,7 +78,7 @@ class HeroList(CmdDefault):
     async def react(reaction, data, user_id):
         if not data:
             return ReactEditPayload(delete=True)
-        elif reaction.emoji == '⬆':
+        if reaction.emoji == '⬆':
             if data.page_start > 0:
                 page_size = PAGE_LIMIT
                 data.page_start = max(data.page_start - page_size, 0)

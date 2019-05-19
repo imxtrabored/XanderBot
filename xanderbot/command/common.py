@@ -143,16 +143,16 @@ def format_legend_eff(hero):
     return ''
 
 
-def try_equip(hero, skill_name):
+def try_equip(hero, skill_name, *, force_seal=False):
     skill = UnitLib.get_skill(skill_name)
     if not skill:
         return 0
-    if not hero.equip(skill):
+    if not hero.equip(skill, force_seal=force_seal):
         return 1
     return 2
 
 
-def process_hero_args(hero, args, *, defer_iv_match=False):
+def process_hero_args(hero, args, user_id, *, defer_iv_match=False):
     bad_args = []
     not_allowed = []
     rarity = None
@@ -162,6 +162,8 @@ def process_hero_args(hero, args, *, defer_iv_match=False):
     level = None
     flowers = None
     support = None
+    p_hero = None
+    p_unpair = False
     for token in args:
         filtered = filter_name(token[:40])
         # rarity, merges, iv, level, "summoned"
@@ -169,6 +171,14 @@ def process_hero_args(hero, args, *, defer_iv_match=False):
                        .replace('star', '').replace('rarity', ''))
         if rarity_test.isdecimal():
             rarity = int(rarity_test)
+        elif 'unpair' in filtered:
+            p_unpair = True
+        elif 'pairup' in filtered:
+            # i hate pairing but we do it first to avoid conflicts
+            p_hero, p_bad_args, p_not_allowed, p_no_commas = process_hero(
+                token.replace('pairup', '').replace(TEMP_SEP, ','), user_id)
+            bad_args.extend(p_bad_args)
+            not_allowed.extend(p_not_allowed)
         elif 'merge' in filtered:
             merge_test = filtered.replace('merges', '').replace('merge', '')
             if merge_test.isdecimal():
@@ -258,8 +268,21 @@ def process_hero_args(hero, args, *, defer_iv_match=False):
         elif 'summoned' in filtered:
             hero.equip('summoned', keyword_mode=True,
                        max_rarity=rarity or hero.rarity)
+        elif ('base' in filtered or 'basic' in filtered
+              or 'default' in filtered):
+            hero.equip('base', keyword_mode=True,
+                       max_rarity=rarity or hero.rarity)
         elif 'prf' in filtered:
             if not hero.equip('prf', keyword_mode=True):
+                not_allowed.append(token.strip())
+        elif 'sseal' in filtered or 'sminusseal' in filtered:
+            equip_status = try_equip(
+                hero, filtered.replace('sseal', '').replace('sminusseal', ''),
+                force_seal=True
+            )
+            if equip_status == 0:
+                bad_args.append(token.strip())
+            elif equip_status == 1:
                 not_allowed.append(token.strip())
         else:
             equip_status = try_equip(hero, filtered)
@@ -275,8 +298,10 @@ def process_hero_args(hero, args, *, defer_iv_match=False):
                 bane = Stat.HP
             else:
                 bane = Stat.RES
-    hero.update_stat_mods(boon=boon, bane=bane, merges=merges, rarity=rarity,
-                          flowers=flowers, summ_support=support)
+    hero.update_stat_mods(
+        boon=boon, bane=bane, merges=merges, rarity=rarity, flowers=flowers,
+        summ_support=support, pair=p_hero, unpair=p_unpair
+    )
     return hero, bad_args, not_allowed
 
 
@@ -290,16 +315,17 @@ def process_hero_spaces(params, user_id):
             match_hero = hero
             match_hero_index = i
     if match_hero:
-        return process_hero_args(match_hero, tokens[match_hero_index:])
-    return None, params, ()
+        return process_hero_args(
+            match_hero, tokens[match_hero_index:], user_id)
+    return None, (params,), ()
 
 
 def process_hero(params, user_id):
     if not params:
-        return None, '', False
-    tokens = PARENTHETICAL.sub(
+        return None, (), (), False
+    params = PARENTHETICAL.sub(
         lambda match: match.group().replace(',', TEMP_SEP), params)
-    tokens = WITH_SYNONYMS.split(tokens, maxsplit=1)
+    tokens = WITH_SYNONYMS.split(params, maxsplit=1)
     if len(tokens) < 2 and ',' in params:
         tokens = params.split(',', 1)
     if len(tokens) > 1:
@@ -313,12 +339,13 @@ def process_hero(params, user_id):
             hero, bad_args, not_allowed = process_hero_spaces(params, user_id)
         else:
             hero, bad_args, not_allowed, no_commas = (
-                None, tokens[0], None, False)
+                None, (tokens[0],), (), False)
     else:
         no_commas = False
-        hero, bad_args, not_allowed = process_hero_args(hero, hero_args)
+        hero, bad_args, not_allowed = process_hero_args(
+            hero, hero_args, user_id)
         if bad_args and len(hero_args) == 1:
-            hero, bad_args, not_allowed = (
-                process_hero_args(hero, hero_args[0].split()))
+            hero, bad_args, not_allowed = process_hero_args(
+                hero, hero_args[0].split(), user_id)
             no_commas = True
     return hero, bad_args, not_allowed, no_commas

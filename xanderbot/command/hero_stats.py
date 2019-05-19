@@ -44,10 +44,23 @@ class HeroStats(CmdDefault):
                 ivs = f'(+{hero.boon.short}/~~-{hero.bane.short}~~)\n'
         else:
             ivs = ''
+        if hero.p_hero_id is not None:
+            if hero.p_custom:
+                pair = (
+                    f'\n**Pair Up:** {hero.p_custom} '
+                    f'({UnitLib.get_rhero_by_id(hero.p_hero_id).short_name})'
+                )
+            else:
+                pair = (
+                    '\n**Pair Up:** '
+                    f'{UnitLib.get_rhero_by_id(hero.p_hero_id).short_name}'
+                )
+        else:
+            pair = ''
         desc_level = (
             f'{desc_rarity} LV. {hero.level}+{hero.merges} · '
             f'{em.get(Dragonflower.get_move(hero.move_type))}+{hero.flowers}\n'
-            f'{ivs}'
+            f'{ivs}{pair}'
         )
         desc_stat = ''
         if any(hero.equipped):
@@ -161,7 +174,7 @@ class HeroStats(CmdDefault):
         if not hero:
             return ReplyPayload(
                 content=(
-                    f'Hero not found: {bad_args}. Don\'t forget that '
+                    f'Hero not found: {bad_args[0]}. Don\'t forget that '
                     'modifiers should be delimited by commas.'
                 ),
                 reactable=ReactMenu(

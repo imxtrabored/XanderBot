@@ -76,7 +76,7 @@ class HeroSort(CmdDefault):
         else:
             equip_terms = None
         sorted_list, sort_terms, bad_args = UnitLib.sort_heroes(
-            sort_terms, search_terms, equip_terms)
+            sort_terms, search_terms, equip_terms, user_id)
         if sorted_list is None:
             return ReplyPayload(
                 content=('Syntax error. Use ``f?help sort`` for help '

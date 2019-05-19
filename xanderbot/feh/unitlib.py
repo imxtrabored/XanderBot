@@ -269,6 +269,7 @@ class UnitLib(object):
         for index in cur:
             self.skill_names[index[0]] = self.skill_list[index[1]]
         con.close()
+        self.unit_list[0].equip(self.skill_list[4])
         print('done.')
         return self
 
@@ -386,7 +387,7 @@ class UnitLib(object):
         return cls.singleton.unit_list[hero_id]
 
     @classmethod
-    def sort_heroes(cls, sort_terms, search_terms, equip_terms):
+    def sort_heroes(cls, sort_terms, search_terms, equip_terms, user_id):
         sort_exprs = []
         for expr in sort_terms:
             test = TOP_SYNONYMS.subn('', expr, count=1)
@@ -597,11 +598,12 @@ class UnitLib(object):
             hero_args = eq_tokens.split(',')
             dummy_hero = copy(DUMMY_HERO)
             dummy_hero, bad_args, not_allowed = (
-                command.common.process_hero_args(dummy_hero, hero_args))
+                command.common.process_hero_args(
+                    dummy_hero, hero_args, user_id))
             if bad_args and len(hero_args) == 1:
                 dummy_hero, bad_args, not_allowed = (
                     command.common.process_hero_args(
-                        dummy_hero, hero_args[0].split()))
+                        dummy_hero, hero_args[0].split(), user_id))
             try:
                 cur.execute(
                     f'SELECT hero.id '
@@ -934,8 +936,10 @@ class UnitLib(object):
             'INSERT INTO user_heroes (user_id, search_name, hero_id, name, '
             'asset, flaw, rarity, merges, dragonflowers, summ_support, '
             'weapon_id, assist_id, special_id, passive_a_id, passive_b_id, '
-            'passive_c_id, passive_s_id, refine_id) '
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+            'passive_c_id, passive_s_id, refine_id, p_hero_id, p_custom, '
+            'p_atk, p_spd, p_def, p_res) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
+            '?, ?, ?, ?, ?, ?);',
             (
                 user_id, search_name, hero.index, hero.custom_name,
                 hero.boon.value, hero.bane.value, hero.rarity, hero.merges,
@@ -954,6 +958,8 @@ class UnitLib(object):
                 hero.equipped.weapon.refine_path.index
                 if hero.equipped.weapon and hero.equipped.weapon.refine_path
                 else 0,
+                hero.p_hero_id, hero.p_custom, hero.p_atk, hero.p_spd,
+                hero.p_def, hero.p_res,
             )
         )
         con.commit()
@@ -984,8 +990,8 @@ class UnitLib(object):
             'SELECT hero_id, name, asset, flaw, merges, rarity, '
             'dragonflowers, summ_support, weapon_id, assist_id, special_id, '
             'passive_a_id, passive_b_id, passive_c_id, passive_s_id, '
-            'refine_id FROM user_heroes WHERE user_id = ? '
-            'AND search_name = ?',
+            'refine_id, p_hero_id, p_custom, p_atk, p_spd, p_def, p_res '
+            'FROM user_heroes WHERE user_id = ? AND search_name = ?',
             (user_id, search_name)
         )
         hero_data = cur.fetchone()
@@ -1019,6 +1025,12 @@ class UnitLib(object):
         if hero_data[8] and hero_data[15]:
             hero.equipped.weapon = hero.equipped.weapon.get_refined(
                 cls.singleton.skill_list[hero_data[15]])
+        if hero_data[16]:
+            if hero_data[17]:
+                hero.update_stat_mods(
+                    pair=cls.get_custom_hero(hero_data[17], user_id))
+            else:
+                hero.force_pair(*hero_data[16:22])
         return hero
 
     @classmethod
@@ -1054,7 +1066,9 @@ class UnitLib(object):
             'rarity = ?, merges = ?, dragonflowers = ?, summ_support = ?, '
             'weapon_id = ?,  assist_id = ?, special_id = ?, passive_a_id = ?, '
             'passive_b_id = ?, passive_c_id = ?, passive_s_id = ?, '
-            'refine_id = ? WHERE user_id = ? AND search_name = ?;',
+            'refine_id = ?, p_hero_id = ?, p_custom = ?, p_atk = ?, '
+            'p_spd = ?, p_def = ?, p_res = ? WHERE user_id = ? '
+            'AND search_name = ?;',
             (
                 hero.index, hero.boon.value, hero.bane.value, hero.rarity, 
                 hero.merges, hero.flowers, hero.summ_support,
@@ -1072,6 +1086,8 @@ class UnitLib(object):
                 hero.equipped.weapon.refine_path.index
                 if hero.equipped.weapon and hero.equipped.weapon.refine_path
                 else 0,
+                hero.p_hero_id, hero.p_custom, hero.p_atk, hero.p_spd,
+                hero.p_def, hero.p_res,
                 user_id, search_name, 
             )
         )

@@ -160,7 +160,7 @@ class SkillInfo(CmdDefault):
         ]))
         embed.add_field(name=title, value=description, inline=False)
         if skill.skill_type == SkillType.PASSIVE_SEAL:
-            learnable = ''
+            learnable = 'Sacred Seal Forge'
         else:
             learnable_count = (
                 len(skill.learnable[1]) + len(skill.learnable[2])

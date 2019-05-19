@@ -23,10 +23,12 @@ class HeroMerges(CmdDefault):
         if not hero:
             return ReplyPayload(
                 content=(
-                    f'Hero not found: {bad_args}. Don\'t forget that '
+                    f'Hero not found: {bad_args[0]}. Don\'t forget that '
                     'modifiers should be delimited by commas.'
                 )
             )
+        if hero.merges != 0:
+            hero.update_stat_mods(merges=0)
         embed = Embed()
         if no_commas:
             embed.set_footer(
@@ -35,8 +37,7 @@ class HeroMerges(CmdDefault):
             )
         title = format_hero_title(hero)
         bonuses = '\n'.join([
-            f'{merges:+3}:'
-            f'{"|".join([f"{stat:3}" for stat in row])}'
+            f'{merges:+3}:{"|".join([f"{stat:3}" for stat in row])}'
             for merges, row in enumerate(hero.get_merge_table(), 1)
         ])
         description = (
