@@ -515,7 +515,7 @@ class UnitLib(object):
                         if equip_terms:
                             filtered_order.append(
                                 f'{"-" if expr[1] else ""}'
-                                f'{filtered_cache_terms[-1]}'
+                                f'({filtered_cache_terms[-1]})'
                             )
                         else:
                             filtered_order.append(
