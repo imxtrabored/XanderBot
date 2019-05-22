@@ -73,8 +73,10 @@ class SkillInfo(CmdDefault):
                  ))
             else:
                 refine_stats = ''
-            weapon_desc = (f'Mt: {skill.might} '
-                           f'Rng: {skill.range}{effective}{refine_stats}')
+            weapon_desc = (f'Mt: {skill.might} Rng: {skill.range}{effective}'
+                           f'{refine_stats}')
+        elif skill.skill_type == SkillType.ASSIST:
+            weapon_desc = f'Rng: {skill.range}'
         elif skill.skill_type == SkillType.SPECIAL:
             weapon_desc = f'{em.get(SkillType.SPECIAL)} {skill.special_cd}'
         else:
