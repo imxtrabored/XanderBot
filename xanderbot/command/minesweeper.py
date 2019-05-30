@@ -171,15 +171,21 @@ class Minesweeper(CmdDefault):
             embed.description = '\n'.join([' '.join([
                 INT_2_EMOJI[val] for val in row]) for row in grid])
         else:
-            max_field = 1000 // (width * 11) # good enough approximation
+            max_field = 1250 // (width * 11) # good enough approximation
             num_fields = length // max_field + (length % max_field > 0)
-            disp_grid = [
+            title_lines = 250 // (width * 11)
+            disp_grid = [(
                 '\n'.join([
                     ' '.join([INT_2_EMOJI[val] for val in row])
-                    for row in grid[start : start+max_field]])
+                    for row in grid[start : start+title_lines]]),
+                '\n'.join([
+                    ' '.join([INT_2_EMOJI[val] for val in row])
+                    for row in grid[start+title_lines : start+max_field]])
+                )
                 for start in range(0, num_fields * max_field, max_field)
             ]
             for segment in disp_grid:
-                embed.add_field(name='-', value=segment, inline=False)
+                embed.add_field(name=segment[0], value=segment[1],
+                                inline=False)
         embed.color = em.get_color(None)
         return ReplyPayload(embed=embed)
