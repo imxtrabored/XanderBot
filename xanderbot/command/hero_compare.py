@@ -247,6 +247,7 @@ class HeroCompare(CmdDefault):
             # fastest mode
             heroes, bad_args, not_allowed, no_commas = zip(*[
                 process_hero(param, user_id) for param in params.split(';')])
+            heroes = filter(None, heroes)
             bad_args = [arg for arg_list in bad_args for arg in arg_list]
             not_allowed = [arg for arg_list in not_allowed for arg in arg_list]
         elif ',' in params:

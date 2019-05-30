@@ -218,7 +218,7 @@ class HeroSkills(CmdDefault):
             if data.hero.rarity == rarity:
                 return ReactEditPayload(delete=True)
         elif reaction.emoji == '👁':
-            data.embed.set_author(name=str(hero.index))
+            data.embed.set_author(name=str(data.hero.index))
         else:
             return ReactEditPayload()
         data.embed = HeroSkills.format_hero_skills(
