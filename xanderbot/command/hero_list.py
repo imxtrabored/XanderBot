@@ -14,8 +14,8 @@ PAGE_LIMIT = 24
 class HeroList(CmdDefault):
 
     help_text = (
-        'The ``list`` command lists all heroes that match the provided search '
-        'parameters.\n\n'
+        'The ``list`` command (aliases ``hl``, ``hs``) lists all heroes that '
+        'match the provided search parameters.\n\n'
         'Usage: ``f?list {search params}``\n\n'
         'For a similar search that lets you sort heroes by their attributes, '
         'see the ``sort`` command, which operates similarly to this command.'

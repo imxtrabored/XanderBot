@@ -14,9 +14,9 @@ ZOOM_LIMIT = 12
 class SkillSearch(CmdDefault):
 
     help_text = (
-        'The ``skillsearch`` command searches for any skills that match the '
-        'search terms, which can be part of their skill type, weapon type, '
-        'description, or more.\n\n'
+        'The ``skillsearch`` command (alias ``ss``) searches for any skills '
+        'that match the search terms, which can be part of their skill type, '
+        'weapon type, description, or more.\n\n'
         'Usage: ``f?skillsearch {search terms}``\n\n'
         'Some skills are tagged with related skills, so ``skillsearch`` can '
         'find similar skills even if their names or wording are dissimilar.\n'

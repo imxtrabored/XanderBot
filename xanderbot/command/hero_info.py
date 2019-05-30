@@ -19,7 +19,8 @@ from feh.unitlib import UnitLib
 class HeroInfo(CmdDefault):
 
     help_text = (
-        'The ``hero`` command lists a hero\'s skills and attribute scores.\n\n'
+        'The ``hero`` command (alias ``h``) lists a hero\'s skills and '
+        'attribute scores.\n\n'
         'Usage: ``f?hero {hero name}, {modifier 1}, {modifier 2}, {additional '
         'modifiers...}``\n\n'
         'Tip: Try adding skills to a hero to visualize that hero\'s potential '

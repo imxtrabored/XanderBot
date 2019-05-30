@@ -15,7 +15,8 @@ PAGE_LIMIT = 24
 class BarracksList(CmdDefault):
 
     help_text = (
-        'The ``barracks`` command lists all heroes in your barracks.\n\n'
+        'The ``barracks`` command (alias ``b``) lists all heroes in your '
+        'barracks.\n\n'
         'Usage: ``f?barracks``\n\n'
         '**About the Barracks**\n'
         'The barracks is a permanent place to save a list of custom unit '

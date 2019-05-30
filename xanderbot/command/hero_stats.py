@@ -18,9 +18,10 @@ from feh.unitlib import UnitLib
 class HeroStats(CmdDefault):
 
     help_text = (
-        'The ``stats`` command lists a hero\'s attribute scores.\n\n'
-        'Usage: ``f?stats {hero name}, {modifier 1}, {modifier 2}, {additional '
-        'modifiers...}``'
+        'The ``stats`` command (alias ``st``) lists a hero\'s attribute '
+        'scores.\n\n'
+        'Usage: ``f?stats {hero name}, {modifier 1}, {modifier 2}, '
+        '{additional modifiers...}``'
     )
 
     @dataclass

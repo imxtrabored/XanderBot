@@ -16,8 +16,8 @@ from feh.skill import Skill, SkillType
 class HeroSkills(CmdDefault):
 
     help_text = (
-        'The ``skills`` command lists the skills that a hero can learn by '
-        'default, without inheritance.\n\n'
+        'The ``skills`` command (alias ``s``) lists the skills that are '
+        'available to a hero by default, without inheritance.\n\n'
         'Usage: ``f?skills {hero name}``\n\n'
         'Note: To display information on a specific skill, use the ``skill`` '
         '(without the s) command.'
