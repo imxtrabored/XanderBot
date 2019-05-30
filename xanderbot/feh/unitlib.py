@@ -37,7 +37,7 @@ STAT_NAMES = re.compile(STAT_NAMES_R)
 COLOR_LIT = re.compile(COLOR_R)
 WEAPON_LIT = re.compile(WEAPON_R)
 MOVE_LIT = re.compile(MOVE_R)
-SEARCH_SPECIAL_CHARS = '"&\'()*-|'
+SEARCH_SPECIAL_CHARS = '"&\'()*-|,'
 ONLY_ALPHANUM = str.maketrans('', '', whitespace + punctuation)
 PUNCT_NON_SEARCH_STR = punctuation.translate(
     str.maketrans('', '', SEARCH_SPECIAL_CHARS))
@@ -310,6 +310,17 @@ class UnitLib(object):
             name.lower().replace('+', 'plus').translate(ONLY_ALPHANUM).strip()
         )
 
+    @staticmethod
+    def filter_search(name):
+        name = (
+            name.translate(PUNCT_NON_SEARCH).lstrip(LSTRIP_SEARCH)
+            .rstrip(RSTRIP_SEARCH).replace('&', ' AND ').replace('|', ' OR ')
+            .replace(',', ' OR ').replace('-', ' NOT ')
+        )
+        if name.startswith(' NOT'):
+            return 'any' + name
+        return name
+
     @classmethod
     def check_name(cls, hero_name):
         return cls.filter_name(hero_name) in cls.singleton.unit_names
@@ -335,13 +346,7 @@ class UnitLib(object):
 
     @classmethod
     def search_hero(cls, hero_name, user_id):
-        hero_name = (
-            hero_name.translate(PUNCT_NON_SEARCH).lstrip(LSTRIP_SEARCH)
-            .rstrip(RSTRIP_SEARCH).replace('&', ' AND ').replace('|', ' OR ')
-            .replace('-', ' NOT ')
-        )
-        if hero_name.startswith(' NOT'):
-            hero_name = 'any' + hero_name
+        hero_name = cls.filter_search(hero_name)
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         try:
@@ -417,12 +422,7 @@ class UnitLib(object):
                 sort_exprs.append((expr, 1))
         if search_terms:
             match = 'WHERE hero_search MATCH ? '
-            search_terms = (
-                search_terms.replace('&', ' AND ').replace('|', ' OR ')
-                .replace('-', ' NOT ').translate(PUNCT_NON_SEARCH)
-            )
-            if search_terms.startswith(' NOT'):
-                search_terms = 'any' + search_terms
+            search_terms = cls.filter_search(search_terms)
             parameterized = (search_terms,)
         else:
             match = ''
@@ -690,13 +690,7 @@ class UnitLib(object):
 
     @classmethod
     def get_skill_by_search(cls, skill_name):
-        skill_name = (
-            skill_name.replace('+', ' plus ').translate(PUNCT_NON_SEARCH)
-            .lstrip(LSTRIP_SEARCH).rstrip(RSTRIP_SEARCH).replace('&', ' AND ')
-            .replace('|', ' OR ').replace('-', ' NOT ')
-        )
-        if skill_name.startswith(' NOT'):
-            skill_name = 'any' + skill_name
+        skill_name = cls.filter_search(skill_name.replace('+', ' plus '))
         if 'random' in skill_name:
             order_by = 'RANDOM()'
             logging = False
@@ -772,7 +766,7 @@ class UnitLib(object):
                         cls.filter_name(skill_name))
                     )
             elif logging:
-                asyncio.create_task(log_skill_search(skill_name))
+                asyncio.create_task(cls.log_skill_search(skill_name))
             con.close()
             return skill
         con.close()
@@ -844,13 +838,7 @@ class UnitLib(object):
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
         # remember this is still faster than regex
-        search_str = (
-            search_str.translate(PUNCT_NON_SEARCH).lstrip(LSTRIP_SEARCH)
-            .rstrip(RSTRIP_SEARCH).replace('&', ' AND ').replace('|', ' OR ')
-            .replace('-', ' NOT ')
-        )
-        if search_str.startswith(' NOT'):
-            search_str = 'any' + search_str
+        search_str = cls.filter_search(search_str)
         try:
             cur.execute(
                 'SELECT icon_id, identity, '

@@ -91,7 +91,6 @@ class SkillSearch(CmdDefault):
                 reactable=ReactMenu(
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )
-        tokens = params.split(',')
         results = UnitLib.search_skills(params)
         if results is None:
             return ReplyPayload(
@@ -101,11 +100,11 @@ class SkillSearch(CmdDefault):
                     emojis=SkillSearch.REACT_MENU, callback=SkillSearch.react),
             )
         embed = Embed()
-        SkillSearch.format_search(embed, results, tokens[0], False, 0)
+        SkillSearch.format_search(embed, results, params, False, 0)
         embed.color = em.get_color(None)
         react_menu = ReactMenu(
             emojis=SkillSearch.REACT_MENU,
-            data=SkillSearch.Data(embed, results, tokens[0], False, 0),
+            data=SkillSearch.Data(embed, results, params, False, 0),
             callback=SkillSearch.react,
         )
         return ReplyPayload(embed=embed, reactable=react_menu)
