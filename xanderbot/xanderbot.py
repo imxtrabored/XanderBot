@@ -31,6 +31,7 @@ from command.skill_info import SkillInfo
 from command.skill_search import SkillSearch
 from command.skill_alias import SkillAlias
 from command.syntax import Syntax
+from command.wiki import Wiki
 from feh.emojilib import EmojiLib as em
 from feh.unitlib import UnitLib
 try:
@@ -92,6 +93,7 @@ COMMAND_DICT = {
     'help'       : HelpCmd       ,
     'about'      : HelpCmd       ,
     'barracks'   : BarracksList  ,
+    'b'          : BarracksList  ,
     'saved'      : BarracksList  ,
     'savedheroes': BarracksList  ,
     'save'       : BarracksSave  ,
@@ -100,8 +102,10 @@ COMMAND_DICT = {
     'sendhome'   : BarracksDelete,
     'hero'       : HeroInfo      ,
     'unit'       : HeroInfo      ,
+    'h'          : HeroInfo      ,
     'stat'       : HeroStats     ,
     'stats'      : HeroStats     ,
+    'st'         : HeroStats     ,
     'skills'     : HeroSkills    ,
     'totalsp'    : HeroTotalSp   ,
     'compare'    : HeroCompare   ,
@@ -111,11 +115,13 @@ COMMAND_DICT = {
     'merges'     : HeroMerges    ,
     'art'        : HeroArt       ,
     'skill'      : SkillInfo     ,
+    's'          : SkillInfo     ,
     'seal'       : SkillInfo     ,
     'skillsearch': SkillSearch   ,
     'searchskills': SkillSearch  ,
     'searchskill': SkillSearch   ,
     'ssearch'    : SkillSearch   ,
+    'ss'         : SkillSearch   ,
     'list'       : HeroList      ,
     'herolist'   : HeroList      ,
     'hlist'      : HeroList      ,
@@ -125,6 +131,8 @@ COMMAND_DICT = {
     'searchhero' : HeroList      ,
     'searchheroes': HeroList     ,
     'hsearch'    : HeroList      ,
+    'hl'         : HeroList      ,
+    'hs'         : HeroList      ,
     'sort'       : HeroSort      ,
     'addalias'   : HeroAlias     ,
     'skillalias' : SkillAlias    ,
@@ -139,6 +147,8 @@ COMMAND_DICT = {
     'donation'   : Donate        ,
     'donations'  : Donate        ,
     'syntax'     : Syntax        ,
+    'wiki'       : Wiki          ,
+    'w'          : Wiki          ,
 }
 
 
