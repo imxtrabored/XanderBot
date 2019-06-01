@@ -15,8 +15,8 @@ from feh.unitlib import UnitLib
 class HeroCompare(CmdDefault):
 
     help_text = (
-        'The ``compare`` command quickly compares the attributes between two '
-        'or more heroes.\n\n'
+        'The ``compare`` (alias ``c``) command quickly compares the '
+        'attributes between two or more heroes.\n\n'
         'Usage: ``f?compare {hero 1}, {modifier 1}, {modifier 2}, {additional '
         'modifiers...}; {hero 2}, {modifier 1}, {modifier 2}, {etc...}; '
         '{additional heroes...}``\n\n'
@@ -247,7 +247,7 @@ class HeroCompare(CmdDefault):
             # fastest mode
             heroes, bad_args, not_allowed, no_commas = zip(*[
                 process_hero(param, user_id) for param in params.split(';')])
-            heroes = filter(None, heroes)
+            heroes = list(filter(None, heroes))
             bad_args = [arg for arg_list in bad_args for arg in arg_list]
             not_allowed = [arg for arg_list in not_allowed for arg in arg_list]
         elif ',' in params:

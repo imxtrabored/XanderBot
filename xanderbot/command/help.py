@@ -33,11 +33,13 @@ class HelpCmd(CmdDefault):
 
     TITLE_1 = 'Welcome to the Order of Heroes!'
 
-    TITLE_2 = 'General Commands'
+    TITLE_2 = 'Hero and Skill Commands'
 
-    TITLE_3 = 'Barracks System'
+    TITLE_3 = 'Other Commands'
 
-    TITLE_4 = 'Tips'
+    TITLE_4 = 'Barracks System'
+
+    TITLE_5 = 'Tips'
 
     DEFAULT_HELP_1 = (
         'I am Xander, the crown prince of Nohr. As you are the tactician for '
@@ -48,7 +50,8 @@ class HelpCmd(CmdDefault):
         'abilities.\n'
         'Use this wisely, summoner, for there are dark times ahead of us.\n\n'
         'The following commands are available. Use ``f?help {command name}``'
-        'to get the details of any command.'
+        'to get the details of any command. Many commands have shortened '
+        'aliases to ease use.'
     )
 
     DEFAULT_HELP_2 = (
@@ -57,22 +60,31 @@ class HelpCmd(CmdDefault):
         '``stats``: Displays a summary of a hero\'s attributes.\n'
         '``skills``: Displays a hero\'s default skills.\n'
         '``compare``: Comapres the attributes of one or more heroes.\n'
-        '``alts``: Shows the available alternate forms of a hero.\n'
+        '``alts``: Lists the available alternate appearances of a hero.\n'
         '``merges``: Shows a brief summary of the bonuses gained by merging '
         'extra copies a hero.\n'
         '``totalsp``: Shows the total SP needed to learn a hero\'s skills.\n'
+        '``sort``: Sorts heroes, or a specified subset of heroes, based on '
+        'any combination of their attributes.\n'
+        '``list``: Lists heroes that match the qualities provided.\n'
         '``art``: Shows the in-game artwork for a hero.\n'
         '``skill``: Shows the details of a particular skill.\n'
         '``skillsearch``: Searches for a skill based on any search terms. Use '
         '``f?help skillsearch`` for advanced syntax.\n'
         '``addalias``: Adds an alternate name for a hero to my database.\n'
         '``skillalias``: Adds an alternate name for a skill to my database.\n'
-        '``ping``: Displays my current latency to Discord\'s servers.\n'
-        '``devs``: Find out about XanderBot\'s development team.\n'
-        '``donate``: Find out how you can make donations.'
     )
 
     DEFAULT_HELP_3 = (
+        '``wiki``: Searches the Fire Emblem Heroes Gamepedia wiki.\n'
+        '``mines``: Generates a random Minesweeper board.\n'
+        '``ping``: Displays my current latency to Discord\'s servers.\n'
+        '``devs``: Find out about XanderBot\'s development team.\n'
+        '``donate``: Find out how you can make donations.\n'
+        '``help``: Displays help about commands, or lists all commands.'
+    )
+
+    DEFAULT_HELP_4 = (
         'Use ``f?help barracks`` for a more detailed overview of the barracks '
         'and custom hero saving feature.\n'
         '``barracks``: Lists the units in your barracks.\n'
@@ -83,7 +95,7 @@ class HelpCmd(CmdDefault):
         '``sendhome``: Removes a unit from your barracks.'
     )
 
-    DEFAULT_HELP_4 = (
+    DEFAULT_HELP_5 = (
         'For help on attributes that can be added to heroes in a command, '
         'use ``f?help syntax``.\n'
         'Several commands have additional aliases to improve usability.\n'
@@ -130,6 +142,11 @@ class HelpCmd(CmdDefault):
                 value=HelpCmd.DEFAULT_HELP_4,
                 inline=True
             )
+            embed.add_field(
+                name=HelpCmd.TITLE_5,
+                value=HelpCmd.DEFAULT_HELP_5,
+                inline=True
+            )
             embed.color = em.get_color(None)
         return ReplyPayload(content=content, embed=embed)
 
@@ -154,6 +171,7 @@ COMMAND_DICT = {
     'skills'     : HeroSkills    ,
     'totalsp'    : HeroTotalSp   ,
     'compare'    : HeroCompare   ,
+    'c'          : HeroCompare   ,
     'alt'        : HeroAlts      ,
     'alts'       : HeroAlts      ,
     'merge'      : HeroMerges    ,
