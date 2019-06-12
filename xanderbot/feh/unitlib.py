@@ -335,12 +335,11 @@ class UnitLib(object):
             enemy_name = hero_name[:-5].strip()
         if enemy_name is not None and enemy_name in cls.singleton.enemy_names:
             hero = copy(cls.singleton.enemy_names[enemy_name])
-            hero.equipped = (
-                copy(cls.singleton.enemy_names[enemy_name].equipped))
+            hero.equipped = copy(hero.equipped)
             return hero
         if hero_name in cls.singleton.unit_names:
             hero = copy(cls.singleton.unit_names[hero_name])
-            hero.equipped = copy(cls.singleton.unit_names[hero_name].equipped)
+            hero.equipped = copy(hero.equipped)
             return hero
         return None
 
@@ -367,12 +366,12 @@ class UnitLib(object):
                 return None
         hero_id = cur.fetchone()
         if hero_id is not None:
-            hero = copy(cls.singleton.unit_list[hero_id[0]])
-            hero.equipped = copy(cls.singleton.unit_list[hero_id[0]].equipped)
+            hero = copy(cls.singleton.unit_list[int(hero_id[0])])
+            hero.equipped = copy(hero.equipped)
             if cur.fetchone() is None:
                 asyncio.create_task(
                     cls.insert_hero_alias(
-                        cls.singleton.unit_list[hero_id[0]],
+                        cls.singleton.unit_list[int(hero_id[0])],
                         cls.filter_name(hero_name))
                     )
             con.close()
@@ -713,7 +712,7 @@ class UnitLib(object):
                 'WHERE skill_search MATCH ? '
                 'AND skill_search.is_real_skill = 1 '
                 f'ORDER BY {order_by} LIMIT {num_results}',
-                (f'{{search_name tags random}} : ({skill_name})',)
+                (f'{{id search_name tags random}} : ({skill_name})',)
             )
         except sqlite3.OperationalError:
             skill_name = skill_name.translate(REMOVE_SEARCH_SPECIAL)
@@ -724,7 +723,7 @@ class UnitLib(object):
                     'WHERE skill_search MATCH ? '
                     'AND skill_search.is_real_skill = 1 '
                     f'ORDER BY {order_by} LIMIT {num_results}',
-                    (f'{{search_name tags random}} : ({skill_name})',)
+                    (f'{{id search_name tags random}} : ({skill_name})',)
                 )
             except sqlite3.OperationalError:
                 con.close()
@@ -738,7 +737,7 @@ class UnitLib(object):
                     'WHERE skill_search MATCH ? '
                     'AND skill_search.is_real_skill = 1 '
                     f'ORDER BY {order_by} LIMIT {num_results}',
-                    ('{search_name type exclusive tags wielder random} : '
+                    ('{id search_name type exclusive tags wielder random} : '
                      f'({skill_name})',)
                 )
             except sqlite3.OperationalError:
@@ -750,7 +749,8 @@ class UnitLib(object):
                         'WHERE skill_search MATCH ? '
                         'AND skill_search.is_real_skill = 1 '
                         f'ORDER BY {order_by} LIMIT {num_results}',
-                        ('{search_name type exclusive tags wielder random} : '
+                        ('{id search_name type exclusive tags wielder '
+                         'random} : '
                          f'({skill_name})',)
                     )
                 except sqlite3.OperationalError:
@@ -758,11 +758,11 @@ class UnitLib(object):
                     return None
             skill_id = cur.fetchone()
         if skill_id is not None:
-            skill = cls.singleton.skill_list[skill_id[0]]
+            skill = cls.singleton.skill_list[int(skill_id[0])]
             if len(cur.fetchall()) < num_results - 1:
                 asyncio.create_task(
                     cls.insert_skill_alias(
-                        cls.singleton.skill_list[skill_id[0]],
+                        cls.singleton.skill_list[int(skill_id[0])],
                         cls.filter_name(skill_name))
                     )
             elif logging:
@@ -994,12 +994,10 @@ class UnitLib(object):
             return None
         if hero_data[0] >= 0:
             hero = copy(cls.singleton.unit_list[hero_data[0]])
-            hero.equipped = copy(
-                cls.singleton.unit_list[hero_data[0]].equipped)
+            hero.equipped = copy(hero.equipped)
         else:
             hero = copy(cls.singleton.enemy_list[abs(hero_data[0])])
-            hero.equipped = copy(
-                cls.singleton.enemy_list[hero_data[0]].equipped)
+            hero.equipped = copy(hero.equipped)
         hero.custom_name = hero_data[1]
         hero.update_stat_mods(
             boon=Stat(hero_data[2]),

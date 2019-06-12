@@ -6,7 +6,7 @@ from command.cmd_default import CmdDefault
 from command.common import ReactMenu, ReplyPayload, ReactEditPayload
 from feh.emojilib import EmojiLib as em
 from feh.hero import MoveType, Rarity
-from feh.skill import Skill, SkillType, SkillWeaponGroup
+from feh.skill import Skill, SkillType
 from feh.unitlib import UnitLib
 
 
@@ -52,8 +52,11 @@ class SkillInfo(CmdDefault):
     @staticmethod
     def format_skill(embed, skill, zoom_state):
         embed.clear_fields()
-        type_icon = (em.get(skill.weapon_type)
-                     if skill.weapon_type else em.get(skill.skill_type))
+        type_icon = (''.join([
+                str(em.get(type)) for type in skill.allowed_weapon
+            ])
+            if skill.weapon_type else em.get(skill.skill_type)
+        )
         seal_icon = (
             em.get(SkillType.PASSIVE_SEAL)
             if skill.skill_type != SkillType.PASSIVE_SEAL and skill.is_seal
@@ -161,8 +164,10 @@ class SkillInfo(CmdDefault):
                 + len(skill.learnable[5])
             )
             if (skill.skill_type == SkillType.WEAPON and not skill.exclusive
-                    and ((skill.tier <= 2 and not skill.is_staff)
-                         or skill.tier <= 1)):
+                    and skill.tier <= 0
+                    and (skill.tier <= 2
+                         or (skill.tier <= 1 and skill.is_staff)
+                )):
                 learnable = 'Basic weapon available to most eligible heroes.'
             elif (skill.skill_type == SkillType.ASSIST and skill.is_staff
                   and skill.tier <= 1):

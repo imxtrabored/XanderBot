@@ -83,8 +83,8 @@ class Skill(object):
         'cd_mod', 'special_cd',
         'prereq1', 'prereq1_id', 'prereq2', 'prereq2_id', 'postreq',
         'sp', 'exclusive', 'exclusive_to_id',
-        'eff_against', 'eff_set', 'learnable', 'restrict_from',
-        'restrict_set',
+        'eff_against', 'eff_set', 'learnable', 'allowed_weapon',
+        'restrict_from', 'restrict_set',
         'refinable', 'refined_ver', 'refined_ver_id',
         'refine_sp', 'refine_medals', 'refine_stones', 'refine_dew',
         'refine_eff', 'refine_eff_id', 'refine_st1', 'refine_st1_id',
@@ -210,13 +210,11 @@ class Skill(object):
             eff_c_breath,
             eff_c_beast ,
         )
-
         self.eff_against = [
             restrictable_types[i]
             for i, val in enumerate(effective)
             if val
         ]
-
         self.eff_set = set(self.eff_against)
 
         #learnable
@@ -230,6 +228,36 @@ class Skill(object):
         )
 
         #restrictions
+        allowed_weapon = (
+            r_sword ,
+            r_bow   ,
+            r_dagger,
+            r_tome  ,
+            r_breath,
+            r_beast ,
+            b_lance ,
+            b_bow   ,
+            b_dagger,
+            b_tome  ,
+            b_breath,
+            b_beast ,
+            g_axe   ,
+            g_bow   ,
+            g_dagger,
+            g_tome  ,
+            g_breath,
+            g_beast ,
+            c_bow   ,
+            c_dagger,
+            c_staff ,
+            c_breath,
+            c_beast ,
+        )
+        self.allowed_weapon = [
+            restrictable_types[i + 4]
+            for i, val in enumerate(allowed_weapon)
+            if val
+        ]
         allowed = (
             infantry,
             armor   ,
@@ -259,13 +287,11 @@ class Skill(object):
             c_breath,
             c_beast ,
         )
-
         self.restrict_from = [
             restrictable_types[i]
             for i, val in enumerate(allowed)
             if not val
         ]
-
         self.restrict_set = set(self.restrict_from)
 
         #refines

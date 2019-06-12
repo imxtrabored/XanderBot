@@ -10,10 +10,6 @@ from feh.hero import (
 from feh.interface import DragonflowerInc, RarityInc
 from feh.skill import SkillType, SkillWeaponGroup
 
-class CompoundEmoji(tuple):
-    __slots__ = ()
-    def __str__(self):
-        return ''.join([str(emoji) for emoji in self])
 
 class EmojiLib(object):
     singleton = None
@@ -143,37 +139,6 @@ class EmojiLib(object):
             else: self.emojis[index[0]] = client.get_emoji(int(index[1]))
         con.close()
         self.emojis[SummonerSupport.NONE] = ''
-        self.emojis[SkillWeaponGroup.R_SWORD] = self.emojis[UnitWeaponType.R_SWORD]
-        self.emojis[SkillWeaponGroup.R_TOME ] = self.emojis[UnitWeaponType.R_TOME ]
-        self.emojis[SkillWeaponGroup.B_LANCE] = self.emojis[UnitWeaponType.B_LANCE]
-        self.emojis[SkillWeaponGroup.B_TOME ] = self.emojis[UnitWeaponType.B_TOME ]
-        self.emojis[SkillWeaponGroup.G_AXE  ] = self.emojis[UnitWeaponType.G_AXE  ]
-        self.emojis[SkillWeaponGroup.G_TOME ] = self.emojis[UnitWeaponType.G_TOME ]
-        self.emojis[SkillWeaponGroup.C_STAFF] = self.emojis[UnitWeaponType.C_STAFF]
-        self.emojis[SkillWeaponGroup.S_BREATH] = CompoundEmoji((
-            self.emojis[UnitWeaponType.R_BREATH],
-            self.emojis[UnitWeaponType.B_BREATH],
-            self.emojis[UnitWeaponType.G_BREATH],
-            self.emojis[UnitWeaponType.C_BREATH],
-        ))
-        self.emojis[SkillWeaponGroup.S_BOW] = CompoundEmoji((
-            self.emojis[UnitWeaponType.R_BOW],
-            self.emojis[UnitWeaponType.B_BOW],
-            self.emojis[UnitWeaponType.G_BOW],
-            self.emojis[UnitWeaponType.C_BOW],
-        ))
-        self.emojis[SkillWeaponGroup.S_DAGGER] = CompoundEmoji((
-            self.emojis[UnitWeaponType.R_DAGGER],
-            self.emojis[UnitWeaponType.B_DAGGER],
-            self.emojis[UnitWeaponType.G_DAGGER],
-            self.emojis[UnitWeaponType.C_DAGGER],
-        ))
-        self.emojis[SkillWeaponGroup.S_BEAST] = CompoundEmoji((
-            self.emojis[UnitWeaponType.R_BEAST],
-            self.emojis[UnitWeaponType.B_BEAST],
-            self.emojis[UnitWeaponType.G_BEAST],
-            self.emojis[UnitWeaponType.C_BEAST],
-        ))
         print('done.')
         return self.emojis
 
