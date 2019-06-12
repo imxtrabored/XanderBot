@@ -478,8 +478,8 @@ class XanderBotClient(discord.Client):
                 or message.id not in self.editable_library):
             return
         msg_bundle = self.editable_library[message.id]
-        if msg_bundle.bot_msg in self.reactable_library:
-            self.reactable_library[bot_msg.id].task.cancel()
+        if msg_bundle.bot_msg.id in self.reactable_library:
+            self.reactable_library[msg_bundle.bot_msg.id].task.cancel()
         await msg_bundle.bot_msg.delete()
         msg_bundle.task.cancel()
 
