@@ -38,6 +38,7 @@ class EmojiLib(object):
         SkillWeaponGroup.S_DAGGER: Color.from_rgb(95,111,118) ,
         SkillWeaponGroup.C_STAFF : Color.from_rgb(95,111,118) ,
         SkillWeaponGroup.S_BEAST : Color.from_rgb(95,111,118) ,
+        SkillWeaponGroup.S_TOME  : Color.from_rgb(120,82,163) ,
         UnitColor.NONE           : Color.from_rgb(95,111,118) ,
         UnitColor.RED            : Color.from_rgb(228,34,67)  ,
         UnitColor.BLUE           : Color.from_rgb(40,101,223) ,

@@ -69,36 +69,36 @@ class MoveType(OrderedEnum):
 @unique
 class TomeType(Enum):
     '''Enum for tome elements, UNUSED'''
-    NONE    = 1
-    FIRE    = 2
-    THUNDER = 3
-    WIND    = 4
-    DARK    = 5
-    LIGHT   = 6
+    NONE    = None
+    FIRE    = 1
+    THUNDER = 2
+    WIND    = 3
+    DARK    = 4
+    LIGHT   = 5
 
 @unique
 class LegendElement(Enum):
     '''Enum for elements of Legendary Heroes'''
-    NONE  = 1
-    FIRE  = 2
-    WATER = 3
-    WIND  = 4
-    EARTH = 5
-    LIGHT = 6
-    DARK  = 7
-    ASTRA = 8
-    ANIMA = 9
+    NONE  = None
+    FIRE  = 1
+    WATER = 2
+    WIND  = 3
+    EARTH = 4
+    LIGHT = 5
+    DARK  = 6
+    ASTRA = 7
+    ANIMA = 8
 
 @unique
 class LegendStat(Enum):
     '''Enum for each unit stat'''
-    NONE = 1
-    HP   = 2
-    ATK  = 3
-    SPD  = 4
-    DEF  = 5
-    RES  = 6
-    DUEL = 7
+    NONE = None
+    HP   = 1
+    ATK  = 2
+    SPD  = 3
+    DEF  = 4
+    RES  = 5
+    DUEL = 6
 
 @unique
 class Stat(Enum):

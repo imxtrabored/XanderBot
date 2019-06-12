@@ -47,7 +47,7 @@ LEGEND_BOOSTS = {
         'Standard Effect 2: Pair Up\n'
         'An ability that can only be used under certain circumstances. Pair '
         'Up can be accessed from the Interact with Allies menu, and allows '
-        'this unit to join battle in a group with another ally.'
+        'this unit to join battle in a group with another ally.\n'
     ),
 }
 MYTHIC_BOOSTS = {

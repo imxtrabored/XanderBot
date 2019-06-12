@@ -18,6 +18,7 @@ class SkillWeaponGroup(Enum):
     S_DAGGER = 9
     C_STAFF  = 10
     S_BEAST  = 11
+    S_TOME   = 12
 
 @unique
 class SpecialTrigger(Enum):
