@@ -83,6 +83,7 @@ class HeroArt(CmdDefault):
         title = format_hero_title(hero)
         description = f'🖋 {hero.artist}'
         art_index = 0
+        tokens = params.partition(',')[2].split(',')
         if hero.is_enemy != 1:
             for token in tokens:
                 param = filter_name(token)
