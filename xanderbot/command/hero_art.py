@@ -89,6 +89,14 @@ class HeroArt(CmdDefault):
                 param = filter_name(token)
                 if param in art_names:
                     art_index = art_names[param]
+            for token in bad_args:
+                param = filter_name(token)
+                if param in art_names:
+                    art_index = art_names[param]
+            for token in not_allowed:
+                param = filter_name(token)
+                if param in art_names:
+                    art_index = art_names[param]
         embed.add_field(name=title, value='-', inline=False)
         embed.set_image(url=ART_URLS[art_index].format(hero.index))
         embed.color = em.get_color(hero.color)
