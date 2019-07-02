@@ -41,7 +41,7 @@ class HeroAlias(CmdDefault):
                 content='Not enough names entered. '
                 'Please enter at least two names, separated by commas.'
             )
-        heroes = [UnitLib.get_hero(n, user_id) for n in names]
+        heroes = [UnitLib.get_base_hero(n, user_id) for n in names]
         if len(names) == 2:
             if heroes[0] and not heroes[1]:
                 await UnitLib.insert_hero_alias(heroes[0], names[1])

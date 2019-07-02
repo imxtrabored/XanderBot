@@ -289,19 +289,19 @@ class UnitLib(object):
         )
         for index in cur:
             skill = cls.singleton.skill_list[index[0]]
-            skill.icon = client.get_emoji(int(index[1]))
+            skill.icon = client.get_emoji(index[1])
         cur.execute(
             """SELECT id, typeemoteid
             FROM skill_emoji WHERE id < 0 ORDER BY id DESC;"""
         )
         empty_slots = cur.fetchall()
-        Skill.EMPTY_WEAPON .icon = client.get_emoji(int(empty_slots[0][1]))
-        Skill.EMPTY_ASSIST .icon = client.get_emoji(int(empty_slots[1][1]))
-        Skill.EMPTY_SPECIAL.icon = client.get_emoji(int(empty_slots[2][1]))
-        Skill.EMPTY_PASSIVE_A.icon = client.get_emoji(int(empty_slots[3][1]))
-        Skill.EMPTY_PASSIVE_B.icon = client.get_emoji(int(empty_slots[4][1]))
-        Skill.EMPTY_PASSIVE_C.icon = client.get_emoji(int(empty_slots[5][1]))
-        Skill.EMPTY_PASSIVE_S.icon = client.get_emoji(int(empty_slots[6][1]))
+        Skill.EMPTY_WEAPON .icon = client.get_emoji(empty_slots[0][1])
+        Skill.EMPTY_ASSIST .icon = client.get_emoji(empty_slots[1][1])
+        Skill.EMPTY_SPECIAL.icon = client.get_emoji(empty_slots[2][1])
+        Skill.EMPTY_PASSIVE_A.icon = client.get_emoji(empty_slots[3][1])
+        Skill.EMPTY_PASSIVE_B.icon = client.get_emoji(empty_slots[4][1])
+        Skill.EMPTY_PASSIVE_C.icon = client.get_emoji(empty_slots[5][1])
+        Skill.EMPTY_PASSIVE_S.icon = client.get_emoji(empty_slots[6][1])
         print('done.')
 
     @staticmethod
@@ -366,12 +366,12 @@ class UnitLib(object):
                 return None
         hero_id = cur.fetchone()
         if hero_id is not None:
-            hero = copy(cls.singleton.unit_list[int(hero_id[0])])
+            hero = copy(cls.singleton.unit_list[hero_id[0]])
             hero.equipped = copy(hero.equipped)
             if cur.fetchone() is None:
                 asyncio.create_task(
                     cls.insert_hero_alias(
-                        cls.singleton.unit_list[int(hero_id[0])],
+                        cls.singleton.unit_list[hero_id[0]],
                         cls.filter_name(hero_name))
                     )
             con.close()
@@ -758,11 +758,11 @@ class UnitLib(object):
                     return None
             skill_id = cur.fetchone()
         if skill_id is not None:
-            skill = cls.singleton.skill_list[int(skill_id[0])]
+            skill = cls.singleton.skill_list[skill_id[0]]
             if len(cur.fetchall()) < num_results - 1:
                 asyncio.create_task(
                     cls.insert_skill_alias(
-                        cls.singleton.skill_list[int(skill_id[0])],
+                        cls.singleton.skill_list[skill_id[0]],
                         cls.filter_name(skill_name))
                     )
             elif logging:
@@ -770,6 +770,12 @@ class UnitLib(object):
             con.close()
             return skill
         con.close()
+        return None
+
+    @classmethod
+    def get_base_skill(cls, skill_name):
+        if skill_name in cls.singleton.skill_names:
+            return cls.singleton.skill_names[skill_name]
         return None
        
     @classmethod
@@ -857,7 +863,8 @@ class UnitLib(object):
                     'SELECT icon_id, identity, '
                     'snippet(skill_search, -1, "**", "**", "…", 10) '
                     'FROM skill_search '
-                    'WHERE skill_search MATCH ? ORDER BY rank ASC;',
+                    'WHERE skill_search MATCH ? '
+                    'AND search_relevant = 1 ORDER BY rank ASC;',
                     ('{identity description type exclusive tags wielder} : '
                      f'({search_str})',)
                 )
@@ -865,8 +872,8 @@ class UnitLib(object):
                 con.close()
                 return None
         results = tuple(zip(*[(
-                f'{cls.singleton.skill_list[int(result[0])].icon} {result[1]}',
-                f'{cls.singleton.skill_list[int(result[0])].icon} '
+                f'{cls.singleton.skill_list[result[0]].icon} {result[1]}',
+                f'{cls.singleton.skill_list[result[0]].icon} '
                 f'__{result[1]}__\n{result[2]}',
             )
             for result in cur

@@ -34,16 +34,13 @@ class SkillAlias(CmdDefault):
     @staticmethod
     async def cmd(params, user_id):
         tokens = params.split(',')
-        names = [
-            filter_name(n)
-            for n in tokens
-        ]
+        names = [filter_name(n) for n in tokens]
         if len(names) < 2:
             return ReplyPayload(
                 content='Not enough names entered. '
                 'Please enter at least two names, separated by commas.'
             )
-        skills = [UnitLib.get_skill(n) for n in names]
+        skills = [UnitLib.get_base_skill(n) for n in names]
         if len(names) == 2:
             if skills[0] and not skills[1]:
                 await UnitLib.insert_skill_alias(skills[0], names[1])
