@@ -627,12 +627,12 @@ class UnitLib(object):
                 hero.equipped = copy(hero.equipped)
                 for skill in dummy_hero.equip_list_all:
                     hero.equip(skill, fail_fast=True, keyword_mode=True)
-                    hero.update_stat_mods(
-                        boon=dummy_hero.boon, bane=dummy_hero.bane,
-                        merges=dummy_hero.merges, rarity=dummy_hero.rarity,
-                        flowers=dummy_hero.flowers,
-                        summ_support=dummy_hero.summ_support
-                    )
+                hero.update_stat_mods(
+                    boon=dummy_hero.boon, bane=dummy_hero.bane,
+                    merges=dummy_hero.merges, rarity=dummy_hero.rarity,
+                    flowers=dummy_hero.flowers,
+                    summ_support=dummy_hero.summ_support
+                )
                 hero.sort_dummy = eval(
                     sort_dummy, {'__builtins__': None}, {'hero': hero})
                 hero.sort_values = eval(
