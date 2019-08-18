@@ -77,7 +77,7 @@ class HeroArt(CmdDefault):
                     'modifiers should be delimited by commas.'
                 ),
                 reactable=ReactMenu(
-                    react_emojis, None, HeroArt.react),
+                    emojis=HeroArt.REACT_MENU, callback=HeroArt.react),
             )
         embed = Embed()
         title = format_hero_title(hero)

@@ -326,7 +326,7 @@ class UnitLib(object):
         return cls.filter_name(hero_name) in cls.singleton.unit_names
 
     @classmethod
-    def get_base_hero(cls, hero_name, user_id):
+    def get_base_hero(cls, hero_name):
         hero_name = cls.filter_name(hero_name)
         enemy_name = None
         if hero_name.startswith('enemy'):
@@ -344,7 +344,7 @@ class UnitLib(object):
         return None
 
     @classmethod
-    def search_hero(cls, hero_name, user_id):
+    def search_hero(cls, hero_name):
         hero_name = cls.filter_search(hero_name)
         con = sqlite3.connect("feh/fehdata.db")
         cur = con.cursor()
@@ -381,13 +381,14 @@ class UnitLib(object):
 
     @classmethod
     def get_hero(cls, hero_name, user_id):
-        hero = cls.get_base_hero(hero_name, user_id)
+        hero = cls.get_base_hero(hero_name)
         if hero is not None:
             return hero
-        hero = UnitLib.get_custom_hero(hero_name, user_id)
-        if hero is not None:
-            return hero
-        return cls.search_hero(hero_name, user_id)
+        if user_id is not None:
+            hero = UnitLib.get_custom_hero(hero_name, user_id)
+            if hero is not None:
+                return hero
+        return cls.search_hero(hero_name)
 
     @classmethod
     def get_rhero_by_id(cls, hero_id):
@@ -670,6 +671,39 @@ class UnitLib(object):
                 ]
         con.close()
         return hero_list, ', '.join(filtered_disp), bad_args
+
+    @classmethod
+    def sort_SSD(cls, this_hero):
+        this_hero = cls.singleton.unit_list[this_hero.index]
+        hero_stats = (
+            this_hero.max_hp,
+            this_hero.max_atk,
+            this_hero.max_spd,
+            this_hero.max_def,
+            this_hero.max_res,
+            this_hero.max_total,
+        )
+        heroes = []
+        for hero in cls.singleton.unit_list:
+            if this_hero.index != hero.index:
+                heroes.append((
+                    hero,
+                    1 + abs(hero_stats[0] - hero.max_hp)
+                    + abs(hero_stats[1] - hero.max_atk)
+                    + abs(hero_stats[2] - hero.max_spd)
+                    + abs(hero_stats[3] - hero.max_def)
+                    + abs(hero_stats[4] - hero.max_res)
+                    + abs(hero_stats[5] - hero.max_total)
+                ))
+        heroes.sort(key=lambda s: s[1])
+        hero_list = [(
+                f'``({999 // hero[1]:0>3})`` '
+                f'{em.get(hero[0].weapon_type)}{em.get(hero[0].move_type)} '
+                f'{hero[0].short_name}'
+            )
+            for hero in heroes
+        ]
+        return hero_list
 
     @classmethod
     async def log_skill_search(cls, skill_name):

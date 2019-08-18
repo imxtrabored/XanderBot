@@ -21,6 +21,7 @@ from command.hero_art import HeroArt
 from command.hero_compare import HeroCompare
 from command.hero_list import HeroList
 from command.hero_merges import HeroMerges
+from command.hero_similar import HeroSimilar
 from command.hero_skills import HeroSkills
 from command.hero_sort import HeroSort
 from command.hero_stats import HeroStats
@@ -118,6 +119,9 @@ COMMAND_DICT = {
     'skill'      : SkillInfo     ,
     's'          : SkillInfo     ,
     'seal'       : SkillInfo     ,
+    'similar'    : HeroSimilar   ,
+    'similarity' : HeroSimilar   ,
+    'similarto'  : HeroSimilar   ,
     'skillsearch': SkillSearch   ,
     'searchskills': SkillSearch  ,
     'searchskill': SkillSearch   ,
