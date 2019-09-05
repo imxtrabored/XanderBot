@@ -694,10 +694,14 @@ class UnitLib(object):
             order_by = 'RANDOM()'
             logging = False
         else:
+            """
             order_by = (
                 'LENGTH(skill_search.tags) '
                 '+ LENGTH(skill_search.search_name) ASC, '
-                'skills.skill_rank DESC, skill_search.id ASC')
+                'skills.skill_rank DESC, skill_search.id ASC'
+            )
+            """
+            order_by = 'skill_search.id ASC'
             logging = True
         if HAS_DIGIT.search(skill_name):
             num_results = 2
