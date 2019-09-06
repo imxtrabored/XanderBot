@@ -164,7 +164,7 @@ class SkillInfo(CmdDefault):
                 + len(skill.learnable[5])
             )
             if (skill.skill_type == SkillType.WEAPON and not skill.exclusive
-                    and skill.tier <= 0
+                    and skill.tier >= 0
                     and (skill.tier <= 2
                          or (skill.tier <= 1 and skill.is_staff)
                 )):
