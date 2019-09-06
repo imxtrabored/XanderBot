@@ -1124,7 +1124,7 @@ class Hero(object):
         elif self.rarity == 1:
             stat_total = 37
         else: print(f'{self.short_name} invalid rarity: {self.rarity}')
-        if self.generation < 1 or self.generation > 3:
+        if self.generation < 1 or self.generation > 4:
             print(f'{self.short_name} invalid generation: {self.generation}')
         growth_rate = 255
         ranged = self.weapon_type in {
@@ -1165,12 +1165,13 @@ class Hero(object):
         if self.move_type == MoveType.ARMOR:
             stat_total += 7
             growth_rate += 10
-        if self.move_type == MoveType.CAVALRY:
+        elif self.move_type == MoveType.CAVALRY:
             stat_total -= 1
             growth_rate -= 5
         if self.is_brave:
             growth_rate += 10
-        if self.generation >= 2 and not self.is_dancer:
+        if (self.generation >= 2
+                and not (self.is_dancer and self.generation < 4)):
             stat_total += 1
             growth_rate += 10
             if ranged and self.move_type != MoveType.ARMOR:
@@ -1178,17 +1179,34 @@ class Hero(object):
             if self.move_type == MoveType.CAVALRY:
                 stat_total -= 1
                 growth_rate -= 5
-            if self.move_type == MoveType.FLIER:
+            elif self.move_type == MoveType.FLIER:
                 stat_total -= 1
             if self.is_sigurd:
                 growth_rate += 5
-            if self.generation == 3:
+            if self.generation >= 3:
                 if self.move_type == MoveType.INFANTRY:
                     stat_total += 1
                     growth_rate += 10
                 if ranged_phys:
                     stat_total += 1
                     growth_rate += 10
+                if self.generation >= 4:
+                    stat_total += 2
+                    growth_rate += 5
+                    if self.move_type == MoveType.CAVALRY:
+                        stat_total -= 1
+                        growth_rate += 5
+                    elif self.move_type == MoveType.FLIER:
+                        stat_total += 1
+                    if ranged:
+                        if self.move_type == MoveType.INFANTRY:
+                            stat_total -= 1
+                        else:
+                            stat_total -= 2
+                        growth_rate += 5
+                    if self.is_dancer:
+                        growth_rate -= 5
+
         if self.base_total != stat_total and self.is_enemy < 2:
             print(f'{self.short_name} failed stat total: '
                   f'expected {stat_total} but got {self.base_total}')
