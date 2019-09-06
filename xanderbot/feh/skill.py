@@ -355,18 +355,23 @@ class Skill(object):
             return None
 
     def get_refined(self, refine):
-        if refine is None: return
+        if refine is None:
+            return
         skill = copy(self)
         if skill.refined_ver:
             skill.description = skill.refined_ver.description
             skill.might = skill.refined_ver.might
             skill.bonus_atk = skill.refined_ver.bonus_atk
+            skill.eff_against = skill.refined_ver.eff_against
+            skill.eff_set = skill.refined_ver.eff_set
             skill.refined_ver = None
             skill.refined_ver_id = None
         if (refine == skill.refine_eff or refine == skill.refine_st1
                 or refine == skill.refine_st2):
             skill.description = (
-                f'{self.description}\n{refine.icon}: **{refine.description}**')
+                f'{skill.description}\n'
+                f'{refine.icon}: **{refine.description}**'
+            )
         skill.bonus_hp += refine.bonus_hp
         skill.might += refine.bonus_atk
         skill.bonus_atk += refine.bonus_atk
