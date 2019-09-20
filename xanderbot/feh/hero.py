@@ -1193,7 +1193,8 @@ class Hero(object):
                 if self.generation >= 4:
                     stat_total += 2
                     growth_rate += 5
-                    if self.move_type == MoveType.CAVALRY:
+                    if (self.move_type == MoveType.ARMOR
+                            or self.move_type == MoveType.CAVALRY):
                         stat_total -= 1
                         growth_rate += 5
                     elif self.move_type == MoveType.FLIER:
