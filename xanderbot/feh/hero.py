@@ -1200,11 +1200,12 @@ class Hero(object):
                     elif self.move_type == MoveType.FLIER:
                         stat_total += 1
                     if ranged:
-                        if self.move_type == MoveType.INFANTRY:
+                        if self.move_type != MoveType.FLIER:
                             stat_total -= 1
                         else:
                             stat_total -= 2
-                        growth_rate += 5
+                        if self.move_type != MoveType.ARMOR:
+                            growth_rate += 5
                     if self.is_dancer:
                         growth_rate -= 5
 
