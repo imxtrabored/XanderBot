@@ -451,6 +451,9 @@ class XanderBotClient(discord.Client):
         if (reaction.message.author != client.user
                 or user == client.user
                 or reaction.message.id not in self.reactable_library):
+            if easter_egg:
+                asyncio.create_task(
+                    easter_egg.process_react_eggs(self, reaction))
             return
         msg_bundle = self.reactable_library[reaction.message.id]
         if user != msg_bundle.user: return
