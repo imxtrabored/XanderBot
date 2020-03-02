@@ -38,6 +38,8 @@ COLOR_LIT = re.compile(COLOR_R)
 WEAPON_LIT = re.compile(WEAPON_R)
 MOVE_LIT = re.compile(MOVE_R)
 SEARCH_SPECIAL_CHARS = '"&\'()*-|,'
+SEARCH_PAREN = re.compile(
+    r'((?<=(?![&\|\-\(])\S)\s*(?=\())|((?<=\))\s*(?=(?![&\|\-\)])\S))')
 ONLY_ALPHANUM = str.maketrans('', '', whitespace + punctuation)
 PUNCT_NON_SEARCH_STR = punctuation.translate(
     str.maketrans('', '', SEARCH_SPECIAL_CHARS))
@@ -312,6 +314,7 @@ class UnitLib(object):
 
     @staticmethod
     def filter_search(name):
+        name = SEARCH_PAREN.sub(' AND ', name)
         name = (
             name.translate(PUNCT_NON_SEARCH).lstrip(LSTRIP_SEARCH)
             .rstrip(RSTRIP_SEARCH).replace('&', ' AND ').replace('|', ' OR ')
