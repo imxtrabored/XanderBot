@@ -691,12 +691,12 @@ class UnitLib(object):
             if this_hero.index != hero.index:
                 heroes.append((
                     hero,
-                    1 + abs(hero_stats[0] - hero.max_hp)
-                    + abs(hero_stats[1] - hero.max_atk)
-                    + abs(hero_stats[2] - hero.max_spd)
-                    + abs(hero_stats[3] - hero.max_def)
-                    + abs(hero_stats[4] - hero.max_res)
-                    + abs(hero_stats[5] - hero.max_total)
+                    1 + abs(hero_stats[0] - hero.max_hp) ** 2
+                    + abs(hero_stats[1] - hero.max_atk) ** 2
+                    + abs(hero_stats[2] - hero.max_spd) ** 2
+                    + abs(hero_stats[3] - hero.max_def) ** 2
+                    + abs(hero_stats[4] - hero.max_res) ** 2
+                    # + abs(hero_stats[5] - hero.max_total)
                 ))
         heroes.sort(key=lambda s: s[1])
         hero_list = [(

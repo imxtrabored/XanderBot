@@ -108,6 +108,7 @@ COMMAND_DICT = {
     'stats'      : HeroStats     ,
     'st'         : HeroStats     ,
     'skills'     : HeroSkills    ,
+    'sk'         : HeroSkills    ,
     'totalsp'    : HeroTotalSp   ,
     'compare'    : HeroCompare   ,
     'c'          : HeroCompare   ,
