@@ -67,7 +67,7 @@ class HeroSimilar(CmdDefault):
             result = '\n'.join(results[start:end])
         matching = f''
         embed.title = (
-            f'Heroes with similar stats to {search_hero.short_name} '
+            f'Heroes with similar stat distribution to {search_hero} '
             f'({start + 1} - {end} of {len(results)}):'
         )
         embed.description = result
@@ -91,10 +91,16 @@ class HeroSimilar(CmdDefault):
                 reactable=ReactMenu(
                     emojis=HeroSimilar.REACT_MENU, callback=HeroSimilar.react),
             )
-        result_list = UnitLib.sort_SSD(hero)
+        hero_list = [(
+                f'``({999 / hero[1]:0>3.0f})`` '
+                f'{em.get(hero[0].weapon_type)}{em.get(hero[0].move_type)} '
+                f'{hero[0].short_name}'
+            )
+            for hero in UnitLib.sort_SSD(hero)
+        ]
         embed = Embed()
         HeroSimilar.format_list(
-            embed, result_list, hero, 0)
+            embed, hero_list, hero.short_name, 0)
         if any(bad_args):
             content = ('I did not understand the following: '
                        f'{", ".join(bad_args)}')
@@ -103,7 +109,7 @@ class HeroSimilar(CmdDefault):
         embed.color = em.get_color(None)
         react_menu = ReactMenu(
             emojis=HeroSimilar.REACT_MENU,
-            data=HeroSimilar.Data(embed, result_list, params, 0),
+            data=HeroSimilar.Data(embed, hero_list, hero.short_name, 0),
             callback=HeroSimilar.react,
         )
         return ReplyPayload(content=content, embed=embed, reactable=react_menu)

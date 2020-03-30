@@ -679,11 +679,11 @@ class UnitLib(object):
     def sort_SSD(cls, this_hero):
         this_hero = cls.singleton.unit_list[this_hero.index]
         hero_stats = (
-            this_hero.max_hp,
-            this_hero.max_atk,
-            this_hero.max_spd,
-            this_hero.max_def,
-            this_hero.max_res,
+            this_hero.max_hp  / this_hero.max_total,
+            this_hero.max_atk / this_hero.max_total,
+            this_hero.max_spd / this_hero.max_total,
+            this_hero.max_def / this_hero.max_total,
+            this_hero.max_res / this_hero.max_total,
             this_hero.max_total,
         )
         heroes = []
@@ -691,22 +691,16 @@ class UnitLib(object):
             if this_hero.index != hero.index:
                 heroes.append((
                     hero,
-                    1 + abs(hero_stats[0] - hero.max_hp) ** 2
-                    + abs(hero_stats[1] - hero.max_atk) ** 2
-                    + abs(hero_stats[2] - hero.max_spd) ** 2
-                    + abs(hero_stats[3] - hero.max_def) ** 2
-                    + abs(hero_stats[4] - hero.max_res) ** 2
+                    10000 * (abs(hero_stats[0] - hero.max_hp / hero.max_total) ** 2
+                    + abs(hero_stats[1] - hero.max_atk / hero.max_total) ** 2
+                    + abs(hero_stats[2] - hero.max_spd / hero.max_total) ** 2
+                    + abs(hero_stats[3] - hero.max_def / hero.max_total) ** 2
+                    + abs(hero_stats[4] - hero.max_res / hero.max_total) ** 2
                     # + abs(hero_stats[5] - hero.max_total)
+                    ) + 1
                 ))
         heroes.sort(key=lambda s: s[1])
-        hero_list = [(
-                f'``({999 // hero[1]:0>3})`` '
-                f'{em.get(hero[0].weapon_type)}{em.get(hero[0].move_type)} '
-                f'{hero[0].short_name}'
-            )
-            for hero in heroes
-        ]
-        return hero_list
+        return heroes
 
     @classmethod
     async def log_skill_search(cls, skill_name):
