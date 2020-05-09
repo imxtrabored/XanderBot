@@ -74,15 +74,21 @@ class HeroList(CmdDefault):
 
     @staticmethod
     async def cmd(params, user_id):
-        result_list, _, bad_args = UnitLib.sort_heroes(
+        result_heroes, _, bad_args = UnitLib.sort_heroes(
             (), params, None, user_id)
-        if result_list is None:
+        if result_heroes is None:
             return ReplyPayload(
                 content=('Syntax error. Use ``f?help list`` for help '
                          'with the syntax for this command.'),
                 reactable=ReactMenu(
                     emojis=HeroList.REACT_MENU, callback=HeroList.react),
             )
+        result_list = [(
+                f'{em.get(hero.weapon_type)}{em.get(hero.move_type)} '
+                f'{hero.short_name}'
+            )
+            for hero in result_heroes
+        ]
         embed = Embed()
         HeroList.format_list(
             embed, result_list, params, 0)

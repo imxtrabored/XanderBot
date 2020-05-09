@@ -92,7 +92,7 @@ class HeroSimilar(CmdDefault):
                     emojis=HeroSimilar.REACT_MENU, callback=HeroSimilar.react),
             )
         hero_list = [(
-                f'``({999 / hero[1]:0>3.0f})`` '
+                f'``({999 / hero[1]:·>3.0f})`` '
                 f'{em.get(hero[0].weapon_type)}{em.get(hero[0].move_type)} '
                 f'{hero[0].short_name}'
             )
