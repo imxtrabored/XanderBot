@@ -162,7 +162,7 @@ class UnitLib(object):
         cur.execute(
             """SELECT id, identity, name, description, type, weapon_type,
             staff_exclusive, is_seal, is_refine, is_refined_variant, range,
-            might, hp, atk, spd, def, res, cd_mod, special_cd, prereq1,
+            might, hp, atk, spd, def, res, special_cd, prereq1,
             prereq2, sp, exclusive, eff_infantry, eff_armor, eff_cavalry,
             eff_flier, eff_r_sword, eff_b_lance, eff_g_axe, eff_r_bow,
             eff_b_bow, eff_g_bow, eff_c_bow, eff_r_dagger, eff_b_dagger,
@@ -196,7 +196,7 @@ class UnitLib(object):
             skillsets.unlockRarity, skillsets.defaultRarity
             FROM skillsets
             JOIN skills ON skillsets.skillid = skills.id
-            ORDER BY skillsets.heroid ASC,  skillsets.unlockRarity ASC,
+            ORDER BY skillsets.heroid ASC, skillsets.unlockRarity ASC,
             skills.exclusive ASC;"""
         )
         for index in cur:
@@ -570,13 +570,7 @@ class UnitLib(object):
                 con.close()
                 return None, '', ()
             if len(filtered_short) == 0:
-                hero_list = [(
-                        f'{em.get(cls.singleton.unit_list[rw[0]].weapon_type)}'
-                        f'{em.get(cls.singleton.unit_list[rw[0]].move_type)} '
-                        f'{rw[1]}'
-                    )
-                    for rw in cur
-                ]
+                hero_list = [cls.singleton.unit_list[rw[0]] for rw in cur]
             elif len(filtered_short) == 1:
                 hero_list = [(
                         f'``({rw[2] or 0:·>{padding[0]}.{prec[0]}f})`` '
@@ -643,12 +637,7 @@ class UnitLib(object):
                     sort_values, {'__builtins__': None}, {'hero': hero})
             heroes.sort(key=lambda hero: hero.sort_dummy)
             if len(filtered_short) == 0:
-                hero_list = [(
-                        f'{em.get(hero.weapon_type)}{em.get(hero.move_type)} '
-                        f'{hero.short_name}'
-                    )
-                    for hero in heroes
-                ]
+                hero_list = heroes
             elif len(filtered_short) == 1:
                 hero_list = [(
                         '``('

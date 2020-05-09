@@ -81,7 +81,7 @@ class Skill(object):
         'is_staff', 'is_seal', 'is_refine', 'is_refined_variant',
         'range', 'might', 'icon', 'w_icon',
         'bonus_hp', 'bonus_atk', 'bonus_spd', 'bonus_def', 'bonus_res',
-        'cd_mod', 'special_cd',
+        'special_cd',
         'prereq1', 'prereq1_id', 'prereq2', 'prereq2_id', 'postreq',
         'sp', 'exclusive', 'exclusive_to_id',
         'eff_against', 'eff_set', 'learnable', 'allowed_weapon',
@@ -107,7 +107,7 @@ class Skill(object):
             staff_exclusive = False, is_seal = False, is_refine = False,
             is_refined_variant = False, range = 0, might = 0,
             bonus_hp = 0, bonus_atk = 0, bonus_spd = 0, bonus_def = 0,
-            bonus_res = 0, cd_mod = 0, special_cd = 0,
+            bonus_res = 0, special_cd = 0,
             prereq1 = False, prereq2 = False, sp = 0, exclusive = False,
             eff_infantry = False, eff_armor = False, eff_cavalry = False,
             eff_flier = False,
@@ -168,7 +168,6 @@ class Skill(object):
         self.bonus_spd  = bonus_spd
         self.bonus_def  = bonus_def
         self.bonus_res  = bonus_res
-        self.cd_mod     = cd_mod
         self.special_cd = special_cd
 
         #prereq
@@ -378,6 +377,7 @@ class Skill(object):
         skill.bonus_spd += refine.bonus_spd
         skill.bonus_def += refine.bonus_def
         skill.bonus_res += refine.bonus_res
+        skill.special_cd += refine.special_cd
         temp = skill.sp
         skill.sp = skill.refine_sp
         skill.refine_sp = temp
