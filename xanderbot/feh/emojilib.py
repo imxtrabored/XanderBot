@@ -36,6 +36,8 @@ class EmojiLib(object):
         SkillWeaponGroup.G_TOME  : Color.from_rgb(10,172,37)  ,
         SkillWeaponGroup.S_BOW   : Color.from_rgb(95,111,118) ,
         SkillWeaponGroup.S_DAGGER: Color.from_rgb(95,111,118) ,
+        SkillWeaponGroup.S_TOME  : Color.from_rgb(95,111,118) ,
+        SkillWeaponGroup.C_TOME  : Color.from_rgb(95,111,118) ,
         SkillWeaponGroup.C_STAFF : Color.from_rgb(95,111,118) ,
         SkillWeaponGroup.S_BEAST : Color.from_rgb(95,111,118) ,
         SkillWeaponGroup.S_TOME  : Color.from_rgb(120,82,163) ,
@@ -80,6 +82,7 @@ class EmojiLib(object):
             elif index[0] == 'Wp_G_Breath': self.emojis[UnitWeaponType.G_BREATH] = client.get_emoji(int(index[1]))
             elif index[0] == 'Wp_C_Bow'   : self.emojis[UnitWeaponType.C_BOW   ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Wp_C_Dagger': self.emojis[UnitWeaponType.C_DAGGER] = client.get_emoji(int(index[1]))
+            elif index[0] == 'Wp_C_Tome'  : self.emojis[UnitWeaponType.C_TOME  ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Wp_C_Staff' : self.emojis[UnitWeaponType.C_STAFF ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Wp_C_Breath': self.emojis[UnitWeaponType.C_BREATH] = client.get_emoji(int(index[1]))
             elif index[0] == 'Wp_R_Beast' : self.emojis[UnitWeaponType.R_BEAST ] = client.get_emoji(int(index[1]))

@@ -8,17 +8,18 @@ from feh.hero import MoveType, UnitWeaponType, SkillType
 class SkillWeaponGroup(Enum):
     NONE     = 0
     R_SWORD  = 1
-    R_TOME   = 2
-    S_BREATH = 3
-    B_LANCE  = 4
-    B_TOME   = 5
-    G_AXE    = 6
-    G_TOME   = 7
-    S_BOW    = 8
-    S_DAGGER = 9
+    B_LANCE  = 2
+    G_AXE    = 3
+    S_BOW    = 4
+    S_DAGGER = 5
+    R_TOME   = 6
+    B_TOME   = 7
+    G_TOME   = 8
+    C_TOME   = 9
     C_STAFF  = 10
-    S_BEAST  = 11
-    S_TOME   = 12
+    S_BREATH = 11
+    S_BEAST  = 12
+    S_TOME   = 13
 
 @unique
 class SpecialTrigger(Enum):
@@ -67,6 +68,7 @@ restrictable_types = (
     UnitWeaponType.G_BEAST ,
     UnitWeaponType.C_BOW   ,
     UnitWeaponType.C_DAGGER,
+    UnitWeaponType.C_TOME  ,
     UnitWeaponType.C_STAFF ,
     UnitWeaponType.C_BREATH,
     UnitWeaponType.C_BEAST ,
@@ -115,7 +117,8 @@ class Skill(object):
             eff_r_bow = False, eff_b_bow = False, eff_g_bow = False,
             eff_c_bow = False, eff_r_dagger = False, eff_b_dagger = False,
             eff_g_dagger = False, eff_c_dagger = False, eff_r_tome = False,
-            eff_b_tome = False, eff_g_tome = False, eff_c_staff = False,
+            eff_b_tome = False, eff_g_tome = False, eff_c_tome = False,
+            eff_c_staff = False,
             eff_r_breath = False, eff_b_breath = False, eff_g_breath = False,
             eff_c_breath = False, eff_r_beast = False, eff_b_beast = False,
             eff_g_beast = False, eff_c_beast = False,
@@ -123,8 +126,8 @@ class Skill(object):
             r_sword = True, b_lance = True, g_axe = True, r_bow = True,
             b_bow = True, g_bow = True, c_bow = True, r_dagger = True,
             b_dagger = True, g_dagger = True, c_dagger = True, r_tome = True,
-            b_tome = True, g_tome = True, c_staff = True, r_breath = True,
-            b_breath = True, g_breath = True, c_breath = True,
+            b_tome = True, g_tome = True, c_tome = True, c_staff = True,
+            r_breath = True, b_breath = True, g_breath = True, c_breath = True,
             r_beast = True, b_beast = True, g_beast = True, c_beast = True,
             refinable = None, refined_version = None, refine_sp = None,
             refine_medals = 0, refine_stones = 0, refine_dew = 0,
@@ -159,8 +162,8 @@ class Skill(object):
         self.is_refined_variant = is_refined_variant
 
         #display
-        self.range        = range
-        self.might        = might
+        self.range = range
+        self.might = might
 
         #stats
         self.bonus_hp   = bonus_hp
@@ -206,6 +209,7 @@ class Skill(object):
             eff_g_beast ,
             eff_c_bow   ,
             eff_c_dagger,
+            eff_c_tome  ,
             eff_c_staff ,
             eff_c_breath,
             eff_c_beast ,
@@ -249,6 +253,7 @@ class Skill(object):
             g_beast ,
             c_bow   ,
             c_dagger,
+            c_tome  ,
             c_staff ,
             c_breath,
             c_beast ,
@@ -283,6 +288,7 @@ class Skill(object):
             g_beast ,
             c_bow   ,
             c_dagger,
+            c_tome  ,
             c_staff ,
             c_breath,
             c_beast ,

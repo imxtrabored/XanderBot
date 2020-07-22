@@ -48,15 +48,16 @@ class UnitWeaponType(OrderedEnum):
     R_TOME   = 12
     B_TOME   = 13
     G_TOME   = 14
-    C_STAFF  = 15
-    R_BREATH = 16
-    B_BREATH = 17
-    G_BREATH = 18
-    C_BREATH = 19
-    R_BEAST  = 20
-    B_BEAST  = 21
-    G_BEAST  = 22
-    C_BEAST  = 23
+    C_TOME   = 15
+    C_STAFF  = 16
+    R_BREATH = 17
+    B_BREATH = 18
+    G_BREATH = 19
+    C_BREATH = 20
+    R_BEAST  = 21
+    B_BEAST  = 22
+    G_BEAST  = 23
+    C_BEAST  = 24
 
 @unique
 class MoveType(OrderedEnum):
@@ -1135,6 +1136,7 @@ class Hero(object):
             UnitWeaponType.R_TOME,
             UnitWeaponType.B_TOME,
             UnitWeaponType.G_TOME,
+            UnitWeaponType.C_TOME,
             UnitWeaponType.C_BOW,
             UnitWeaponType.C_DAGGER,
             UnitWeaponType.C_STAFF,
