@@ -102,7 +102,9 @@ class EmojiLib(object):
             elif index[0] == 'L_Stat_Spd': self.emojis[LegendStat.SPD] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Stat_Def': self.emojis[LegendStat.DEF] = client.get_emoji(int(index[1]))
             elif index[0] == 'L_Stat_Res': self.emojis[LegendStat.RES] = client.get_emoji(int(index[1]))
-            elif index[0] == 'L_Stat_Duel': self.emojis[LegendStat.DUEL] = client.get_emoji(int(index[1]))
+            elif index[0] == 'L_Stat_Duel':
+                self.emojis[LegendStat.DUEL] = client.get_emoji(int(index[1]))
+                self.emojis[LegendStat.DUEL2] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Weapon' : self.emojis[SkillType.WEAPON ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Assist' : self.emojis[SkillType.ASSIST ] = client.get_emoji(int(index[1]))
             elif index[0] == 'Skill_Special': self.emojis[SkillType.SPECIAL] = client.get_emoji(int(index[1]))

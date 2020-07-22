@@ -49,6 +49,18 @@ LEGEND_BOOSTS = {
         'Up can be accessed from the Interact with Allies menu, and allows '
         'this unit to join battle in a group with another ally.\n'
     ),
+    LegendStat.DUEL2: (
+        'Ally Boost: +3 HP\n\n'
+        'Standard Effect 1: Duel\n'
+        'If unit is 5★ and level 40 and unit\'s stats total less than 180, '
+        'treats unit\'s stats as 180 in modes like Arena. (Higher-scoring '
+        'opponents will appear. Stat total calculation excludes any values '
+        'added by merges and skills.)\n'
+        'Standard Effect 2: Pair Up\n'
+        'An ability that can only be used under certain circumstances. Pair '
+        'Up can be accessed from the Interact with Allies menu, and allows '
+        'this unit to join battle in a group with another ally.\n'
+    ),
 }
 MYTHIC_BOOSTS = {
     LegendStat.ATK: 'Boost: HP+5, Atk+3',
@@ -56,6 +68,7 @@ MYTHIC_BOOSTS = {
     LegendStat.DEF: 'Boost: HP+5, Def+5',
     LegendStat.RES: 'Boost: HP+5, Res+5',
     LegendStat.DUEL: 'Invalid boost',
+    LegendStat.DUEL2: 'Invalid boost',
 }
 
 SUPPORT_RANKS = {

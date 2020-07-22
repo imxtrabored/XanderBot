@@ -92,13 +92,14 @@ class LegendElement(Enum):
 @unique
 class LegendStat(Enum):
     '''Enum for each unit stat'''
-    NONE = None
-    HP   = 1
-    ATK  = 2
-    SPD  = 3
-    DEF  = 4
-    RES  = 5
-    DUEL = 6
+    NONE  = None
+    HP    = 1
+    ATK   = 2
+    SPD   = 3
+    DEF   = 4
+    RES   = 5
+    DUEL  = 6
+    DUEL2 = 7
 
 @unique
 class Stat(Enum):
@@ -518,8 +519,11 @@ class Hero(object):
                            if skill.duel_bst]
             if any(duel_skills):
                 bst = max(bst, max(duel_skills))
-            if self.is_legend and self.legend_boost == LegendStat.DUEL:
-                bst = max(bst, 175)
+            if self.is_legend:
+                if self.legend_boost == LegendStat.DUEL:
+                    bst = max(bst, 175)
+                elif self.legend_boost == LegendStat.DUEL2:
+                    bst = max(bst, 180)
         if self.rarity == 5:
             rfactor = 182
         elif self.rarity == 4:
