@@ -142,7 +142,7 @@ class EmojiLib(object):
         cur.execute("""SELECT name, id FROM emojis;""")
         for index in cur:
             # alright i improved this a bit
-            self.emojis[emoji_index.get(index[0], index[0])] = (
+            self.emojis[self.emoji_index.get(index[0], index[0])] = (
                 client.get_emoji(int(index[1])))
         con.close()
         self.emojis[SummonerSupport.NONE] = ''
@@ -150,13 +150,8 @@ class EmojiLib(object):
         return self.emojis
 
     @classmethod
-    def get(cls, obj, *, single=False):
-        if obj in cls.singleton.emojis:
-            if not single:
-                return cls.singleton.emojis.get(obj)
-            if single and len(cls.singleton.emojis[obj]) > 1:
-                return cls.singleton.emojis[obj][-1]
-        return cls.singleton.emojis[None]
+    def get(cls, obj):
+        return cls.singleton.emojis.get(obj, cls.singleton.emojis[None])
 
     @classmethod
     def get_color(cls, obj):

@@ -69,10 +69,10 @@ class SkillInfo(CmdDefault):
             effective = SkillInfo.format_eff(skill)
             if skill.refine_path:
                 refine_stats = ''.join((
-                    f'{f" HP+{skill.bonus_hp}" if skill.bonus_hp else ""}',
-                    f'{f" Spd+{skill.bonus_spd}" if skill.bonus_spd else ""}',
-                    f'{f" Def+{skill.bonus_def}" if skill.bonus_def else ""}',
-                    f'{f" Res+{skill.bonus_res}" if skill.bonus_res else ""}',
+                    f' HP+{skill.bonus_hp}' if skill.bonus_hp else '',
+                    f' Spd+{skill.bonus_spd}' if skill.bonus_spd else '',
+                    f' Def+{skill.bonus_def}' if skill.bonus_def else '',
+                    f' Res+{skill.bonus_res}' if skill.bonus_res else '',
                  ))
             else:
                 refine_stats = ''
@@ -135,7 +135,7 @@ class SkillInfo(CmdDefault):
             cumul_sp = skill.get_cumul_sp_recursive()
             skill_cumul_sp = (
                 f'**Cumulative SP:** {cumul_sp}'
-                f'{f" ({cumul_sp * 3 // 2})" if not skill.exclusive else ""}'
+                f' ({cumul_sp * 3 // 2})' if not skill.exclusive else ''
             )
             if skill.evolves_from:
                 evolve_src = (
@@ -181,7 +181,7 @@ class SkillInfo(CmdDefault):
             else:
                 learnable = '\n'.join([
                     f'{count}{em.get(Rarity(count))}: '
-                    f'{", ".join([hero.short_name for hero in hero_list])} '
+                    f'", ".join([hero.short_name for hero in hero_list])} '
                     f'[{len(hero_list)}]'
                     for count, hero_list in enumerate(skill.learnable[1:], 1)
                     if hero_list
