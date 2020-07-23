@@ -152,9 +152,9 @@ class Skill(object):
                             else None)
         self.icon = ''
         self.w_icon = ''
-        self.skill_rank = skill_rank
-        self.tier = tier
-        self.duel_bst = duel_bst
+        self.skill_rank = skill_rank or 0
+        self.tier = tier or 0
+        self.duel_bst = duel_bst or 0
 
         self.is_staff = staff_exclusive
         self.is_seal = is_seal
@@ -162,16 +162,16 @@ class Skill(object):
         self.is_refined_variant = is_refined_variant
 
         #display
-        self.range = range
-        self.might = might
+        self.range = range or 0
+        self.might = might or 0
 
         #stats
-        self.bonus_hp   = bonus_hp
-        self.bonus_atk  = bonus_atk
-        self.bonus_spd  = bonus_spd
-        self.bonus_def  = bonus_def
-        self.bonus_res  = bonus_res
-        self.special_cd = special_cd
+        self.bonus_hp   = bonus_hp or 0
+        self.bonus_atk  = bonus_atk or 0
+        self.bonus_spd  = bonus_spd or 0
+        self.bonus_def  = bonus_def or 0
+        self.bonus_res  = bonus_res or 0
+        self.special_cd = special_cd or 0
 
         #prereq
         self.prereq1_id = prereq1
@@ -179,7 +179,7 @@ class Skill(object):
         self.prereq1 = None
         self.prereq2 = None
         self.postreq = []
-        self.sp = sp
+        self.sp = sp or 0
         self.exclusive = exclusive
         self.exclusive_to_id = set()
 
@@ -304,15 +304,15 @@ class Skill(object):
         self.refinable      = refinable
         self.refined_ver_id = refined_version
         self.refined_ver    = None
-        self.refine_sp      = refine_sp
-        self.refine_medals  = refine_medals
-        self.refine_stones  = refine_stones
-        self.refine_dew     = refine_dew
+        self.refine_sp      = refine_sp or 0
+        self.refine_medals  = refine_medals or 0
+        self.refine_stones  = refine_stones or 0
+        self.refine_dew     = refine_dew or 0
         self.evolves_to_id  = evolves_to
         self.evolves_to     = None
-        self.evolve_medals  = evolve_medals
-        self.evolve_stones  = evolve_stones
-        self.evolve_dew     = evolve_dew
+        self.evolve_medals  = evolve_medals or 0
+        self.evolve_stones  = evolve_stones or 0
+        self.evolve_dew     = evolve_dew or 0
         self.evolve_from_id = evolve_from
         self.evolves_from   = None
         self.refine_eff_id  = refine_eff
@@ -332,9 +332,9 @@ class Skill(object):
         self.refine_path    = None
 
         self.seal_badge_color  = seal_badge_color
-        self.seal_great_badges = seal_great_badges
-        self.seal_small_badges = seal_small_badges
-        self.seal_coins        = seal_coins
+        self.seal_great_badges = seal_great_badges or 0
+        self.seal_small_badges = seal_small_badges or 0
+        self.seal_coins        = seal_coins or 0
 
     def __eq__(self, other):
         if self.__class__ is other.__class__:
@@ -384,9 +384,7 @@ class Skill(object):
         skill.bonus_def += refine.bonus_def
         skill.bonus_res += refine.bonus_res
         skill.special_cd += refine.special_cd
-        temp = skill.sp
-        skill.sp = skill.refine_sp
-        skill.refine_sp = temp
+        skill.sp, skill.refine_sp = skill.refine_sp, skill.sp
         skill.icon = refine.icon
         skill.refine_path = refine
         return skill

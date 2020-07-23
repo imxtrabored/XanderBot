@@ -181,7 +181,7 @@ class SkillInfo(CmdDefault):
             else:
                 learnable = '\n'.join([
                     f'{count}{em.get(Rarity(count))}: '
-                    f'", ".join([hero.short_name for hero in hero_list])} '
+                    f'{", ".join([hero.short_name for hero in hero_list])} '
                     f'[{len(hero_list)}]'
                     for count, hero_list in enumerate(skill.learnable[1:], 1)
                     if hero_list
@@ -226,9 +226,10 @@ class SkillInfo(CmdDefault):
                 refined_title = 'Weapon Refinery'
                 refined_skill_str = None
 
-            refine_eff = (f'{skill.refine_eff.icon}: '
-                          f'{skill.refine_eff.description}'
-                          if skill.refine_eff else None)
+            refine_eff = (
+                f'{skill.refine_eff.icon}: {skill.refine_eff.description}'
+                if skill.refine_eff else None
+            )
             skill_refines = (
                 skill.refine_st1,
                 skill.refine_st2,
